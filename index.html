@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+	<link rel="stylesheet" href="index.css" />
+	<link rel="stylesheet" href="icons.css" />
+    <title>Hello World!</title>
+  </head>
+  <body>
+	<!-- <div id="contextmenu"></div> -->
+
+	<header id="titlebar">
+		<div id="drag-region">
+			<div id="page-controls">
+				<div class="button" id="home-btn" title="Home">
+					<i class="gg-home-alt"></i>
+				</div>
+				<div class="button" id="album-btn" title="Albums">
+					<i class="gg-disc"></i>
+				</div>
+			</div>
+			<div id="window-controls">
+				<div class="button" id="option-btn">
+					<i class="gg-options"></i>
+				</div>
+				<div class="button" id="min-button">
+					<i class="gg-minimize-alt"></i>
+				</div>
+				<div class="button" id="refresh-button">
+					<i class="gg-sync"></i>
+				</div>
+				<div class="button" id="close-button">
+					<i class="gg-close-r"></i>
+				</div>
+			</div>
+		</div>
+	</header>
+
+	<div id="app">
+		<div class="hidden" id="options-page">
+			<h1>OPTIONS</h1>
+			<div class="wrapper" id="opt-container">
+				
+			</div>
+		</div>
+
+		<div class="hidden" id="home-page">
+			<h1>HOME</h1>
+			<div class="separator-title">
+				<span class="separator-text">RECENT</span>
+				<div class="separator"></div>
+			</div>
+
+			<div class="wrapper" id="recents" name="Wrapper">
+				<div class="dummy">DUMMY</div>
+				<div class="dummy">DUMMY</div>
+				<div class="dummy">DUMMY</div>
+				<div class="dummy">DUMMY</div>
+			</div>
+
+			<div class="separator-title">
+				<span class="separator-text">ALBUMS</span>
+				<div class="separator"></div>
+			</div>
+
+			<div class="wrapper" id="albums">
+				<div class="dummy">DUMMY</div>
+				<div class="dummy">DUMMY</div>
+				<div class="dummy">DUMMY</div>
+				<div class="dummy">DUMMY</div>
+			</div>
+
+			<div class="separator-title">
+				<span class="separator-text">FAVORITES</span>
+				<div class="separator"></div>
+			</div>
+
+			<div class="wrapper" id="favorites">
+				<div class="dummy">DUMMY</div>
+				<div class="dummy">DUMMY</div>
+				<div class="dummy">DUMMY</div>
+				<div class="dummy">DUMMY</div>
+			</div>
+		</div>
+
+		<div class="hidden" id="albums-page">
+			<h1>ALBUMS</h1>
+			<div class="separator"></div>
+		</div>
+	</div>
+    <script src="./renderer.js"></script>
+  </body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "bruh",
+  "version": "1.0.0",
+  "description": "A local music player made with w/ electron and vanillajs",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [
+    "music",
+    "player",
+    "music-player",
+    "electron",
+    "vanillajs",
+    "electron-vanillajs"
+  ],
+  "author": "b0l0553",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^20.1.3"
+  }
+}
