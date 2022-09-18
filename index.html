@@ -5,7 +5,7 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
 	<link rel="stylesheet" href="index.css" />
 	<link rel="stylesheet" href="icons.css" />
-    <title>Hello World!</title>
+    <title>Electron Music Player</title>
   </head>
   <body>
 	<!-- <div id="contextmenu"></div> -->
@@ -18,6 +18,9 @@
 				</div>
 				<div class="button" id="album-btn" title="Albums">
 					<i class="gg-disc"></i>
+				</div>
+				<div class="button" id="artist-btn" title="Artists">
+					<i class="gg-user-list"></i>
 				</div>
 			</div>
 			<div id="window-controls">
@@ -39,24 +42,26 @@
 
 	<div id="app">
 		<div class="hidden" id="options-page">
-			<h1>OPTIONS</h1>
-			<div class="wrapper" id="opt-container">
-				
+			<div class="page-title striped">
+				<h1 class="setting-title">SETTINGS</h1>
+				<i class="gg-toolbox"></i>
+			</div>
+			<div class="separator"></div>
+			<div class="wrapper rounded" id="opt-container">
 			</div>
 		</div>
 
 		<div class="hidden" id="home-page">
-			<h1>HOME</h1>
+			<div class="page-title">
+				<h1>HOME</h1>
+				<!--<div class="button rounded" id="home-fetch-button">FETCH</div>-->
+			</div>
 			<div class="separator-title">
 				<span class="separator-text">RECENT</span>
 				<div class="separator"></div>
 			</div>
 
-			<div class="wrapper" id="recents" name="Wrapper">
-				<div class="dummy">DUMMY</div>
-				<div class="dummy">DUMMY</div>
-				<div class="dummy">DUMMY</div>
-				<div class="dummy">DUMMY</div>
+			<div class="wrapper rounded" id="recents" name="Wrapper">
 			</div>
 
 			<div class="separator-title">
@@ -64,11 +69,7 @@
 				<div class="separator"></div>
 			</div>
 
-			<div class="wrapper" id="albums">
-				<div class="dummy">DUMMY</div>
-				<div class="dummy">DUMMY</div>
-				<div class="dummy">DUMMY</div>
-				<div class="dummy">DUMMY</div>
+			<div class="wrapper rounded" id="albums">
 			</div>
 
 			<div class="separator-title">
@@ -76,17 +77,20 @@
 				<div class="separator"></div>
 			</div>
 
-			<div class="wrapper" id="favorites">
-				<div class="dummy">DUMMY</div>
-				<div class="dummy">DUMMY</div>
-				<div class="dummy">DUMMY</div>
-				<div class="dummy">DUMMY</div>
+			<div class="wrapper rounded" id="favorites">
 			</div>
 		</div>
 
 		<div class="hidden" id="albums-page">
 			<h1>ALBUMS</h1>
 			<div class="separator"></div>
+			<div class="wrapper" id="album-wrapper"></div>
+		</div>
+
+		<div class="hidden" id="artist-page">
+			<h1>ARTISTS</h1>
+			<div class="separator"></div>
+			<div class="wrapper" id="artist-wrapper"></div>
 		</div>
 	</div>
     <script src="./renderer.js"></script>

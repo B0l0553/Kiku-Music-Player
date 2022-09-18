@@ -27,18 +27,6 @@ body {
 	user-select: none;
 }
 
-#contextmenu {
-	position: absolute;
-	transition: 300ms all;
-	background: rgba(36, 104, 98, 0.75);
-	backdrop-filter: blur(1px);
-	border-radius: 4px;
-	min-height: 32px;
-	display: flex;
-	flex-direction: column;
-	flex-wrap: nowrap;
-}
-
 #titlebar {
 	top: 0;
 	display: block;
@@ -136,7 +124,7 @@ body {
 
 #page-controls {
 	display: grid;
-	grid-template-columns: repeat(2, 64px);
+	grid-template-columns: repeat(3, 64px);
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -162,9 +150,31 @@ body {
 	background-color: rgba(255, 255, 255, 0.2);
 }
 
+#home-fetch-button {
+	width: fit-content;
+	padding: 4px;
+	margin: 4px;
+	border:rgba(255, 255, 255, 0.5) solid 2px;
+	cursor: pointer;
+	transition: 100ms all;
+	font-weight: 600;
+}
+
+#home-fetch-button:active {
+	background-color: #FFF;
+	color: #000;
+}
+
+.page-title {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+}
+
 .dummy {
 	height: 6rem;
-	animation: 1s ease loading alternate infinite;
+	/*animation: 1s ease loading alternate infinite;*/
 	min-width: 10rem;
 	border-radius: 0.35rem;
 	margin-right: 0.5rem;
@@ -172,6 +182,13 @@ body {
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	border: transparent 2px solid;
+	transition: border-color 500ms;
+	background: rgba(255, 255, 255, 0.05);
+}
+
+.dummy:hover {
+	border-color: violet;
 }
 
 .hidden {
@@ -186,9 +203,9 @@ body {
 .separator {
 	height: 3px;
 	background: #FFF;
-	border-radius: 1rem;
 	width: 100%;
-	margin: 0.5rem;
+	margin-top: 0.5rem;
+	margin-bottom: 0.5rem;
 }
 
 .separator-title {
@@ -204,13 +221,18 @@ body {
 }
 
 .wrapper {
-	border-radius: 0.75rem;
 	background:rgba(255, 255, 255, 0.05);
-	min-height: 1rem;
+	min-height: 7rem;
 	padding: 0.75rem;
 	display: flex;
 	flex-direction: row;
 	overflow: hidden;
+	transition: 500ms all;
+	border: transparent solid 2px;
+}
+
+.wrapper:hover {
+	border:rgba(255, 255, 255, 0.2) solid 2px;
 }
 
 .smoll-text {
@@ -218,6 +240,26 @@ body {
 	font-weight: 600;
 	margin: 0.25rem;
 }
+
+.striped {
+	background: repeating-linear-gradient(
+		45deg, rgba(255, 208, 0, 0.5), rgba(255, 208, 0, 0.5) 0.50rem, transparent 0px, transparent 1rem
+	);
+}
+
+.rounded {
+	border-radius: 0.5rem;
+}
+
+#opt-container {
+	display: flex;
+	flex-direction: column;
+}
+
+.setting-title {
+	margin-right: 1rem;
+}
+
 
 @keyframes loading {
 	0% { background: rgba(255, 255, 255, 0.05); }

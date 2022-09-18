@@ -229,3 +229,123 @@
     bottom: -7px;
     right: -4px
 }
+
+.gg-user-list {
+    display: block;
+    transform: scale(var(--ggs,1));
+    box-sizing: border-box;
+    width: 20px;
+    height: 18px;
+    background:
+      linear-gradient(
+        to left,
+        currentColor 8px,
+        transparent 0)
+        no-repeat 14px 4px/6px 2px,
+      linear-gradient(
+        to left,
+        currentColor 8px,
+        transparent 0)
+        no-repeat 14px 8px/6px 2px,
+      linear-gradient(
+        to left,
+        currentColor 8px,
+        transparent 0)
+        no-repeat 14px 12px/6px 2px
+}
+.gg-user-list::after,
+.gg-user-list::before {
+    content: "";
+    display: block;
+    box-sizing: border-box;
+    position: absolute;
+    border: 2px solid
+}
+.gg-user-list::before {
+    width: 8px;
+    height: 8px;
+    border-radius: 30px;
+    top: 0;
+    left: 2px
+}
+.gg-user-list::after {
+    width: 12px;
+    height: 9px;
+    border-bottom: 0;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    top: 9px
+}
+
+.gg-toolbox {
+    box-sizing: border-box;
+    position: relative;
+    display: block;
+    transform: scale(var(--ggs,1.35));
+    width: 22px;
+    height: 16px;
+    border: 2px solid;
+    border-radius: 2px
+}
+.gg-toolbox::after,
+.gg-toolbox::before {
+    content: "";
+    display: block;
+    box-sizing: border-box;
+    position: absolute
+}
+.gg-toolbox::before {
+    border: 2px solid;
+    border-bottom: 0;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    left: 4px;
+    width: 10px;
+    height: 4px;
+    top: -5px
+}
+.gg-toolbox::after {
+    width: 18px;
+    height: 2px;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    box-shadow:
+        0 -2px 0,
+        inset 4px 0 0,
+        inset -4px 0 0;
+    top: 4px
+}
+
+.gg-spinner {
+    transform: scale(var(--ggs,1))
+}
+.gg-spinner,
+.gg-spinner::after,
+.gg-spinner::before {
+    box-sizing: border-box;
+    position: relative;
+    display: block;
+    width: 20px;
+    height: 20px
+}
+.gg-spinner::after,
+.gg-spinner::before {
+    content: "";
+    position: absolute;
+    border-radius: 100px
+}
+.gg-spinner::before {
+    animation: spinner 1s
+    cubic-bezier(.6,0,.4,1) infinite;
+    border: 3px solid transparent;
+    border-top-color: currentColor
+}
+.gg-spinner::after {
+    border: 3px solid;
+    opacity: .2
+}
+
+@keyframes spinner {
+    0% { transform: rotate(0deg) }
+    to { transform: rotate(359deg) }
+}
