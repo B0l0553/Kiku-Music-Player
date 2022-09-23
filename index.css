@@ -165,7 +165,7 @@ body {
 	margin-top: 32px;
 	height: calc(100vh - 32px);
 	background-color: #E81123;
-	transition: 750ms all cubic-bezier(0.22, 0.61, 0.36, 1);
+	transition: 750ms transform cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 #playback__header {
