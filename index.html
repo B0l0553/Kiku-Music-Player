@@ -13,6 +13,9 @@
 	<header id="titlebar">
 		<div id="drag-region">
 			<div id="page-controls">
+				<div class="button icon">
+					<img width="32" height="32" src="icons/AkioFacingOpenMouthCloseUp.png" draggable="false" />
+				</div>
 				<div class="button" id="home-btn" title="Home">
 					<i class="gg-home-alt"></i>
 				</div>
@@ -41,17 +44,47 @@
 	</header>
 
 	<div id="app">
+		<div id="playback__wrapper" class="hide">
+			<div id="playback__header">
+				<div id="playback__showBtn" class="playback__button">
+					<i class="gg-arrow-up-r"></i>
+				</div>
+				<div id="playback__before" class="playback__button">
+					<i class="gg-play-track-prev-r"></i>
+				</div>
+				<div id="playback__pause" class="playback__button">
+					<i class="gg-play-button-r"></i>
+				</div>
+				<div id="playback__next" class="playback__button">
+					<i class="gg-play-track-next-r"></i>
+				</div>
+				<div id="playback__time">
+					<span>0:00</span>
+				</div>
+				<div class="playback__progressWrapper">
+					<div id="playbackProgress" class="playback__progressBar"></div>
+					<div id="playbackHandle" class="playback__progressHandle"></div>
+				</div>
+				<div id="playback__length">
+					<span>0:00</span>
+				</div>
+
+			</div>
+			<div id="playback__body">
+
+			</div>
+		</div>
+
 		<div class="hidden" id="options-page">
 			<div class="page-title striped">
 				<h1 class="setting-title">SETTINGS</h1>
-				<i class="gg-toolbox"></i>
 			</div>
 			<div class="separator"></div>
 			<div class="wrapper rounded" id="opt-container">
 			</div>
 		</div>
 
-		<div class="hidden" id="home-page">
+		<div class="home__page hidden" id="home-page">
 			<div class="page-title">
 				<h1>HOME</h1>
 				<!--<div class="button rounded" id="home-fetch-button">FETCH</div>-->
@@ -92,6 +125,8 @@
 			<div class="separator"></div>
 			<div class="wrapper" id="artist-wrapper"></div>
 		</div>
+
+		
 	</div>
     <script src="./renderer.js"></script>
   </body>
