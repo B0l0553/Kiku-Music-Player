@@ -5,16 +5,14 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
 	<link rel="stylesheet" href="index.css" />
 	<link rel="stylesheet" href="icons.css" />
-    <title>Electron Music Player</title>
+    <title>Akio Music Player</title>
   </head>
   <body>
-	<!-- <div id="contextmenu"></div> -->
-
 	<header id="titlebar">
 		<div id="drag-region">
 			<div id="page-controls">
 				<div class="button icon">
-					<img width="32" height="32" src="icons/AkioFacingOpenMouthCloseUp.png" draggable="false" />
+					<!--<img width="32" height="32" draggable="false" />-->
 				</div>
 				<div class="button" id="home-btn" title="Home">
 					<i class="gg-home-alt"></i>
@@ -58,6 +56,7 @@
 				<div id="playback__next" class="playback__button">
 					<i class="gg-play-track-next-r"></i>
 				</div>
+				<div class="separator-vertical"></div>
 				<div id="playback__time">
 					<span>0:00</span>
 				</div>
@@ -75,57 +74,65 @@
 			</div>
 		</div>
 
-		<div class="hidden" id="options-page">
-			<div class="page-title striped">
-				<h1 class="setting-title">SETTINGS</h1>
-			</div>
-			<div class="separator"></div>
-			<div class="wrapper rounded" id="opt-container">
-			</div>
-		</div>
-
-		<div class="home__page hidden" id="home-page">
-			<div class="page-title">
-				<h1>HOME</h1>
-				<!--<div class="button rounded" id="home-fetch-button">FETCH</div>-->
-			</div>
-			<div class="separator-title">
-				<span class="separator-text">RECENT</span>
+		<div id="pages__wrapper">
+			<div class="hidden" id="options-page">
+				<div class="page-title striped">
+					<h1 class="setting-title">SETTINGS</h1>
+				</div>
 				<div class="separator"></div>
+				<div class="wrapper rounded" id="opt-container">
+					<div class="settings__cacheWrapper">
+						<h2>CACHE</h2>
+						<div class="settings__cacheListWrapper">
+							<div id="settings__cacheUnscanned"></div>
+							<div id="settings__cachedFiles"></div>
+						</div>
+					</div>
+				</div>
 			</div>
 
-			<div class="wrapper rounded" id="recents" name="Wrapper">
+			<div class="home__page hidden" id="home-page">
+				<div class="page-title">
+					<h1>HOME</h1>
+					<!--<div class="button rounded" id="home-fetch-button">FETCH</div>-->
+				</div>
+				<div class="separator-title">
+					<span class="separator-text">RECENT</span>
+					<div class="separator"></div>
+				</div>
+
+				<div class="wrapper rounded" id="recents" name="Wrapper">
+				</div>
+
+				<div class="separator-title">
+					<span class="separator-text">ALBUMS</span>
+					<div class="separator"></div>
+				</div>
+
+				<div class="wrapper rounded" id="albums">
+				</div>
+
+				<div class="separator-title">
+					<span class="separator-text">FAVORITES</span>
+					<div class="separator"></div>
+				</div>
+
+				<div class="wrapper rounded" id="favorites">
+				</div>
 			</div>
 
-			<div class="separator-title">
-				<span class="separator-text">ALBUMS</span>
+			<div class="hidden" id="albums-page">
+				<h1>ALBUMS</h1>
 				<div class="separator"></div>
+				<div class="wrapper" id="album-wrapper"></div>
 			</div>
 
-			<div class="wrapper rounded" id="albums">
-			</div>
-
-			<div class="separator-title">
-				<span class="separator-text">FAVORITES</span>
+			<div class="hidden" id="artist-page">
+				<h1>ARTISTS</h1>
 				<div class="separator"></div>
-			</div>
-
-			<div class="wrapper rounded" id="favorites">
+				<div class="wrapper" id="artist-wrapper"></div>
 			</div>
 		</div>
-
-		<div class="hidden" id="albums-page">
-			<h1>ALBUMS</h1>
-			<div class="separator"></div>
-			<div class="wrapper" id="album-wrapper"></div>
-		</div>
-
-		<div class="hidden" id="artist-page">
-			<h1>ARTISTS</h1>
-			<div class="separator"></div>
-			<div class="wrapper" id="artist-wrapper"></div>
-		</div>
-
 		
 	</div>
     <script src="./renderer.js"></script>
