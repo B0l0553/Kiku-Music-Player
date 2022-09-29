@@ -132,7 +132,7 @@ function IsFile(_path) {
 }
 
 function IsAudioFile(_path) {
-	var name = _path.split("\\")[_path.split("\\").length - 1];
+	var name = path.basename(_path);
 	return re.test(name);
 }
 
@@ -141,8 +141,8 @@ function GetDirs(_path) {
 	var dirs = [];
 
 	rawDirs.forEach(el => {
-		if(IsDir(_path + "\\" + el)) {
-			dirs.push(_path + "\\" + el);
+		if(IsDir(path.join(_path, el))) {
+			dirs.push(path.join(_path, el));
 		}
 	})
 
@@ -165,8 +165,8 @@ function GetAudioFiles(_path) {
 	var audioFiles = [];
 	var dirs = GetDirs(_path);
 	rawArray.forEach(el => {
-		if(IsAudioFile(_path + "\\" + el)) {
-			audioFiles.push(_path + "\\" + el);
+		if(IsAudioFile(path.join(_path, el))) {
+			audioFiles.push(path.join(_path, el));
 		}
 	})
 
@@ -182,7 +182,7 @@ function GetMetadata(_path) {
 	var fMusic = new MusicMeta();
 	var file = fs.lstatSync(_path);
 	fMusic.path = _path;
-	fMusic.filename = _path.split('\\')[_path.split('\\').length - 1];
+	fMusic.filename = path.basename(_path);
 	fMusic.lastEdited = file.birthtime;
 
 	const tags = NodeID3.read(_path);
@@ -202,14 +202,14 @@ function GetMetadata(_path) {
 	if(tags.image !== undefined) {
 		if(tags.album !== undefined) {
 			var albumForm = btoa(encodeURIComponent(tags.album))
-			if(fs.existsSync(settings.cachePath + "\\" + albumForm + "." + tags.image.mime.split('/')[1])) return fMusic;
-			fs.writeFileSync(settings.cachePath + "\\" + albumForm + "." + tags.image.mime.split('/')[1], tags.image.imageBuffer);
-			fMusic.tags.image = settings.cachePath + "\\" + albumForm + "." + tags.image.mime.split('/')[1];
+			if(fs.existsSync(path.join(settings.cachePath, albumForm + "." + tags.image.mime.split('/')[1]))) return fMusic;
+			fs.writeFileSync(path.join(settings.cachePath, albumForm + "." + tags.image.mime.split('/')[1]), tags.image.imageBuffer);
+			fMusic.tags.image = path.join(settings.cachePath, albumForm + "." + tags.image.mime.split('/')[1]);
 		} else {
 			var filename = btoa(encodeURIComponent(fMusic.filename));
-			if(fs.existsSync(settings.cachePath + "\\" + filename + "." + tags.image.mime.split('/')[1])) return fMusic;
-			fs.writeFileSync(settings.cachePath + "\\" + filename + "." + tags.image.mime.split('/')[1], tags.image.imageBuffer);
-			fMusic.tags.image = settings.cachePath + "\\" + filename + "." + tags.image.mime.split('/')[1];
+			if(fs.existsSync(path.join(settings.cachePath, filename + "." + tags.image.mime.split('/')[1]))) return fMusic;
+			fs.writeFileSync(path.join(settings.cachePath, filename + "." + tags.image.mime.split('/')[1]), tags.image.imageBuffer);
+			fMusic.tags.image = path.join(settings.cachePath, filename + "." + tags.image.mime.split('/')[1]);
 		}
 	}
 
@@ -221,7 +221,7 @@ function PeekAudioFiles(_path) {
 	var audioFiles = 0;
 	var dirs = GetDirs(_path);
 	rawArray.forEach(el => {
-		if(IsAudioFile(_path + "\\" + el)) {
+		if(IsAudioFile(path.join(_path, el))) {
 			audioFiles++;
 		}
 	})

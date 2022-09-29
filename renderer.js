@@ -97,6 +97,16 @@ document.onreadystatechange = () => {
 			}
 		}
 
+		function InsertList(_element, _list) {
+			console.log(_element)
+			_list.forEach(el => {
+				const nsp = document.createElement("span");
+				nsp.textContent = el;
+				nsp.classList.add("list__element")
+				_element.appendChild(nsp);
+			})
+		}
+
 		function FetchRecent() {}
 
 		
@@ -120,16 +130,26 @@ document.onreadystatechange = () => {
 		//const controlh = document.getElementById("playback__header");
 		const controlHide = document.getElementById("playback__showBtn");
 
+		const TS = document.getElementById("settings__cacheTSList");
+		const AB = document.getElementById("settings__cacheABList");
+		const UF = document.getElementById("settings__cacheUFList");
+		const BA = document.getElementById("settings__cacheBAList");
+
+
 		if(cache.lstpag) {
 			ChangePageWithId(cache.lstpag);
 		} else {
 			ChangePage(home)
 		}
 
-
 		if(cache.ctrlop) {
 			TogglePlayback();
 		}
+
+		InsertList(TS, cache.toscan);
+		InsertList(AB, cache.albums);
+		InsertList(UF, cache.u_favs);
+		InsertList(BA, cache.banned);
 
 		homeBtn.addEventListener('click', () => {
 			//FetchRecent();
@@ -146,12 +166,13 @@ document.onreadystatechange = () => {
 
 		artistBtn.addEventListener('click', () => {
 			HidePlayback();
-			ChangePage(artist)
+			ChangePage(artist);
 		});
 
 		optionsBtn.addEventListener('click', () => {
 			HidePlayback();
-			ChangePage(options)
+			ChangePage(options);
+			FetchSettingsLists();
 		});
 
 		controlHide.addEventListener('click', () => TogglePlayback())

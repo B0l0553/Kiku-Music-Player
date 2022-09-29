@@ -357,8 +357,25 @@ body {
 	margin: 0.25rem;
 }
 
-.settings__cacheUnscanned {
+.settings__list {
+	display: flex;
+	flex-direction: column;
+	height: 5rem;
+	width: 10rem;
+	border: rgba(255, 255, 255, 0) solid 2px;
+}
 
+.settings__list:hover {
+	border-color: rgba(255, 255, 255, 0.1);
+}
+
+.settings__list .list_element {
+	color: white;
+	
+}
+
+.settings__list .list_element:focus {
+	background: blue;
 }
 
 @keyframes loading {
