@@ -3,15 +3,18 @@ const path = require("path");
 
 function createWindow () {
   const win = new BrowserWindow({
-    width: 900,
-    height: 700,
+    width: 1024,
+    height: 768,
     frame: false,
-    resizable: false,
+    resizable: true,
+    minHeight: 512,
+    minWidth: 512,
     backgroundColor: '#fff',
+    icon: "icons/AkioCrossedArmsCloseUp.png",
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: true,
-      contextIsolation: false
+      contextIsolation: false,
     }
   })
 
@@ -22,34 +25,29 @@ app.whenReady().then(() => {
   ipcMain.on("minimize", (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     win.minimize();
-  })
+  });
 
   ipcMain.on("refresh", (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     win.reload();
-  })
+  });
 
   ipcMain.on("close", (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     win.close();
-  })
-
-  ipcMain.on("setSettings", (event, appSettings) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    
-  })
+});
   
-  createWindow()
+  createWindow();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow()
+      createWindow();
     }
   })
 })
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    app.quit()
+    app.quit();
   }
 })

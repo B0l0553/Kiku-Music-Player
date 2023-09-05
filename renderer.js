@@ -1,17 +1,20 @@
-const { ipcRenderer } = require("electron");
+const { ipcRenderer, dialog, app, BrowserWindow } = require("electron");
 const fs = require("fs");
 const { 
 	GetSettings, 
 	GetMusics, 
+	GetMetadata,
 	GetAlbums, 
 	WriteSettings,
+	GetUserData,
+	WriteUserData,
 	GetCache,
 	PeekMusicFolders,
 	GetUnscannedFiles,
 	VerifyFiles,
 	WriteCache,  
 } = require("./mapi.js")
-
+const path = require("path")
 let CurrentPage;
 let InternalPlaylist = [];
 
@@ -30,24 +33,28 @@ document.onreadystatechange = () => {
 	if(document.readyState === 'complete') {
 		document.getElementById('min-button').addEventListener("click", () => {
 			ipcRenderer.send("minimize");
-		})
+		});
 		
 		document.getElementById('close-button').addEventListener("click", () => {
 			ipcRenderer.send("close");
-		})
+		});
 		
 		document.getElementById('refresh-button').addEventListener("click", () => {
 			ipcRenderer.send('refresh');
-		})
-		
+		});
+
+		const userdata = GetUserData();
 		const settings = GetSettings();
+		console.log(userdata);
 		fs.mkdirSync(settings.cachePath, { recursive: true });
 
 		const cache = GetCache();
-		if(cache.fcount !== PeekMusicFolders(settings.musicFolders)) {
-			cache.remove = VerifyFiles(settings.musicFolders, [].concat(cache.albums, cache.banned, cache.toscan));
-			cache.toscan = GetUnscannedFiles(settings.musicFolders, cache.albums);
-			cache.fcount = PeekMusicFolders(settings.musicFolders);
+		var f = PeekMusicFolders(settings.musicFolders)
+		if(cache.musics.length !== f) {
+			console.log(`Length Invalid: ${cache.musics.length} != ${f}`)
+			cache.remove = VerifyFiles(settings.musicFolders, cache.musics);
+			cache.toscan = GetUnscannedFiles(settings.musicFolders, cache.musics);
+			//cache.fcount = PeekMusicFolders(settings.musicFolders);
 		}
 
 		cache.remove.forEach(trm => {
@@ -63,6 +70,38 @@ document.onreadystatechange = () => {
 		cache.remove = [];
 		WriteCache(cache);
 
+		function GetAlbumBox(_album) {
+			const box 			= document.createElement('div');
+			const thumb 		= document.createElement('img');
+			const infoWrap 		= document.createElement('div');
+			const subInfoL 		= document.createElement('div');
+			const subInfoR 		= document.createElement('div');
+			const title 		= document.createElement('span');
+			const author 		= document.createElement('span');
+			const musicNumber 	= document.createElement('span');
+
+			thumb.src = _album.musics[0].tags.image;
+			musicNumber.innerText = _album.musics.length;
+			title.innerText = _album.name;
+			author.innerText = _album.author;
+
+			subInfoR.classList.add("box__subInfoWrapper");
+			subInfoR.appendChild(musicNumber);
+
+			subInfoL.classList.add("box__subInfoWrapper");
+			subInfoL.appendChild(title);
+			subInfoL.appendChild(author);
+
+			infoWrap.classList.add("box__infoWrapper");
+			infoWrap.appendChild(subInfoL);
+
+			box.classList.add("box__albumDisplay")
+			box.appendChild(thumb);
+			box.appendChild(infoWrap);
+
+			return box;
+		}
+
 		function ChangePage(newP) {
 			if(CurrentPage) {
 				CurrentPage.classList.toggle("hidden");
@@ -70,8 +109,8 @@ document.onreadystatechange = () => {
 			
 			newP.classList.toggle("hidden");
 			CurrentPage = newP;
-			cache.lstpag = CurrentPage.id;
-			WriteCache(cache);
+			userdata.lstpag = CurrentPage.id;
+			WriteUserData(userdata);
 		}
 		
 		function ChangePageWithId(_id) {
@@ -80,41 +119,76 @@ document.onreadystatechange = () => {
 		
 		function TogglePlayback() {
 			controls.classList.toggle("hide");
-			cache.ctrlop = !controls.classList.contains("hide");
+			userdata.ctrlop = !controls.classList.contains("hide");
 		
-			if(cache.ctrlop) {
-				controlHide.innerHTML = '<i class="gg-arrow-down-r"></i>'
+			if(userdata.ctrlop) {
+				controlHide.setAttribute('title', "Close Playback");
+				controlHide.innerHTML = '<i class="gg-arrow-down-r"></i>';
 			} else {
-				controlHide.innerHTML = '<i class="gg-arrow-up-r"></i>'
+				controlHide.setAttribute('title', "Close Playback");
+				controlHide.innerHTML = '<i class="gg-arrow-up-r"></i>';
 			}
 		
-			WriteCache(cache);
+			WriteUserData(userdata);
 		}
 
 		function HidePlayback() {
-			if(cache.ctrlop === true) {
+			if(userdata.ctrlop === true) {
 				TogglePlayback();
 			}
 		}
 
-		function InsertList(_element, _list) {
-			console.log(_element)
+		function InsertList(_element, _list, _basename = false) {
+			if(!_list) return;
+			if(_list.length === 0) {
+				const fel = document.getElementById(_element);
+				fel.classList.add("list__nothing");
+				fel.innerText = "Nothing :(";
+				return;
+			}
+
+			const fel = document.getElementById(_element);
 			_list.forEach(el => {
 				const nsp = document.createElement("span");
-				nsp.textContent = el;
-				nsp.classList.add("list__element")
-				_element.appendChild(nsp);
+				if(_basename) nsp.textContent = path.basename(el);
+				else nsp.textContent = el;
+				nsp.classList.add("list__element");
+				fel.appendChild(nsp);
 			})
+
+			const title = document.getElementById(_element + "Title");
+			if(title !== undefined && title) {
+				title.innerText = `Waiting to be scanned ( ${_list.length} )`;
+			}
 		}
 
-		function FetchRecent() {}
+		function DeleteFromListWithValue(_list, _value) {
+			if(!_value || !_list) return;
+			
+			const fel = document.getElementById(_list);
+			fel.childNodes.forEach((value, key) => {
+				if(value.textContent == _value) {
+					fel.removeChild(value);
+					//return;
+				}
+			});
 
-		
-		//? TODO *not obligatory* Make 'NEW' Bagdes on fresh imported musics
-		//* TODO Add notifications icons
-		//  TODO Make a warning in options, and make it so only the user can decide if he want to sync the unscanned musics
-		//? TODO Make it so the user can eventually ban some audio files he doesn't want in his library
-		//! TODO DO SETTINGS PANEL !!!!
+			//console.log(`No childs with content: ${_value} to remove!`);
+		}
+
+		function ScanAllMusics() {
+			const p = document.getElementById('playbackProgress');
+			for(let i = 0; i < cache.toscan.length; i++) {
+				var MMeta = GetMetadata(cache.toscan[i], settings.cachePath);
+				cache.musics.push(MMeta);
+				//DeleteFromListWithValue("settings__cacheTSList", MMeta.filename)
+				//p.style.width = `${(Math.round(((i / cache.toscan.length) * 100))).toString()}%`;
+				console.log((Math.round(((i / cache.toscan.length) * 100))).toString());
+			}
+			cache.toscan = [];
+			WriteCache(cache);
+			//ipcRenderer.send("refresh")
+		}
 
 		const homeBtn = document.getElementById("home-btn");
 		const albumBtn = document.getElementById("album-btn");
@@ -129,32 +203,37 @@ document.onreadystatechange = () => {
 		const controls = document.getElementById("playback__wrapper");
 		//const controlh = document.getElementById("playback__header");
 		const controlHide = document.getElementById("playback__showBtn");
+		const scanBtn = document.getElementById('settings__scanButton')
 
-		const TS = document.getElementById("settings__cacheTSList");
-		const AB = document.getElementById("settings__cacheABList");
-		const UF = document.getElementById("settings__cacheUFList");
-		const BA = document.getElementById("settings__cacheBAList");
-
-
-		if(cache.lstpag) {
-			ChangePageWithId(cache.lstpag);
+		if(userdata.lstpag) {
+			ChangePageWithId(userdata.lstpag);
 		} else {
-			ChangePage(home)
+			ChangePage(home);
 		}
 
-		if(cache.ctrlop) {
+		if(userdata.ctrlop) {
 			TogglePlayback();
 		}
 
-		InsertList(TS, cache.toscan);
-		InsertList(AB, cache.albums);
-		InsertList(UF, cache.u_favs);
-		InsertList(BA, cache.banned);
+		var alb = [];
+		var msc = [];
 
+		cache.albums.forEach(album => {
+			alb.push(album.name);
+		})
+
+		cache.musics.forEach(music => {
+			msc.push(music.filename);
+		})
+
+		InsertList("settings__cacheSOList", settings.musicFolders);
+		InsertList("settings__cacheTSList", cache.toscan, true);
+		InsertList("settings__cacheMSList", msc, true);
+		InsertList("settings__cacheABList", alb, true);
+		InsertList("settings__cacheUFList", cache.u_favs, true);
+		
+		scanBtn.addEventListener('click', () => ScanAllMusics());
 		homeBtn.addEventListener('click', () => {
-			//FetchRecent();
-			//FetchAlbums();
-			//FetchFavorites();
 			HidePlayback();
 			ChangePage(home);
 		});
@@ -172,10 +251,10 @@ document.onreadystatechange = () => {
 		optionsBtn.addEventListener('click', () => {
 			HidePlayback();
 			ChangePage(options);
-			FetchSettingsLists();
+			
 		});
 
-		controlHide.addEventListener('click', () => TogglePlayback())
+		controlHide.addEventListener('click', () => TogglePlayback());
 	}
 }
 

@@ -2,3 +2,4 @@ node_modules/
 Cache/
 settings.json
 cache.json
+usrdata.json

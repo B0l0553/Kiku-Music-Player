@@ -11,9 +11,9 @@
 	<header id="titlebar">
 		<div id="drag-region">
 			<div id="page-controls">
-				<div class="button icon">
-					<!--<img width="32" height="32" draggable="false" />-->
-				</div>
+				<!--<div class="button icon">
+					<img width="32" height="32" draggable="false" />
+				</div>-->
 				<div class="button" id="home-btn" title="Home">
 					<i class="gg-home-alt"></i>
 				</div>
@@ -41,22 +41,28 @@
 		</div>
 	</header>
 
-	<div id="app">
+	<div id="app" class="scrollbar-app">
 		<div id="playback__wrapper" class="hide">
 			<div id="playback__header">
-				<div id="playback__showBtn" class="playback__button">
+				<div id="playback__showBtn" class="playback__button" title="Open Playback">
 					<i class="gg-arrow-up-r"></i>
 				</div>
-				<div id="playback__before" class="playback__button">
+				<div id="playback__before" class="playback__button" title="Play previous music">
 					<i class="gg-play-track-prev-r"></i>
 				</div>
-				<div id="playback__pause" class="playback__button">
+				<div id="playback__pause" class="playback__button" title="Play">
 					<i class="gg-play-button-r"></i>
 				</div>
-				<div id="playback__next" class="playback__button">
+				<div id="playback__next" class="playback__button"  title="Skip current to next">
 					<i class="gg-play-track-next-r"></i>
 				</div>
-				<div class="separator-vertical"></div>
+				<div id="playback__random" class="playback__button" title="Randomize">
+					<i class="gg-move-up"></i>
+				</div>
+				<div id="playback__repeat" class="playback__button" title="Repeat album">
+					<i class="gg-repeat"></i>
+				</div>
+				<!--<div class="separator-vertical"></div>-->
 				<div id="playback__time">
 					<span>0:00</span>
 				</div>
@@ -80,14 +86,44 @@
 					<h1 class="setting-title">SETTINGS</h1>
 				</div>
 				<div class="separator"></div>
-				<div class="wrapper rounded" id="opt-container">
+				<div class="wrapper rounded opt-container">
+					<h2>FILES</h2>
 					<div class="settings__cacheWrapper">
-						<h2>CACHE</h2>
 						<div class="settings__cacheListWrapper">
-							<div id="settings__list" id="settings__cacheTSList"></div>
-							<div id="settings__list" id="settings__cacheABList"></div>
-							<div id="settings__list" id="settings__cacheUFList"></div>
-							<div id="settings__list" id="settings__cacheBAList"></div>
+							<h4>SOURCES</h4>
+							<div class="settings__list scrollbar-secondary" id="settings__cacheSOList"></div>
+							<div class="settings__inputWrapper between">
+								<input type="text" id="settings__sourceInput"/>
+								<div class="button icon" id="settings__sourceBtn">
+									<i class="gg-check"></i>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="wrapper rounded opt-container">
+					<h2>CACHE</h2>
+					<div class="settings__cacheWrapper">
+						<div id="settings__cacheAdvancedWrapper" class="visible">
+							<div class="settings__cacheListWrapper">
+								<h4 id="settings__cacheTSListTitle">Waiting in scan queue</h4>
+								<div class="settings__list scrollbar-secondary" id="settings__cacheTSList"></div>
+								<div class="settings__inputWrapper centered">
+									<div class="button" id="settings__scanButton">SCAN ALL</div>
+								</div>
+							</div>
+							<div class="settings__cacheListWrapper">
+								<h4>Musics</h4>
+								<div class="settings__list" id="settings__cacheMSList"></div>
+							</div>
+							<div class="settings__cacheListWrapper">
+								<h4>Albums</h4>
+								<div class="settings__list" id="settings__cacheABList"></div>
+							</div>
+							<div class="settings__cacheListWrapper">
+								<h4>Favorites</h4>
+								<div class="settings__list" id="settings__cacheUFList"></div>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -95,42 +131,25 @@
 
 			<div class="home__page hidden" id="home-page">
 				<div class="page-title">
-					<h1>HOME</h1>
+					<h1>MUSICS</h1>
 					<!--<div class="button rounded" id="home-fetch-button">FETCH</div>-->
 				</div>
-				<div class="separator-title">
-					<span class="separator-text">RECENT</span>
-					<div class="separator"></div>
-				</div>
-
-				<div class="wrapper rounded" id="recents" name="Wrapper">
-				</div>
-
-				<div class="separator-title">
-					<span class="separator-text">ALBUMS</span>
-					<div class="separator"></div>
-				</div>
-
-				<div class="wrapper rounded" id="albums">
-				</div>
-
-				<div class="separator-title">
-					<span class="separator-text">FAVORITES</span>
-					<div class="separator"></div>
-				</div>
-
-				<div class="wrapper rounded" id="favorites">
-				</div>
+				<div class="separator"></div>
+				<div class="wrapper" id="music-wrapper"></div>
 			</div>
 
 			<div class="hidden" id="albums-page">
-				<h1>ALBUMS</h1>
+				<div class="page-title">
+					<h1>ALBUMS</h1>
+				</div>
 				<div class="separator"></div>
 				<div class="wrapper" id="album-wrapper"></div>
 			</div>
 
 			<div class="hidden" id="artist-page">
-				<h1>ARTISTS</h1>
+				<div class="page-title">
+					<h1>ARTISTS</h1>
+				</div>
 				<div class="separator"></div>
 				<div class="wrapper" id="artist-wrapper"></div>
 			</div>
