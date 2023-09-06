@@ -53,13 +53,19 @@ class Cache {
 }
 
 class UsrData {
-	lstpag;
-	ctrlop = false;
+	last_page;
+	playback_open = false;
+	volume;
+	last_played;
+	playtime;
+	duration;
+	title;
+	thumb;
 }
 
 function GetJSONFromFile(_path, callback) {
 	if(fs.existsSync(_path) && fs.statSync(_path).isFile) {
-		//console.log("is file!")
+		console.log("is file!")
 		return JSON.parse(fs.readFileSync(_path));
 	} else {
 		console.log("GetJSONFromFile > executing callback");
@@ -118,8 +124,14 @@ function GetUserData() {
 	if(json) {
 		console.log("UsrData JSON Valid");
 		var tu = new UsrData();
-		tu.ctrlop = json.ctrlop;
-		tu.lstpag = json.lstpag;
+		tu.playback_open 	= json.playback_open;
+		tu.last_page 		= json.last_page;
+		tu.volume 			= json.volume;
+		tu.last_played 		= json.last_played;
+		tu.playtime 		= json.playtime;
+		tu.duration 		= json.duration;
+		tu.title 			= json.title;
+		tu.thumb 			= json.thumb;
 		return tu;
 	} 
 
@@ -127,6 +139,7 @@ function GetUserData() {
 }
 
 function WriteUserData(_usrdata) {
+	console.log("Writing to usrdata");
 	var fpath = path.join(__dirname, "usrdata.json");
 	fs.writeFileSync(fpath, JSON.stringify(_usrdata, null, 4));
 }

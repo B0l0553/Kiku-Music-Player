@@ -621,3 +621,58 @@
     transform-origin: bottom left;
     transform: rotate(45deg)
 }
+
+.gg-music,
+.gg-music::after,
+.gg-music::before {
+    display: block;
+    box-sizing: border-box;
+    border: 2px solid
+}
+.gg-music {
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    border-bottom: 0;
+    margin-top: -4px;
+    position: relative;
+    transform: skewY(-15deg) scale(var(--ggs,1));
+    width: 14px;
+    height: 16px
+}
+.gg-music::after,
+.gg-music::before {
+    content: "";
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    top: 9px;
+    left: -7px;
+    transform: skewY(15deg);
+    border-radius: 10px
+}
+.gg-music::after {
+    left: 5px
+}
+
+.gg-play-pause-r {
+    box-sizing: border-box;
+    position: relative;
+    display: block;
+    transform: scale(var(--ggs,1));
+    width: 22px;
+    height: 22px;
+    border: 2px solid;
+    border-radius: 4px
+}
+.gg-play-pause-r::before {
+    content: "";
+    display: block;
+    box-sizing: border-box;
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    left: 6px;
+    top: 6px;
+    border-left: 2px solid;
+    border-right: 2px solid
+}

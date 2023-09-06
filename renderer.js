@@ -1,29 +1,11 @@
 const { ipcRenderer, dialog, app, BrowserWindow } = require("electron");
 const fs = require("fs");
-const { 
-	GetSettings, 
-	GetMusics, 
-	GetMetadata,
-	GetAlbums, 
-	WriteSettings,
-	GetUserData,
-	WriteUserData,
-	GetCache,
-	PeekMusicFolders,
-	GetUnscannedFiles,
-	VerifyFiles,
-	WriteCache,  
-} = require("./mapi.js")
 const path = require("path")
-let CurrentPage;
 let InternalPlaylist = [];
-
-//Musics = GetMusics(settings.musicFolders);
-/*
-Musics.push(GetMetadata("F:\\Windows\\Music\\Camellia\\Blackmagik Blazing\\[BLEED BLOOD].mp3"));
-Musics.push(GetMetadata("F:\\Windows\\Music\\Camellia\\PLANET√√SHAPER\\BLACK JACK.mp3"));
-Musics.push(GetMetadata("F:\\Windows\\Music\\kyarustep.mp3"));
-*/
+const {
+	GetUserData,
+	WriteUserData
+} = require("./mapi.js");
 
 window.onbeforeunload = () => {
 	ipcMain.removeAllListeners();
@@ -44,96 +26,67 @@ document.onreadystatechange = () => {
 		});
 
 		const userdata = GetUserData();
-		const settings = GetSettings();
 		console.log(userdata);
-		fs.mkdirSync(settings.cachePath, { recursive: true });
 
-		const cache = GetCache();
-		var f = PeekMusicFolders(settings.musicFolders)
-		if(cache.musics.length !== f) {
-			console.log(`Length Invalid: ${cache.musics.length} != ${f}`)
-			cache.remove = VerifyFiles(settings.musicFolders, cache.musics);
-			cache.toscan = GetUnscannedFiles(settings.musicFolders, cache.musics);
-			//cache.fcount = PeekMusicFolders(settings.musicFolders);
-		}
-
-		cache.remove.forEach(trm => {
-			if(cache.albums.includes(trm)) {
-				cache.albums = cache.albums.filter(e => e !== trm);
-			}
-
-			if(cache.toscan.includes(trm)) {
-				cache.toscan = cache.toscan.filter(e => e !== trm);
-			}
-		})
-
-		cache.remove = [];
-		WriteCache(cache);
-
-		function GetAlbumBox(_album) {
-			const box 			= document.createElement('div');
-			const thumb 		= document.createElement('img');
-			const infoWrap 		= document.createElement('div');
-			const subInfoL 		= document.createElement('div');
-			const subInfoR 		= document.createElement('div');
-			const title 		= document.createElement('span');
-			const author 		= document.createElement('span');
-			const musicNumber 	= document.createElement('span');
-
-			thumb.src = _album.musics[0].tags.image;
-			musicNumber.innerText = _album.musics.length;
-			title.innerText = _album.name;
-			author.innerText = _album.author;
-
-			subInfoR.classList.add("box__subInfoWrapper");
-			subInfoR.appendChild(musicNumber);
-
-			subInfoL.classList.add("box__subInfoWrapper");
-			subInfoL.appendChild(title);
-			subInfoL.appendChild(author);
-
-			infoWrap.classList.add("box__infoWrapper");
-			infoWrap.appendChild(subInfoL);
-
-			box.classList.add("box__albumDisplay")
-			box.appendChild(thumb);
-			box.appendChild(infoWrap);
-
-			return box;
-		}
-
-		function ChangePage(newP) {
-			if(CurrentPage) {
-				CurrentPage.classList.toggle("hidden");
-			}
-			
-			newP.classList.toggle("hidden");
-			CurrentPage = newP;
-			userdata.lstpag = CurrentPage.id;
-			WriteUserData(userdata);
+		function ClearWrapper() {
+			wrapper.textContent = "";
 		}
 		
 		function ChangePageWithId(_id) {
-			ChangePage(document.getElementById(_id));
+			ClearWrapper();
+			switch(_id) {
+				case "home":
+					pageTitle.textContent = "HOME"
+					//FetchHome();
+					break;
+				case "music":
+					pageTitle.textContent = "MUSICS"
+					FetchMusic();
+					break;
+				case "album":
+					pageTitle.textContent = "ALBUMS"
+					//FetchAlbum();
+					break;
+				case "artist":
+					pageTitle.textContent = "ARTISTS"
+					break;
+				case "option":
+					break;
+				default:
+					pageTitle.textContent = "HOME"
+					//FetchHome();
+					break;
+			}
+
+			userdata.last_page = _id;
+			WriteUserData(userdata);
 		}
 		
 		function TogglePlayback() {
 			controls.classList.toggle("hide");
-			userdata.ctrlop = !controls.classList.contains("hide");
+			userdata.playback_open = !controls.classList.contains("hide");
 		
-			if(userdata.ctrlop) {
+			if(userdata.playback_open) {
 				controlHide.setAttribute('title', "Close Playback");
 				controlHide.innerHTML = '<i class="gg-arrow-down-r"></i>';
+				progress.classList.toggle("hidden");
+				progressWrapper.classList.toggle("hidden");
+				playbackLength.classList.toggle("hidden");
+				playbackTime.classList.toggle("hidden");
 			} else {
 				controlHide.setAttribute('title', "Close Playback");
 				controlHide.innerHTML = '<i class="gg-arrow-up-r"></i>';
+				progress.classList.toggle("hidden");
+				progressWrapper.classList.toggle("hidden");
+				playbackLength.classList.toggle("hidden");
+				playbackTime.classList.toggle("hidden");
 			}
 		
 			WriteUserData(userdata);
 		}
 
 		function HidePlayback() {
-			if(userdata.ctrlop === true) {
+			if(userdata.playback_open === true) {
 				TogglePlayback();
 			}
 		}
@@ -176,82 +129,158 @@ document.onreadystatechange = () => {
 			//console.log(`No childs with content: ${_value} to remove!`);
 		}
 
-		function ScanAllMusics() {
-			const p = document.getElementById('playbackProgress');
-			for(let i = 0; i < cache.toscan.length; i++) {
-				var MMeta = GetMetadata(cache.toscan[i], settings.cachePath);
-				cache.musics.push(MMeta);
-				//DeleteFromListWithValue("settings__cacheTSList", MMeta.filename)
-				//p.style.width = `${(Math.round(((i / cache.toscan.length) * 100))).toString()}%`;
-				console.log((Math.round(((i / cache.toscan.length) * 100))).toString());
+		function CreateMusicLine(data) {
+			let line = document.createElement('div');
+			let title = document.createElement('div');
+			let artist = document.createElement('div');
+			let length = document.createElement('div');
+
+			line.classList.add("music__line");
+			line.addEventListener('click', () => {
+				player.pause();
+				player.src = `http://localhost/musics/${data.hash}.${data.data.dataformat}`;
+				playbackLength.textContent = getTime(data.length);
+				playbackMImg.src = "";
+				TogglePause();
+				userdata.last_played = `http://localhost/musics/${data.hash}.${data.data.dataformat}`;
+				userdata.duration = data.length;
+			});
+			title.textContent = data.tags.title;
+			title.classList.add("item");
+			artist.textContent = data.tags.artist;
+			artist.classList.add("item");
+			length.textContent = getTime(data.length);
+			length.classList.add("item");
+
+			line.appendChild(title);
+			line.appendChild(artist);
+			line.appendChild(length);
+			return line;
+		}
+
+		function FetchMusic(search = "") {
+			let xhr = new XMLHttpRequest();
+			xhr.open("GET", `http://localhost/search.php?JSON_DATA={"title":"${search}"}`);
+			xhr.setRequestHeader("Accept", "application/json");
+			xhr.setRequestHeader("Content-Type", "application/json");
+			xhr.onreadystatechange = function () {
+				if(xhr.readyState === 4) {
+					if(xhr.status === 200) {
+						const res = JSON.parse(xhr.responseText);
+						console.log(res);
+						for(let i = 0; i < res.length; i++) {
+							wrapper.appendChild(CreateMusicLine(res[i]));
+						}
+					} else {
+					}
+				}
+			};
+			xhr.send(null);
+		}
+
+		function getTime(s) {
+			var m = Math.floor(s/60);
+			var s = Math.floor(s%60);
+			return `${m.toLocaleString(undefined, { minimumIntegerDigits: 2 })}:${s.toLocaleString(undefined, { minimumIntegerDigits: 2 })}`;
+		}
+
+		function TogglePause() {
+			if(player.paused && player.currentSrc != null) {
+				player.play();
+				pause.setAttribute('title', "Pause");
+				pause.innerHTML = '<i class="gg-play-pause-r"></i>';
+				return;
 			}
-			cache.toscan = [];
-			WriteCache(cache);
-			//ipcRenderer.send("refresh")
+			player.pause();
+			pause.setAttribute('title', "Play");
+			pause.innerHTML = '<i class="gg-play-button-r"></i>';
 		}
 
 		const homeBtn = document.getElementById("home-btn");
+		const musicBtn = document.getElementById("music-btn");
 		const albumBtn = document.getElementById("album-btn");
 		const artistBtn = document.getElementById("artist-btn");
 		const optionsBtn = document.getElementById("option-btn");
 
-		const home = document.getElementById("home-page");
-		const album = document.getElementById("albums-page");
-		const artist = document.getElementById("artist-page");
-		const options = document.getElementById("options-page");
-
 		const controls = document.getElementById("playback__wrapper");
 		//const controlh = document.getElementById("playback__header");
 		const controlHide = document.getElementById("playback__showBtn");
-		const scanBtn = document.getElementById('settings__scanButton')
+		
+		const pageTitle = document.getElementById("page__title")
+		const pageWrapper = document.getElementById("page__wrapper");
+		const wrapper = document.getElementById('inside__wrapper')
 
-		if(userdata.lstpag) {
-			ChangePageWithId(userdata.lstpag);
+
+		const player = document.createElement("audio");
+		const pause = document.getElementById("playback__pause");
+		const progressWrapper = document.getElementsByClassName("playback__progressWrapper")[0];
+		const progress = document.getElementById("playbackProgress");
+		//const progressHandle = document.getElementById("playbackHandle");
+		const playbackLength = document.getElementById("playback__length");
+		const playbackTime = document.getElementById("playback__time");
+		const playbackMImg = document.getElementById("playback__minithumb");
+		const playbackMTitle = document.getElementById("playback__minititle");
+		player.addEventListener('timeupdate', () => {
+			var percent = (player.currentTime / player.duration) * 100;
+			progress.style.width = `${percent}%`;
+			//progressHandle.style.left = `${percent}%`;
+			playbackTime.textContent = getTime(player.currentTime);
+			userdata.playtime = player.currentTime;
+			WriteUserData(userdata);
+		});
+		player.volume = userdata.volume || 0.5;
+		player.src = userdata.last_played;
+		player.currentTime = userdata.playtime || 0;
+		playbackLength.textContent = getTime(userdata.duration);
+
+		if(userdata.last_page) {
+			ChangePageWithId(userdata.last_page);
 		} else {
-			ChangePage(home);
+			ChangePageWithId("home");
 		}
 
-		if(userdata.ctrlop) {
+		if(userdata.playback_open) {
 			TogglePlayback();
 		}
-
-		var alb = [];
-		var msc = [];
-
-		cache.albums.forEach(album => {
-			alb.push(album.name);
-		})
-
-		cache.musics.forEach(music => {
-			msc.push(music.filename);
-		})
-
-		InsertList("settings__cacheSOList", settings.musicFolders);
-		InsertList("settings__cacheTSList", cache.toscan, true);
-		InsertList("settings__cacheMSList", msc, true);
-		InsertList("settings__cacheABList", alb, true);
-		InsertList("settings__cacheUFList", cache.u_favs, true);
-		
-		scanBtn.addEventListener('click', () => ScanAllMusics());
+	
 		homeBtn.addEventListener('click', () => {
 			HidePlayback();
-			ChangePage(home);
+			
+			if(userdata.last_page != "home") {
+				ChangePageWithId("home");
+			}
+		});
+
+		musicBtn.addEventListener('click', () => {
+			HidePlayback();
+			if(userdata.last_page != "music") {
+				ChangePageWithId("music");
+			}
 		});
 
 		albumBtn.addEventListener('click', () => {
 			HidePlayback();
-			ChangePage(album);
+			if(userdata.last_page != "album") {
+				ChangePageWithId("album");
+			}
 		});
 
 		artistBtn.addEventListener('click', () => {
 			HidePlayback();
-			ChangePage(artist);
+			if(userdata.last_page != "artist") {
+				ChangePageWithId("artist");
+			}
 		});
 
 		optionsBtn.addEventListener('click', () => {
 			HidePlayback();
-			ChangePage(options);
-			
+			if(userdata.last_page != "option") {
+				ChangePageWithId("option");
+			}
+		});
+
+		pause.addEventListener("click", () => {
+			TogglePause();
 		});
 
 		controlHide.addEventListener('click', () => TogglePlayback());
