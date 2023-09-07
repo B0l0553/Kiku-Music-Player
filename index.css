@@ -100,7 +100,6 @@ body {
 	grid-column: 4;
 }
 
-
 #close-button:hover {
 	background: #E81123 !important;
 }
@@ -173,6 +172,10 @@ body {
 	background-color: #1A2933;
 	height: 100%;
 	width: 100%;
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
 }
 
 #playback__header {
@@ -195,6 +198,33 @@ body {
 #playback__length {
 	font-size: 0.85rem;
 	margin-right: 2.5rem;
+}
+
+#playback__thumb {
+	width: 30vw;
+}
+
+#playback__title {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin-top: 1rem;
+	font-size: 3vw;
+	font-weight: 900;
+}
+
+#pbProgress__wrapper {
+	width: 100%;
+}
+
+.pBody__timeinfo {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	width: 100%;
+	margin-left: 0.75rem;
+	margin-right: 0.75rem;
+	margin-top: 4px;
 }
 
 .slidecontainer {
@@ -285,19 +315,39 @@ body {
 }
 
 .wrapper {
-	background:rgba(255, 255, 255, 0.05);
+	
 	min-height: 7rem;
 	padding: 0.75rem;
 	display: flex;
-	flex-direction: row;
-	flex-wrap: wrap;
 	overflow: hidden;
 	transition: 500ms all;
 	border: transparent solid 2px;
+	/*margin-bottom: 2rem;*/
+}
+
+.border-an {
+	border: transparent solid 2px;
+}
+
+.bg {
+	background:rgba(255, 255, 255, 0.05);
+}
+
+.mb-2 {
 	margin-bottom: 2rem;
 }
 
-.wrapper:hover {
+.flex-row {
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+
+.flex-column {
+	flex-direction: column;
+	flex-wrap: wrap;
+}
+
+.border-an:hover {
 	border:rgba(255, 255, 255, 0.2) solid 2px;
 }
 

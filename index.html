@@ -77,11 +77,27 @@
 				<div id="playback__minititle">NO SONG</div>
 			</div>
 			<div id="playback__body">
-				<div class="container">
-					<img id="playback__thumb" />
-				</div>
-				<div>
-
+				<div class="wrapper rounded flex-column">
+					<div class="wrapper flex-row">
+						<div class="wrapper rounded">
+							<img id="playback__thumb" />
+						</div>
+						<div class="wrapper rounded flex-column">
+							<div id="playback__title"></div>
+						</div>
+					</div>
+					<div id="pbProgress__wrapper" class="playback__progressWrapper">
+						<div id="pBody__progress" class="playback__progressBar"></div>
+						<!--<div id="playbackHandle" class="playback__progressHandle"></div>-->
+					</div>
+					<div class="pBody__timeinfo">
+						<div id="pBody__time">
+							<span>0:00</span>
+						</div>
+						<div id="pBody__length">
+							<span>0:00</span>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -141,7 +157,7 @@
 					<!--<div class="button rounded" id="home-fetch-button">FETCH</div>-->
 				</div>
 				<div class="separator"></div>
-				<div class="wrapper" id="inside__wrapper"></div>
+				<div class="wrapper flex-row" id="inside__wrapper"></div>
 			</div>
 		</div>
 		

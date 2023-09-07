@@ -73,6 +73,8 @@ document.onreadystatechange = () => {
 				progressWrapper.classList.toggle("hidden");
 				playbackLength.classList.toggle("hidden");
 				playbackTime.classList.toggle("hidden");
+				playbackMImg.classList.toggle("hidden");
+				playbackMTitle.classList.toggle("hidden");
 			} else {
 				controlHide.setAttribute('title', "Close Playback");
 				controlHide.innerHTML = '<i class="gg-arrow-up-r"></i>';
@@ -80,6 +82,8 @@ document.onreadystatechange = () => {
 				progressWrapper.classList.toggle("hidden");
 				playbackLength.classList.toggle("hidden");
 				playbackTime.classList.toggle("hidden");
+				playbackMImg.classList.toggle("hidden");
+				playbackMTitle.classList.toggle("hidden");
 			}
 		
 			WriteUserData(userdata);
@@ -140,10 +144,14 @@ document.onreadystatechange = () => {
 				player.pause();
 				player.src = `http://localhost/musics/${data.hash}.${data.data.dataformat}`;
 				playbackLength.textContent = getTime(data.length);
-				playbackMImg.src = "";
+				playbackMImg.src = `http://localhost/covers/${data.cover_hash}`;
+				playbackMTitle.textContent = data.tags.title;
 				TogglePause();
 				userdata.last_played = `http://localhost/musics/${data.hash}.${data.data.dataformat}`;
 				userdata.duration = data.length;
+				userdata.title = data.tags.title;
+				userdata.thumb = playbackMImg.src;
+
 			});
 			title.textContent = data.tags.title;
 			title.classList.add("item");
@@ -220,6 +228,8 @@ document.onreadystatechange = () => {
 		const playbackTime = document.getElementById("playback__time");
 		const playbackMImg = document.getElementById("playback__minithumb");
 		const playbackMTitle = document.getElementById("playback__minititle");
+		const playbackImg = document.getElementById("playback__thumb");
+		const playbackTitle = document.getElementById("playback__title");
 		player.addEventListener('timeupdate', () => {
 			var percent = (player.currentTime / player.duration) * 100;
 			progress.style.width = `${percent}%`;
@@ -232,7 +242,11 @@ document.onreadystatechange = () => {
 		player.src = userdata.last_played;
 		player.currentTime = userdata.playtime || 0;
 		playbackLength.textContent = getTime(userdata.duration);
-
+		playbackMImg.src = userdata.thumb || ""
+		playbackImg.src = userdata.thumb || ""
+		playbackMTitle.textContent = userdata.title || "NO SONG"
+		playbackTitle.textContent = userdata.title || "NO SONG"
+		
 		if(userdata.last_page) {
 			ChangePageWithId(userdata.last_page);
 		} else {
