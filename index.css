@@ -201,20 +201,28 @@ body {
 }
 
 #playback__thumb {
-	width: 30vw;
+	width: 40vw;
+	image-rendering: optimizeQuality;
 }
 
 #playback__title {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	margin-top: 1rem;
-	font-size: 3vw;
+	
+	flex-wrap: nowrap;
+	overflow: hidden;
+	font-size: 3.5vw;
 	font-weight: 900;
+	/*border: solid white 4px;
+	border-radius: 1rem;
+	padding: 1rem;*/
 }
 
 #pbProgress__wrapper {
 	width: 100%;
+	margin: 0;
+}
+
+#title__container {
+	inline-size: 40vw;
 }
 
 .pBody__timeinfo {
@@ -222,8 +230,6 @@ body {
 	flex-direction: row;
 	justify-content: space-between;
 	width: 100%;
-	margin-left: 0.75rem;
-	margin-right: 0.75rem;
 	margin-top: 4px;
 }
 
@@ -323,6 +329,7 @@ body {
 	transition: 500ms all;
 	border: transparent solid 2px;
 	/*margin-bottom: 2rem;*/
+	white-space: nowrap;
 }
 
 .border-an {
@@ -347,13 +354,17 @@ body {
 	flex-wrap: wrap;
 }
 
+.nowrap {
+	flex-wrap: nowrap;
+}
+
 .border-an:hover {
 	border:rgba(255, 255, 255, 0.2) solid 2px;
 }
 
 .music__line {
 	display: grid;
-	grid-template-columns: repeat(3, 33vw);
+	grid-template-columns: repeat(4, 25vw);
 	justify-content: start;
 	align-items: center;
 	width: 100%;
@@ -410,7 +421,7 @@ body {
 
 .playback__progressBar {
 	height: 100%;
-	background-color: orange;
+	background-color: blueviolet;
 	width: 0%;
 	/*transition: width 100ms ease;*/
 }
@@ -585,37 +596,9 @@ body {
 	background-color: #FF9100; 
 }
 
-.scrollbar-danger::-webkit-scrollbar-track {
-	box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.1);
-	background-color: #000000;
-	border-radius: 10px; 
+.test {
+	animation: leftright 3s infinite alternate;
 }
-	
-.scrollbar-danger::-webkit-scrollbar {
-	width: 12px;
-	background-color: #F5F5F5; 
-}
-	
-.scrollbar-danger::-webkit-scrollbar-thumb {
-	border-radius: 10px;
-	box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.1);
-	background-color: #ff3547; 
-}
-
-.scrollbar-secondary::-webkit-scrollbar-track {
-	box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.1);
-	background-color: #254053;
-}
-	
-.scrollbar-secondary::-webkit-scrollbar {
-	width: 10px;
-}
-	
-.scrollbar-secondary::-webkit-scrollbar-thumb {
-	box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.1);
-	background-color: #aa66cc; 
-}
-	
 
 @keyframes loading {
 	0% { background: rgba(255, 255, 255, 0.05); }

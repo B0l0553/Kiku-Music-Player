@@ -65,7 +65,7 @@ class UsrData {
 
 function GetJSONFromFile(_path, callback) {
 	if(fs.existsSync(_path) && fs.statSync(_path).isFile) {
-		console.log("is file!")
+		//console.log("is file!")
 		return JSON.parse(fs.readFileSync(_path));
 	} else {
 		console.log("GetJSONFromFile > executing callback");
@@ -122,7 +122,7 @@ function GetUserData() {
 	})
 	
 	if(json) {
-		console.log("UsrData JSON Valid");
+		//console.log("UsrData JSON Valid");
 		var tu = new UsrData();
 		tu.playback_open 	= json.playback_open;
 		tu.last_page 		= json.last_page;
@@ -139,7 +139,7 @@ function GetUserData() {
 }
 
 function WriteUserData(_usrdata) {
-	console.log("Writing to usrdata");
+	//console.log("Writing to usrdata");
 	var fpath = path.join(__dirname, "usrdata.json");
 	fs.writeFileSync(fpath, JSON.stringify(_usrdata, null, 4));
 }

@@ -28,6 +28,10 @@ document.onreadystatechange = () => {
 		const userdata = GetUserData();
 		console.log(userdata);
 
+		function $(value) {
+			return document.getElementById(value);
+		}
+
 		function ClearWrapper() {
 			wrapper.textContent = "";
 		}
@@ -45,7 +49,7 @@ document.onreadystatechange = () => {
 					break;
 				case "album":
 					pageTitle.textContent = "ALBUMS"
-					//FetchAlbum();
+					FetchAlbum();
 					break;
 				case "artist":
 					pageTitle.textContent = "ARTISTS"
@@ -133,37 +137,98 @@ document.onreadystatechange = () => {
 			//console.log(`No childs with content: ${_value} to remove!`);
 		}
 
+		function setTitle(value) {
+			playbackMTitle.textContent = value;
+			playbackTitle.textContent = value;
+
+			if(playbackTitle.clientWidth > playbackTitle.parentElement.clientWidth) {
+				var td = (playbackTitle.parentElement.clientWidth - playbackTitle.clientWidth)/window.innerWidth*100;
+				var animation = `
+				@keyframes animleftright {
+					0%,
+					20% {
+						transform: translateX(0%);
+					}
+					80%,
+					100% {
+						transform: translateX(${td-4}vw);
+					}
+				}
+				.prout {
+					animation: animleftright 5s infinite alternate ease-in-out;
+				}
+				`
+				$("styleMain").textContent = animation;
+				playbackTitle.classList.value = "prout";
+			} else {
+				playbackTitle.classList.value = "";
+			}
+			if($("playback__mtC").clientWidth < playbackMTitle.clientWidth) {
+				playbackMTitle.classList.add("animate");
+			}
+		}
+
+		function setThumb(value) {
+			playbackMImg.src = value;
+			playbackImg.src = value;
+			userdata.thumb = value;
+		}
+
 		function CreateMusicLine(data) {
 			let line = document.createElement('div');
 			let title = document.createElement('div');
+			let album = document.createElement('div');
 			let artist = document.createElement('div');
 			let length = document.createElement('div');
 
 			line.classList.add("music__line");
 			line.addEventListener('click', () => {
-				player.pause();
-				player.src = `http://localhost/musics/${data.hash}.${data.data.dataformat}`;
-				playbackLength.textContent = getTime(data.length);
-				playbackMImg.src = `http://localhost/covers/${data.cover_hash}`;
-				playbackMTitle.textContent = data.tags.title;
+				var src = `http://localhost/musics/${data.hash}.${data.data.dataformat}`;
+				if(player.currentSrc != src) {
+					player.pause();
+					player.src = src;
+					playbackLength.textContent = getTime(data.length);
+					setThumb(`http://localhost/covers/${data.cover_hash}`);
+					setTitle(data.tags.title);
+					userdata.last_played = src;
+					userdata.duration = data.length;
+					userdata.title = data.tags.title;
+					userdata.thumb = playbackMImg.src;
+				}
+				pBodyAlbum.textContent = data.tags.album;
+				pBodyArtist.textContent = data.tags.artist;
 				TogglePause();
-				userdata.last_played = `http://localhost/musics/${data.hash}.${data.data.dataformat}`;
-				userdata.duration = data.length;
-				userdata.title = data.tags.title;
-				userdata.thumb = playbackMImg.src;
-
 			});
 			title.textContent = data.tags.title;
 			title.classList.add("item");
+			album.textContent = data.tags.album;
+			album.classList.add("item");
 			artist.textContent = data.tags.artist;
 			artist.classList.add("item");
 			length.textContent = getTime(data.length);
 			length.classList.add("item");
 
 			line.appendChild(title);
+			line.appendChild(album);
 			line.appendChild(artist);
 			line.appendChild(length);
 			return line;
+		}
+
+		function createAlbumBox(data) {
+			let box = document.createElement("div");
+			let thumb = document.createElement("img");
+			let info = document.createElement("div");
+			let title = document.createElement("span");
+			let artist = document.createElement("span");
+
+			title.textContent = data.title;
+			artist.textContent = data.artist;
+			info.appendChild(title);
+			info.appendChild(artist);
+			box.appendChild(thumb);
+			box.appendChild(info);
+			return box;
 		}
 
 		function FetchMusic(search = "") {
@@ -175,9 +240,29 @@ document.onreadystatechange = () => {
 				if(xhr.readyState === 4) {
 					if(xhr.status === 200) {
 						const res = JSON.parse(xhr.responseText);
-						console.log(res);
+						//console.log(res);
 						for(let i = 0; i < res.length; i++) {
 							wrapper.appendChild(CreateMusicLine(res[i]));
+						}
+					} else {
+					}
+				}
+			};
+			xhr.send(null);
+		}
+
+		function FetchAlbum(search = "") {
+			let xhr = new XMLHttpRequest();
+			xhr.open("GET", `http://localhost/search.php?JSON_DATA={"title":"${search}","type":"album"}`);
+			xhr.setRequestHeader("Accept", "application/json");
+			xhr.setRequestHeader("Content-Type", "application/json");
+			xhr.onreadystatechange = function () {
+				if(xhr.readyState === 4) {
+					if(xhr.status === 200) {
+						const res = JSON.parse(xhr.responseText);
+						//console.log(res);
+						for(let i = 0; i < res.length; i++) {
+							wrapper.appendChild(createAlbumBox(res[i]));
 						}
 					} else {
 					}
@@ -204,6 +289,28 @@ document.onreadystatechange = () => {
 			pause.innerHTML = '<i class="gg-play-button-r"></i>';
 		}
 
+		function MoveMusicTimestampTo(_time) {	
+			if(_time > player.duration) {
+				_time = player.duration;
+			} else if(_time < 0) {
+				_time = 0;
+			}
+		
+			player.currentTime = _time;
+		}
+
+		function SetMusicVolume(_volume) {
+			if(_volume < 0) _volume = 0;
+			if(_volume > 100) _volume = 100;
+		
+			_volume = Math.floor(_volume);
+		
+			//vti.textContent = `${_volume}%`
+			//vpi.style.width = `${_volume}%`
+		
+			player.volume = _volume/100;
+		}
+
 		const homeBtn = document.getElementById("home-btn");
 		const musicBtn = document.getElementById("music-btn");
 		const albumBtn = document.getElementById("album-btn");
@@ -218,34 +325,40 @@ document.onreadystatechange = () => {
 		const pageWrapper = document.getElementById("page__wrapper");
 		const wrapper = document.getElementById('inside__wrapper')
 
-
 		const player = document.createElement("audio");
 		const pause = document.getElementById("playback__pause");
 		const progressWrapper = document.getElementsByClassName("playback__progressWrapper")[0];
 		const progress = document.getElementById("playbackProgress");
+		const progressBody = document.getElementById("pBody__progress");
 		//const progressHandle = document.getElementById("playbackHandle");
 		const playbackLength = document.getElementById("playback__length");
 		const playbackTime = document.getElementById("playback__time");
+		const pBodyLength = document.getElementById("pBody__length");
+		const pBodyTime = document.getElementById("pBody__time");
 		const playbackMImg = document.getElementById("playback__minithumb");
 		const playbackMTitle = document.getElementById("playback__minititle");
 		const playbackImg = document.getElementById("playback__thumb");
 		const playbackTitle = document.getElementById("playback__title");
+		const pBodyAlbum = document.getElementById("pBody__album");
+		const pBodyArtist = document.getElementById("pBody__artist");
 		player.addEventListener('timeupdate', () => {
 			var percent = (player.currentTime / player.duration) * 100;
 			progress.style.width = `${percent}%`;
+			progressBody.style.width = `${percent}%`;
 			//progressHandle.style.left = `${percent}%`;
 			playbackTime.textContent = getTime(player.currentTime);
+			pBodyTime.textContent = getTime(player.currentTime);
+			pBodyLength.textContent = getTime(player.duration);
 			userdata.playtime = player.currentTime;
 			WriteUserData(userdata);
 		});
-		player.volume = userdata.volume || 0.5;
 		player.src = userdata.last_played;
-		player.currentTime = userdata.playtime || 0;
+		player.volume = userdata.volume || 0.5;
+		//player.currentTime = userdata.playtime;
 		playbackLength.textContent = getTime(userdata.duration);
-		playbackMImg.src = userdata.thumb || ""
-		playbackImg.src = userdata.thumb || ""
-		playbackMTitle.textContent = userdata.title || "NO SONG"
-		playbackTitle.textContent = userdata.title || "NO SONG"
+		pBodyLength.textContent = getTime(userdata.duration);
+		setThumb(userdata.thumb);
+		setTitle(userdata.title)
 		
 		if(userdata.last_page) {
 			ChangePageWithId(userdata.last_page);
@@ -298,10 +411,23 @@ document.onreadystatechange = () => {
 		});
 
 		controlHide.addEventListener('click', () => TogglePlayback());
+
+		document.addEventListener("keydown", (e) => {
+			e.preventDefault();
+			switch(e.key) {
+				case " ":
+					TogglePause();
+					break;
+				case "ArrowUp":
+					SetMusicVolume(player.volume*100 + 10);
+					break;
+				case "ArrowDown":
+					SetMusicVolume(player.volume*100 - 10);
+					break;
+				default:
+					console.log(e.key);
+					break;
+			}
+		})
 	}
 }
-
-		
-
-
-

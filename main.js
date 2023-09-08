@@ -10,7 +10,7 @@ function createWindow () {
     minHeight: 512,
     minWidth: 512,
     backgroundColor: '#fff',
-    icon: "icons/AkioCrossedArmsCloseUp.png",
+    icon: "icons/icon.jpg",
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: true,

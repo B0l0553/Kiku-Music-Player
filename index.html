@@ -5,6 +5,7 @@
     <meta http-equiv="Content-Security-Policy" content="default-src * self blob: data: gap:; style-src * self 'unsafe-inline' blob: data: gap:; script-src * 'self' 'unsafe-eval' 'unsafe-inline' blob: data: gap:; object-src * 'self' blob: data: gap:; img-src * self 'unsafe-inline' blob: data: gap:; connect-src self * 'unsafe-inline' blob: data: gap:; frame-src * self blob: data: gap:;">
 	<link rel="stylesheet" href="index.css" />
 	<link rel="stylesheet" href="icons.css" />
+	<style id="styleMain"></style>
     <title>Akio Music Player</title>
   </head>
   <body>
@@ -74,16 +75,20 @@
 					<span>0:00</span>
 				</div>
 				<img id="playback__minithumb" height="32px" width="32px" />
-				<div id="playback__minititle">NO SONG</div>
+				<div id="playback__mtC">
+					<span id="playback__minititle">NO SONG</span>
+				</div>
 			</div>
 			<div id="playback__body">
-				<div class="wrapper rounded flex-column">
-					<div class="wrapper flex-row">
-						<div class="wrapper rounded">
+				<div class="wrapper flex-column">
+					<div class="wrapper nowrap flex-row">
+						<div class="wrapper">
 							<img id="playback__thumb" />
 						</div>
-						<div class="wrapper rounded flex-column">
-							<div id="playback__title"></div>
+						<div class="wrapper flex-column" style="max-width: 40vw;">
+							<span id="playback__title"></span>
+							<div id="pBody__album"></div>
+							<div id="pBody__artist"></div>
 						</div>
 					</div>
 					<div id="pbProgress__wrapper" class="playback__progressWrapper">
@@ -150,7 +155,6 @@
 					</div>
 				</div>
 			</div>
-
 			<div class="home__page" id="page__wrapper">
 				<div id="page__title">
 					<h1>HOME</h1>
