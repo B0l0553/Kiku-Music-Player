@@ -7,6 +7,12 @@ const {
 	WriteUserData
 } = require("./mapi.js");
 
+const { 
+	CreateVisualizer, 
+	RefreshVisualizer,
+	ChangeBarWidth
+} = require("./visualizer.js");
+
 window.onbeforeunload = () => {
 	ipcMain.removeAllListeners();
 }
@@ -30,6 +36,28 @@ document.onreadystatechange = () => {
 
 		function $(value) {
 			return document.getElementById(value);
+		}
+
+		function vwTOpx(value) {
+			var w = window,
+			  d = document,
+			  e = d.documentElement,
+			  g = d.getElementsByTagName('body')[0],
+			  x = w.innerWidth || e.clientWidth || g.clientWidth;
+		   
+			var result = (x*value)/100;
+			return(result);
+		}
+
+		function vhTOpx(value) {
+			var w = window,
+			  d = document,
+			  e = d.documentElement,
+			  g = d.getElementsByTagName('body')[0],
+			  y = w.innerHeight|| e.clientHeight|| g.clientHeight;
+		   
+			var result = (y*value)/100;
+			return(result);
 		}
 
 		function ClearWrapper() {
@@ -170,8 +198,31 @@ document.onreadystatechange = () => {
 
 		function setThumb(value) {
 			playbackMImg.src = value;
-			playbackImg.src = value;
+			//playbackImg.src = value;
+			visCanvas.style.backgroundImage = `url("${value}")`;
 			userdata.thumb = value;
+		}
+
+		function PlayMusic(data) {
+			
+			var src = `http://localhost/musics/${data.hash}.${data.data.dataformat}`;
+			if(player.currentSrc != src) {
+				player.pause();
+				player.src = src;
+				player.load();
+				playbackLength.textContent = getTime(data.length);
+				setThumb(`http://localhost/covers/${data.cover_hash}`);
+				setTitle(data.tags.title);
+				userdata.last_played = src;
+				userdata.duration = data.length;
+				userdata.title = data.tags.title;
+				userdata.thumb = playbackMImg.src;
+				RefreshVisualizer(player);
+			}
+			pBodyAlbum.textContent = data.tags.album;
+			pBodyArtist.textContent = data.tags.artist;
+			TogglePause();
+			
 		}
 
 		function CreateMusicLine(data) {
@@ -182,23 +233,7 @@ document.onreadystatechange = () => {
 			let length = document.createElement('div');
 
 			line.classList.add("music__line");
-			line.addEventListener('click', () => {
-				var src = `http://localhost/musics/${data.hash}.${data.data.dataformat}`;
-				if(player.currentSrc != src) {
-					player.pause();
-					player.src = src;
-					playbackLength.textContent = getTime(data.length);
-					setThumb(`http://localhost/covers/${data.cover_hash}`);
-					setTitle(data.tags.title);
-					userdata.last_played = src;
-					userdata.duration = data.length;
-					userdata.title = data.tags.title;
-					userdata.thumb = playbackMImg.src;
-				}
-				pBodyAlbum.textContent = data.tags.album;
-				pBodyArtist.textContent = data.tags.artist;
-				TogglePause();
-			});
+			line.addEventListener('click', () => PlayMusic(data));
 			title.textContent = data.tags.title;
 			title.classList.add("item");
 			album.textContent = data.tags.album;
@@ -311,6 +346,36 @@ document.onreadystatechange = () => {
 			player.volume = _volume/100;
 		}
 
+		function hideMenu() {
+			document.getElementById("contextMenu")
+					.style.display = "none"
+		}
+	  
+		function rightClick(e) {
+			e.preventDefault();
+			var menu = document.getElementById("contextMenu")
+			if (menu.style.display == "block") {
+				menu.style.left = e.pageX + "px";
+				menu.style.top = e.pageY + "px";
+			} else {	  
+				menu.style.display = 'block';
+				menu.style.left = e.pageX + "px";
+				menu.style.top = e.pageY + "px";
+			}
+		}
+
+		function RefreshVisSize() {
+			var w = vwTOpx(40);
+			var h = vwTOpx(40);
+
+			visCanvas.width = w;
+			visCanvas.height = h;
+
+			ChangeBarWidth(Math.floor(w/128))
+			console.log("new size!")
+			console.log("barWidth: ", Math.floor(w/96-.35));
+		}
+
 		const homeBtn = document.getElementById("home-btn");
 		const musicBtn = document.getElementById("music-btn");
 		const albumBtn = document.getElementById("album-btn");
@@ -325,7 +390,7 @@ document.onreadystatechange = () => {
 		const pageWrapper = document.getElementById("page__wrapper");
 		const wrapper = document.getElementById('inside__wrapper')
 
-		const player = document.createElement("audio");
+		const player = document.getElementById("player");
 		const pause = document.getElementById("playback__pause");
 		const progressWrapper = document.getElementsByClassName("playback__progressWrapper")[0];
 		const progress = document.getElementById("playbackProgress");
@@ -341,6 +406,8 @@ document.onreadystatechange = () => {
 		const playbackTitle = document.getElementById("playback__title");
 		const pBodyAlbum = document.getElementById("pBody__album");
 		const pBodyArtist = document.getElementById("pBody__artist");
+		const visCanvas = document.getElementById("visualiz");
+		
 		player.addEventListener('timeupdate', () => {
 			var percent = (player.currentTime / player.duration) * 100;
 			progress.style.width = `${percent}%`;
@@ -354,7 +421,10 @@ document.onreadystatechange = () => {
 		});
 		player.src = userdata.last_played;
 		player.volume = userdata.volume || 0.5;
-		//player.currentTime = userdata.playtime;
+		player.load();
+		CreateVisualizer(player, visCanvas);
+		RefreshVisSize();
+		player.currentTime = userdata.playtime;
 		playbackLength.textContent = getTime(userdata.duration);
 		pBodyLength.textContent = getTime(userdata.duration);
 		setThumb(userdata.thumb);
@@ -412,17 +482,35 @@ document.onreadystatechange = () => {
 
 		controlHide.addEventListener('click', () => TogglePlayback());
 
+		document.oncontextmenu = rightClick;
+		document.onclick = hideMenu;
+
+		window.addEventListener("resize", () => {
+			RefreshVisSize();
+		});
+
 		document.addEventListener("keydown", (e) => {
-			e.preventDefault();
+			
 			switch(e.key) {
 				case " ":
+					e.preventDefault();
 					TogglePause();
 					break;
 				case "ArrowUp":
+					e.preventDefault();
 					SetMusicVolume(player.volume*100 + 10);
 					break;
 				case "ArrowDown":
+					e.preventDefault();
 					SetMusicVolume(player.volume*100 - 10);
+					break;
+				case "ArrowLeft":
+					e.preventDefault();
+					MoveMusicTimestampTo(player.currentTime - 10);
+					break;
+				case "ArrowRight":
+					e.preventDefault();
+					MoveMusicTimestampTo(player.currentTime + 10);
 					break;
 				default:
 					console.log(e.key);

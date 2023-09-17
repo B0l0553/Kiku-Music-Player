@@ -6,6 +6,7 @@
 	<link rel="stylesheet" href="index.css" />
 	<link rel="stylesheet" href="icons.css" />
 	<style id="styleMain"></style>
+	<audio id="player" preload="auto"></audio>
     <title>Akio Music Player</title>
   </head>
   <body>
@@ -43,6 +44,17 @@
 	</header>
 
 	<div id="app" class="scrollbar-app">
+		<div id="contextMenu" class="context-menu" style="display: none">
+			<ul>
+				<li><a href="#">Element-1</a></li>
+				<li><a href="#">Element-2</a></li>
+				<li><a href="#">Element-3</a></li>
+				<li><a href="#">Element-4</a></li>
+				<li><a href="#">Element-5</a></li>
+				<li><a href="#">Element-6</a></li>
+				<li><a href="#">Element-7</a></li>
+			</ul>
+		</div>
 		<div id="playback__wrapper" class="hide">
 			<div id="playback__header">
 				<div id="playback__showBtn" class="playback__button" title="Open Playback">
@@ -83,12 +95,14 @@
 				<div class="wrapper flex-column">
 					<div class="wrapper nowrap flex-row">
 						<div class="wrapper">
-							<img id="playback__thumb" />
+							<!--<img id="playback__thumb" draggable="false" />-->
+							<canvas id="visualiz"></canvas>
 						</div>
 						<div class="wrapper flex-column" style="max-width: 40vw;">
 							<span id="playback__title"></span>
 							<div id="pBody__album"></div>
 							<div id="pBody__artist"></div>
+							
 						</div>
 					</div>
 					<div id="pbProgress__wrapper" class="playback__progressWrapper">
