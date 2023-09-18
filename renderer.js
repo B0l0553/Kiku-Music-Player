@@ -2,6 +2,7 @@ const { ipcRenderer, dialog, app, BrowserWindow } = require("electron");
 const fs = require("fs");
 const path = require("path")
 let InternalPlaylist = [];
+let pPtr = 0;
 const {
 	GetUserData,
 	WriteUserData
@@ -206,23 +207,39 @@ document.onreadystatechange = () => {
 		function PlayMusic(data) {
 			
 			var src = `http://localhost/musics/${data.hash}.${data.data.dataformat}`;
+			var thumbSrc = `http://localhost/covers/${data.cover_hash}`;
 			if(player.currentSrc != src) {
 				player.pause();
 				player.src = src;
 				player.load();
 				playbackLength.textContent = getTime(data.length);
-				setThumb(`http://localhost/covers/${data.cover_hash}`);
+				setThumb(thumbSrc);
 				setTitle(data.tags.title);
 				userdata.last_played = src;
 				userdata.duration = data.length;
 				userdata.title = data.tags.title;
 				userdata.thumb = playbackMImg.src;
 				RefreshVisualizer(player);
+				TogglePause();
+				
 			}
 			pBodyAlbum.textContent = data.tags.album;
 			pBodyArtist.textContent = data.tags.artist;
-			TogglePause();
-			
+						
+		}
+
+		function PlayPrevious() {
+			if(pPtr == 0) {
+				MoveMusicTimestampTo(0);
+			} else {
+				PlayMusic(InternalPlaylist[--pPtr])
+			}
+		}
+
+		function PlayNextInQueue() {
+			if(i < InternalPlaylist.length-1) {
+				PlayMusic(InternalPlaylist[++pPtr]);
+			}
 		}
 
 		function CreateMusicLine(data) {
@@ -234,6 +251,8 @@ document.onreadystatechange = () => {
 
 			line.classList.add("music__line");
 			line.addEventListener('click', () => PlayMusic(data));
+			line.addEventListener('contextmenu', rightClick);
+
 			title.textContent = data.tags.title;
 			title.classList.add("item");
 			album.textContent = data.tags.album;
@@ -419,6 +438,10 @@ document.onreadystatechange = () => {
 			userdata.playtime = player.currentTime;
 			WriteUserData(userdata);
 		});
+
+		player.addEventListener("ended", () => {
+			PlayNextInQueue();
+		});
 		player.src = userdata.last_played;
 		player.volume = userdata.volume || 0.5;
 		player.load();
@@ -482,7 +505,6 @@ document.onreadystatechange = () => {
 
 		controlHide.addEventListener('click', () => TogglePlayback());
 
-		document.oncontextmenu = rightClick;
 		document.onclick = hideMenu;
 
 		window.addEventListener("resize", () => {
