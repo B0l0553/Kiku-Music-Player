@@ -1,8 +1,7 @@
 const { ipcRenderer, dialog, app, BrowserWindow } = require("electron");
 const fs = require("fs");
 const path = require("path")
-let InternalPlaylist = [];
-let pPtr = 0;
+let InternalPlaylist=[],pPtr=0,loop=0;
 const {
 	GetUserData,
 	WriteUserData
@@ -11,7 +10,8 @@ const {
 const { 
 	CreateVisualizer, 
 	RefreshVisualizer,
-	ChangeBarWidth
+	ChangeBarWidth,
+	mode
 } = require("./visualizer.js");
 
 window.onbeforeunload = () => {
@@ -206,7 +206,7 @@ document.onreadystatechange = () => {
 
 		function PlayMusic(data) {
 			
-			var src = `http://localhost/musics/${data.hash}.${data.data.dataformat}`;
+			var src = `http://localhost/serveMusic.php?hash=${data.hash}.${data.data.dataformat}`;
 			var thumbSrc = `http://localhost/covers/${data.cover_hash}`;
 			if(player.currentSrc != src) {
 				player.pause();
@@ -237,7 +237,7 @@ document.onreadystatechange = () => {
 		}
 
 		function PlayNextInQueue() {
-			if(i < InternalPlaylist.length-1) {
+			if(pPtr < InternalPlaylist.length-1) {
 				PlayMusic(InternalPlaylist[++pPtr]);
 			}
 		}
@@ -272,16 +272,19 @@ document.onreadystatechange = () => {
 		function createAlbumBox(data) {
 			let box = document.createElement("div");
 			let thumb = document.createElement("img");
-			let info = document.createElement("div");
 			let title = document.createElement("span");
 			let artist = document.createElement("span");
 
 			title.textContent = data.title;
 			artist.textContent = data.artist;
-			info.appendChild(title);
-			info.appendChild(artist);
+			thumb.src = "http://localhost/covers/" + data.cover;
+			title.classList.add("album__text");
+			artist.classList.add("album__text");
+			thumb.classList.add("album__thumb");
+			box.classList.add("album__box");
 			box.appendChild(thumb);
-			box.appendChild(info);
+			box.appendChild(title);
+			box.appendChild(artist);
 			return box;
 		}
 
@@ -298,7 +301,6 @@ document.onreadystatechange = () => {
 						for(let i = 0; i < res.length; i++) {
 							wrapper.appendChild(CreateMusicLine(res[i]));
 						}
-					} else {
 					}
 				}
 			};
@@ -318,7 +320,6 @@ document.onreadystatechange = () => {
 						for(let i = 0; i < res.length; i++) {
 							wrapper.appendChild(createAlbumBox(res[i]));
 						}
-					} else {
 					}
 				}
 			};
@@ -361,7 +362,7 @@ document.onreadystatechange = () => {
 		
 			//vti.textContent = `${_volume}%`
 			//vpi.style.width = `${_volume}%`
-		
+			
 			player.volume = _volume/100;
 		}
 
@@ -392,7 +393,7 @@ document.onreadystatechange = () => {
 
 			ChangeBarWidth(Math.floor(w/128))
 			console.log("new size!")
-			console.log("barWidth: ", Math.floor(w/96-.35));
+			console.log("barWidth: ", Math.floor(w/128));
 		}
 
 		const homeBtn = document.getElementById("home-btn");
@@ -405,13 +406,14 @@ document.onreadystatechange = () => {
 		//const controlh = document.getElementById("playback__header");
 		const controlHide = document.getElementById("playback__showBtn");
 		
-		const pageTitle = document.getElementById("page__title")
+		const pageTitle = document.getElementById("page__title");
 		const pageWrapper = document.getElementById("page__wrapper");
-		const wrapper = document.getElementById('inside__wrapper')
+		const wrapper = document.getElementById('inside__wrapper');
 
 		const player = document.getElementById("player");
 		const pause = document.getElementById("playback__pause");
 		const progressWrapper = document.getElementsByClassName("playback__progressWrapper")[0];
+		const progressBodyWrapper = document.getElementsByClassName("playback__progressWrapper")[1];
 		const progress = document.getElementById("playbackProgress");
 		const progressBody = document.getElementById("pBody__progress");
 		//const progressHandle = document.getElementById("playbackHandle");
@@ -426,6 +428,14 @@ document.onreadystatechange = () => {
 		const pBodyAlbum = document.getElementById("pBody__album");
 		const pBodyArtist = document.getElementById("pBody__artist");
 		const visCanvas = document.getElementById("visualiz");
+
+		progressWrapper.addEventListener("click", (e) => {
+			player.currentTime = player.duration*((e.clientX-progressWrapper.offsetLeft)/vwTOpx(40));
+		});
+
+		progressBodyWrapper.addEventListener("click", (e) => {
+			player.currentTime = player.duration*((e.clientX-progressBodyWrapper.offsetLeft)/progressBodyWrapper.offsetWidth);
+		});
 		
 		player.addEventListener('timeupdate', () => {
 			var percent = (player.currentTime / player.duration) * 100;
@@ -436,6 +446,7 @@ document.onreadystatechange = () => {
 			pBodyTime.textContent = getTime(player.currentTime);
 			pBodyLength.textContent = getTime(player.duration);
 			userdata.playtime = player.currentTime;
+			userdata.volume = player.volume;
 			WriteUserData(userdata);
 		});
 
@@ -445,6 +456,7 @@ document.onreadystatechange = () => {
 		player.src = userdata.last_played;
 		player.volume = userdata.volume || 0.5;
 		player.load();
+		TogglePause();
 		CreateVisualizer(player, visCanvas);
 		RefreshVisSize();
 		player.currentTime = userdata.playtime;

@@ -1,7 +1,32 @@
-var context,src,analyser,ctx,barWidth = 2,HEIGHT,WIDTH,dataArray,canvas,x = 0;
+var context,src,analyser,ctx,barWidth = 2,HEIGHT,WIDTH,dataArray,canvas,x = 0,sampled=false,mode="bezier";
 
 function ChangeBarWidth(_nWidth) {
 	barWidth = _nWidth;
+}
+
+function drawBezier(bp) {
+	ctx.beginPath();
+	ctx.strokeStyle = "white";
+	ctx.lineWidth = 4;
+	// move to the first point
+	ctx.moveTo(bp[0].x, bp[0].y);
+	for (var i = 1; i < bp.length - 2; i++)
+	{
+		var xc = (bp[i].x + bp[i + 1].x) / 2;
+		var yc = (bp[i].y + bp[i + 1].y) / 2;
+		ctx.quadraticCurveTo(bp[i].x, bp[i].y, xc, yc);
+	}
+	// curve through the last two bp
+	ctx.quadraticCurveTo(bp[i].x, bp[i].y, bp[i+1].x,bp[i+1].y);
+	ctx.stroke();
+	ctx.closePath();
+}
+
+function drawBar(p) {
+	for(var i = 0; i < p.length; i++) {
+		ctx.fillStyle = "#FFF";
+		ctx.fillRect(p[i].x+i, canvas.height, barWidth, p[i].y- canvas.height);
+	}
 }
 
 function renderFrame() {
@@ -26,37 +51,40 @@ function renderFrame() {
 		return p;
 	}
 
+	if(mode == "none") return;
 	let bp = [];
 	analyser.getFloatFrequencyData(dataArray);
 
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	var gradient = ctx.createLinearGradient(canvas.width/2, canvas.height, canvas.width/2, canvas.height-160)
+	var gradient = ctx.createLinearGradient(canvas.width/2, canvas.height, canvas.width/2, canvas.height-128)
 	gradient.addColorStop(0, "rgba(0,0,0,0.75)");
 	gradient.addColorStop(1, "rgba(0,0,0,0.75)");
 	ctx.fillStyle = gradient;
 	ctx.fillRect(0, canvas.height, canvas.width, -140)
-	bp.push(... getRange(dataArray, 0,    16,   90,   6)); // 200 Hz range
-	bp.push(... getRange(dataArray, 16,   32,   80,   4)); // 500 Hz range
-	bp.push(... getRange(dataArray, 32,   64,   80,   4)); // 1kHz range
-	bp.push(... getRange(dataArray, 64,  128,   70,   2)); // 2kHz range
-	//bp.push(... getRange(dataArray, 168,  176,  70)); // 4kHz range
-	//bp.push(... getRange(dataArray, 339,  343,  50)); // 8kHz range
-	//bp.push(... getRange(dataArray, 511,  513,  40)); // 12kHz range
-	ctx.beginPath();
-	ctx.strokeStyle = "white";
-	ctx.lineWidth = 6;
-	// move to the first point
-	ctx.moveTo(bp[0].x, bp[0].y);
-	for (var i = 1; i < bp.length - 2; i++)
-	{
-		var xc = (bp[i].x + bp[i + 1].x) / 2;
-		var yc = (bp[i].y + bp[i + 1].y) / 2;
-		ctx.quadraticCurveTo(bp[i].x, bp[i].y, xc, yc);
+	bp.push(... getRange(dataArray, 0,      64,    80,   4));
+	bp.push(... getRange(dataArray, 64,     129,   75,   2));
+	//bp.push(... getRange(dataArray, 0,     16,   85,   6));
+	//bp.push(... getRange(dataArray, 16,    24,   85,   4)); // 500 Hz range
+	//bp.push(... getRange(dataArray, 32,    64,   85,   2));
+	//bp.push(... getRange(dataArray, 336,   352,  85,   1)); // 4kHz range
+	//bp.push(... getRange(dataArray, 678,   686,  70)); // 8kHz range
+	//bp.push(... getRange(dataArray, 1022, 1026,  70)); // 12kHz range
+
+	if(!sampled) {
+		console.log("New sample size: ", bp.length);
+		sampled = 1;
 	}
-	// curve through the last two bp
-	ctx.quadraticCurveTo(bp[i].x, bp[i].y, bp[i+1].x,bp[i+1].y);
-	ctx.stroke();
-	ctx.closePath();
+
+	switch(mode) {
+		case "bar":
+			drawBar(bp);
+			break;
+		case "bezier":
+			drawBezier(bp);
+			break;
+		default:
+			break;
+	}
 }
 
 function CreateVisualizer(audio, _canvas) {
@@ -82,5 +110,6 @@ function RefreshVisualizer(audio) {
 module.exports = {
 	CreateVisualizer,
 	RefreshVisualizer,
-	ChangeBarWidth
+	ChangeBarWidth,
+	mode
 }

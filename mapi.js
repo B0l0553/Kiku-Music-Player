@@ -141,7 +141,7 @@ function GetUserData() {
 function WriteUserData(_usrdata) {
 	//console.log("Writing to usrdata");
 	var fpath = path.join(__dirname, "usrdata.json");
-	fs.writeFileSync(fpath, JSON.stringify(_usrdata, null, 4));
+	fs.writeFile(fpath, JSON.stringify(_usrdata, null, 4), ()=>{});
 }
 
 function WriteCache(_albums) {
