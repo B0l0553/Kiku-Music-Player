@@ -1,18 +1,30 @@
 const { ipcRenderer, dialog, app, BrowserWindow } = require("electron");
 const fs = require("fs");
 const path = require("path")
-let InternalPlaylist=[],pPtr=0,loop=0;
+const {
+	SetRPC,
+	StartRPC,
+	PauseRPC
+} = require("./rpcApi.js")
+let InternalPlaylist=[],pPtr=0,loop=0,contextData=null;
 const {
 	GetUserData,
-	WriteUserData
+	WriteUserData,
+	getFileB64
 } = require("./mapi.js");
 
 const { 
 	CreateVisualizer, 
 	RefreshVisualizer,
 	ChangeBarWidth,
-	mode
+	ChangeMode,
+	ChangeDiff,
+	changeCursorCoords,
 } = require("./visualizer.js");
+
+const {
+	changeMS
+} = require("./msHandler.js")
 
 window.onbeforeunload = () => {
 	ipcMain.removeAllListeners();
@@ -61,12 +73,12 @@ document.onreadystatechange = () => {
 			return(result);
 		}
 
-		function ClearWrapper() {
+		function clearWrapper() {
 			wrapper.textContent = "";
 		}
 		
-		function ChangePageWithId(_id) {
-			ClearWrapper();
+		function changePageWithId(_id) {
+			clearWrapper();
 			switch(_id) {
 				case "home":
 					pageTitle.textContent = "HOME"
@@ -74,11 +86,11 @@ document.onreadystatechange = () => {
 					break;
 				case "music":
 					pageTitle.textContent = "MUSICS"
-					FetchMusic();
+					fetchMusic();
 					break;
 				case "album":
 					pageTitle.textContent = "ALBUMS"
-					FetchAlbum();
+					fetchAlbum();
 					break;
 				case "artist":
 					pageTitle.textContent = "ARTISTS"
@@ -95,7 +107,7 @@ document.onreadystatechange = () => {
 			WriteUserData(userdata);
 		}
 		
-		function TogglePlayback() {
+		function togglePlayback() {
 			controls.classList.toggle("hide");
 			userdata.playback_open = !controls.classList.contains("hide");
 		
@@ -122,13 +134,13 @@ document.onreadystatechange = () => {
 			WriteUserData(userdata);
 		}
 
-		function HidePlayback() {
+		function hidePlayback() {
 			if(userdata.playback_open === true) {
-				TogglePlayback();
+				togglePlayback();
 			}
 		}
 
-		function InsertList(_element, _list, _basename = false) {
+		function insertList(_element, _list, _basename = false) {
 			if(!_list) return;
 			if(_list.length === 0) {
 				const fel = document.getElementById(_element);
@@ -152,7 +164,7 @@ document.onreadystatechange = () => {
 			}
 		}
 
-		function DeleteFromListWithValue(_list, _value) {
+		function deleteFromListWithValue(_list, _value) {
 			if(!_value || !_list) return;
 			
 			const fel = document.getElementById(_list);
@@ -204,45 +216,93 @@ document.onreadystatechange = () => {
 			userdata.thumb = value;
 		}
 
-		function PlayMusic(data) {
-			
+		function clearPlaylist() {
+			InternalPlaylist = [];
+			pPtr = -1;
+			updatePlaylistDisplay();
+		}
+
+		function addMusic(data) {
+			data.i = InternalPlaylist.length;
+			InternalPlaylist.push(data);
+			updatePlaylistDisplay();
+		}
+
+		function setMusic(i) {
+			pPtr = i;
+			playMusic(InternalPlaylist[i]);
+		}
+
+		//! Why did I do this, this is fundamentaly flawed wtf ???
+		//FML mannn
+		function playMusic(data) {
+			if(data == null) {
+				console.error("Tried to play, but data was null");
+				return;
+			}
+			changeMS(player, togglePause, data);
 			var src = `http://localhost/serveMusic.php?hash=${data.hash}.${data.data.dataformat}`;
 			var thumbSrc = `http://localhost/covers/${data.cover_hash}`;
 			if(player.currentSrc != src) {
 				player.pause();
 				player.src = src;
 				player.load();
+				player.currentTime = 0;
 				playbackLength.textContent = getTime(data.length);
 				setThumb(thumbSrc);
 				setTitle(data.tags.title);
-				userdata.last_played = src;
-				userdata.duration = data.length;
-				userdata.title = data.tags.title;
-				userdata.thumb = playbackMImg.src;
 				RefreshVisualizer(player);
-				TogglePause();
-				
+				togglePause();
+				userdata.last_music_data = data;
+				WriteUserData(userdata);
 			}
 			pBodyAlbum.textContent = data.tags.album;
 			pBodyArtist.textContent = data.tags.artist;
-						
+			PauseRPC();
+			SetRPC(data.tags.title, data.tags.artist, thumbSrc, data.tags.album);
+			StartRPC(0.001, data.length);
 		}
 
-		function PlayPrevious() {
+		function playPrevious() {
 			if(pPtr == 0) {
-				MoveMusicTimestampTo(0);
+				console.log("ptr at zero")
+				moveMusicTimestampTo(0);
 			} else {
-				PlayMusic(InternalPlaylist[--pPtr])
+				playMusic(InternalPlaylist[--pPtr])
 			}
 		}
 
-		function PlayNextInQueue() {
+		function playNext() {
+			console.log("Playing Next Music... preincremented ptr=", pPtr);
 			if(pPtr < InternalPlaylist.length-1) {
-				PlayMusic(InternalPlaylist[++pPtr]);
+				playMusic(InternalPlaylist[++pPtr]);
 			}
 		}
 
-		function CreateMusicLine(data) {
+		function updatePlaylistDisplay() {
+			console.log("Updating Playlist display with new playlist: ", InternalPlaylist);
+			playbackPlaylistDisplay.textContent = "";
+			InternalPlaylist.forEach(music => {
+				playbackPlaylistDisplay.appendChild(createPlaylistLine(music));
+			})
+		}
+
+		function createPlaylistLine(data) {
+			let line = document.createElement('div');
+			let title = document.createElement('div');
+			let length = document.createElement('div');
+			line.classList.add("playlist__line");
+			line.addEventListener('click', () => setMusic(data.i));
+			title.textContent = data.tags.title;
+			title.classList.add("item");
+			length.textContent = getTime(data.length);
+			length.classList.add("item");
+			line.appendChild(title);
+			line.appendChild(length);
+			return line;
+		}
+
+		function createMusicLine(data) {
 			let line = document.createElement('div');
 			let title = document.createElement('div');
 			let album = document.createElement('div');
@@ -250,8 +310,13 @@ document.onreadystatechange = () => {
 			let length = document.createElement('div');
 
 			line.classList.add("music__line");
-			line.addEventListener('click', () => PlayMusic(data));
-			line.addEventListener('contextmenu', rightClick);
+			line.addEventListener('click', () => {
+				clearPlaylist();
+				addMusic(data);
+				playNext();
+
+			} );
+			line.addEventListener('contextmenu', (e) => rightClick(e, data));
 
 			title.textContent = data.tags.title;
 			title.classList.add("item");
@@ -288,7 +353,8 @@ document.onreadystatechange = () => {
 			return box;
 		}
 
-		function FetchMusic(search = "") {
+		// je veux mourir
+		function fetchMusic(search = "") {
 			let xhr = new XMLHttpRequest();
 			xhr.open("GET", `http://localhost/search.php?JSON_DATA={"title":"${search}"}`);
 			xhr.setRequestHeader("Accept", "application/json");
@@ -299,7 +365,7 @@ document.onreadystatechange = () => {
 						const res = JSON.parse(xhr.responseText);
 						//console.log(res);
 						for(let i = 0; i < res.length; i++) {
-							wrapper.appendChild(CreateMusicLine(res[i]));
+							wrapper.appendChild(createMusicLine(res[i]));
 						}
 					}
 				}
@@ -307,7 +373,7 @@ document.onreadystatechange = () => {
 			xhr.send(null);
 		}
 
-		function FetchAlbum(search = "") {
+		function fetchAlbum(search = "") {
 			let xhr = new XMLHttpRequest();
 			xhr.open("GET", `http://localhost/search.php?JSON_DATA={"title":"${search}","type":"album"}`);
 			xhr.setRequestHeader("Accept", "application/json");
@@ -332,19 +398,25 @@ document.onreadystatechange = () => {
 			return `${m.toLocaleString(undefined, { minimumIntegerDigits: 2 })}:${s.toLocaleString(undefined, { minimumIntegerDigits: 2 })}`;
 		}
 
-		function TogglePause() {
-			if(player.paused && player.currentSrc != null) {
+		function togglePause() {
+			if(player.paused) {
+				if(player.currentSrc == null) {
+					playNext();
+					return;
+				}
 				player.play();
 				pause.setAttribute('title', "Pause");
 				pause.innerHTML = '<i class="gg-play-pause-r"></i>';
+				StartRPC(player.currentTime, InternalPlaylist[pPtr].length);
 				return;
 			}
 			player.pause();
 			pause.setAttribute('title', "Play");
 			pause.innerHTML = '<i class="gg-play-button-r"></i>';
+			PauseRPC();
 		}
 
-		function MoveMusicTimestampTo(_time) {	
+		function moveMusicTimestampTo(_time) {	
 			if(_time > player.duration) {
 				_time = player.duration;
 			} else if(_time < 0) {
@@ -354,16 +426,24 @@ document.onreadystatechange = () => {
 			player.currentTime = _time;
 		}
 
-		function SetMusicVolume(_volume) {
+		function setMusicVolume(_volume) {
 			if(_volume < 0) _volume = 0;
 			if(_volume > 100) _volume = 100;
 		
 			_volume = Math.floor(_volume);
-		
-			//vti.textContent = `${_volume}%`
-			//vpi.style.width = `${_volume}%`
-			
+			ChangeDiff(_volume);
+			showVToaster();
+			volumeSlider.style.width = `${_volume}%`
+			volumeText.textContent = `${_volume}%`
 			player.volume = _volume/100;
+		}
+
+		function showVToaster() {
+			volumeToaster.classList.remove("hideAnim");
+			volumeToaster.classList.remove("hidden");
+			volumeToaster.getAnimations().forEach(i => { i.cancel() });
+			//volumeToaster.classList.toggle("show");
+			volumeToaster.classList.add("hideAnim");
 		}
 
 		function hideMenu() {
@@ -371,8 +451,10 @@ document.onreadystatechange = () => {
 					.style.display = "none"
 		}
 	  
-		function rightClick(e) {
+		function rightClick(e, data) {
 			e.preventDefault();
+			contextData = data;
+			console.log("Recorded context data");
 			var menu = document.getElementById("contextMenu")
 			if (menu.style.display == "block") {
 				menu.style.left = e.pageX + "px";
@@ -384,16 +466,17 @@ document.onreadystatechange = () => {
 			}
 		}
 
-		function RefreshVisSize() {
+		function refreshVisSize() {
 			var w = vwTOpx(40);
 			var h = vwTOpx(40);
+
+			if(w > 600) w = 600;
+			if(h > 600) h = 600;
 
 			visCanvas.width = w;
 			visCanvas.height = h;
 
-			ChangeBarWidth(Math.floor(w/128))
-			console.log("new size!")
-			console.log("barWidth: ", Math.floor(w/128));
+			ChangeBarWidth(Math.floor(w/86));
 		}
 
 		const homeBtn = document.getElementById("home-btn");
@@ -410,8 +493,13 @@ document.onreadystatechange = () => {
 		const pageWrapper = document.getElementById("page__wrapper");
 		const wrapper = document.getElementById('inside__wrapper');
 
-		const player = document.getElementById("player");
 		const pause = document.getElementById("playback__pause");
+		const playbackPrev = document.getElementById("playback__before");
+		const playbackNext = document.getElementById("playback__next");
+
+		const cPlayNext = document.getElementById("context__playNext");
+
+		const player = document.getElementById("player");
 		const progressWrapper = document.getElementsByClassName("playback__progressWrapper")[0];
 		const progressBodyWrapper = document.getElementsByClassName("playback__progressWrapper")[1];
 		const progress = document.getElementById("playbackProgress");
@@ -425,9 +513,14 @@ document.onreadystatechange = () => {
 		const playbackMTitle = document.getElementById("playback__minititle");
 		const playbackImg = document.getElementById("playback__thumb");
 		const playbackTitle = document.getElementById("playback__title");
+		const playbackPlaylistDisplay = document.getElementById("playback__playlist");
 		const pBodyAlbum = document.getElementById("pBody__album");
 		const pBodyArtist = document.getElementById("pBody__artist");
 		const visCanvas = document.getElementById("visualiz");
+		const cRect = visCanvas.getBoundingClientRect();
+		const volumeSlider = document.getElementById("volumeSlider");
+		const volumeText = document.getElementById("volume__text");
+		const volumeToaster = document.getElementById("volume-toast");
 
 		progressWrapper.addEventListener("click", (e) => {
 			player.currentTime = player.duration*((e.clientX-progressWrapper.offsetLeft)/vwTOpx(40));
@@ -451,76 +544,99 @@ document.onreadystatechange = () => {
 		});
 
 		player.addEventListener("ended", () => {
-			PlayNextInQueue();
+			//togglePause();
+			playNext();
 		});
-		player.src = userdata.last_played;
-		player.volume = userdata.volume || 0.5;
-		player.load();
-		TogglePause();
+		
 		CreateVisualizer(player, visCanvas);
-		RefreshVisSize();
-		player.currentTime = userdata.playtime;
-		playbackLength.textContent = getTime(userdata.duration);
-		pBodyLength.textContent = getTime(userdata.duration);
-		setThumb(userdata.thumb);
-		setTitle(userdata.title)
+		/*if(userdata.last_music_data != null)
+			addMusic(userdata.last_music_data);*/
+		
+		clearPlaylist();
+		if(userdata.last_music_data != null) {
+			addMusic(userdata.last_music_data);
+			playNext();
+		}
+		
+		setMusicVolume(userdata.volume*100 || 50);
+		refreshVisSize();
+		player.currentTime = userdata.playtime || 0;
 		
 		if(userdata.last_page) {
-			ChangePageWithId(userdata.last_page);
+			changePageWithId(userdata.last_page);
 		} else {
-			ChangePageWithId("home");
+			changePageWithId("home");
 		}
 
 		if(userdata.playback_open) {
-			TogglePlayback();
+			togglePlayback();
 		}
-	
+
 		homeBtn.addEventListener('click', () => {
-			HidePlayback();
+			hidePlayback();
 			
 			if(userdata.last_page != "home") {
-				ChangePageWithId("home");
+				changePageWithId("home");
 			}
 		});
 
+		playbackPrev.addEventListener('click', () => {
+			playPrevious();
+		});
+
+		playbackNext.addEventListener('click', () => {
+			playNext();
+		});
+
 		musicBtn.addEventListener('click', () => {
-			HidePlayback();
+			hidePlayback();
 			if(userdata.last_page != "music") {
-				ChangePageWithId("music");
+				changePageWithId("music");
 			}
 		});
 
 		albumBtn.addEventListener('click', () => {
-			HidePlayback();
+			hidePlayback();
 			if(userdata.last_page != "album") {
-				ChangePageWithId("album");
+				changePageWithId("album");
 			}
 		});
 
 		artistBtn.addEventListener('click', () => {
-			HidePlayback();
+			hidePlayback();
 			if(userdata.last_page != "artist") {
-				ChangePageWithId("artist");
+				changePageWithId("artist");
 			}
 		});
 
 		optionsBtn.addEventListener('click', () => {
-			HidePlayback();
+			hidePlayback();
 			if(userdata.last_page != "option") {
-				ChangePageWithId("option");
+				changePageWithId("option");
 			}
 		});
 
 		pause.addEventListener("click", () => {
-			TogglePause();
+			togglePause();
 		});
 
-		controlHide.addEventListener('click', () => TogglePlayback());
+		controlHide.addEventListener('click', () => togglePlayback());
+
+		volumeToaster.addEventListener("animationend", () => {
+			volumeToaster.classList.add("hidden");
+		});
+
+		//visCanvas.addEventListener('mousemove', (e) => changeCursorCoords(e.clientX-358, e.y));
+		//visCanvas.addEventListener('mouseout', (e) => changeCursorCoords(-1, -1));
 
 		document.onclick = hideMenu;
+		cPlayNext.addEventListener("click", () => {
+
+			addMusic(contextData);
+		})
 
 		window.addEventListener("resize", () => {
-			RefreshVisSize();
+			refreshVisSize();
 		});
 
 		document.addEventListener("keydown", (e) => {
@@ -528,28 +644,28 @@ document.onreadystatechange = () => {
 			switch(e.key) {
 				case " ":
 					e.preventDefault();
-					TogglePause();
+					togglePause();
 					break;
 				case "ArrowUp":
 					e.preventDefault();
-					SetMusicVolume(player.volume*100 + 10);
+					setMusicVolume(player.volume*100 + 2);
 					break;
 				case "ArrowDown":
 					e.preventDefault();
-					SetMusicVolume(player.volume*100 - 10);
+					setMusicVolume(player.volume*100 - 2);
 					break;
 				case "ArrowLeft":
 					e.preventDefault();
-					MoveMusicTimestampTo(player.currentTime - 10);
+					moveMusicTimestampTo(player.currentTime - 10);
 					break;
 				case "ArrowRight":
 					e.preventDefault();
-					MoveMusicTimestampTo(player.currentTime + 10);
+					moveMusicTimestampTo(player.currentTime + 10);
 					break;
 				default:
 					console.log(e.key);
 					break;
 			}
-		})
+		});
 	}
 }
