@@ -56,11 +56,12 @@ class UsrData {
 	last_page;
 	playback_open = false;
 	volume;
-	last_played;
 	playtime;
-	duration;
-	title;
-	thumb;
+	last_music_data;
+	//last_played;
+	//duration;
+	//title;
+	//thumb;
 }
 
 function GetJSONFromFile(_path, callback) {
@@ -127,11 +128,12 @@ function GetUserData() {
 		tu.playback_open 	= json.playback_open;
 		tu.last_page 		= json.last_page;
 		tu.volume 			= json.volume;
-		tu.last_played 		= json.last_played;
 		tu.playtime 		= json.playtime;
-		tu.duration 		= json.duration;
-		tu.title 			= json.title;
-		tu.thumb 			= json.thumb;
+		tu.last_music_data  = json.last_music_data;
+		//tu.last_played 		= json.last_played;
+		//tu.duration 		= json.duration;
+		//tu.title 			= json.title;
+		//tu.thumb 			= json.thumb;
 		return tu;
 	} 
 
@@ -359,6 +361,10 @@ function GetAlbums(_toscan) {
 	return albums;
 }
 
+function getFileB64(_path) {
+	return fs.readFileSync(_path).toString('base64');
+}
+
 module.exports = {
 	GetAlbums,
 	GetMusics,
@@ -372,6 +378,7 @@ module.exports = {
 	PeekMusicFolders,
 	GetUnscannedFiles,
 	VerifyFiles,
+	getFileB64,
 	MusicMeta,
 	Cache,
 	AppSettings,
