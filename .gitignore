@@ -2,3 +2,4 @@ node_modules/
 Cache/
 usrdata.json
 *.bat
+rpcApi.js
