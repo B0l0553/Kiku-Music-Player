@@ -1,7 +1,7 @@
 const rpc = require("discord-rpc");
 const client = new rpc.Client({transport: 'ipc'});
 var currentActivity = { activity: { timestamps: {}, assets: {}}};
-client.login({clientId: "710385949699473441"}).catch(console.error);
+client.login({clientId: "nuh huh"}).catch(console.error);
 
 client.on("ready", ()=> {
 	console.warn("Discord Presence Ready!");
