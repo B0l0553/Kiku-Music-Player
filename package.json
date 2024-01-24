@@ -4,7 +4,8 @@
   "description": "A local music player made with w/ electron and vanillajs",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "make": "electron-packager . \"kmp\" --platform=win32 --arch=x64"
   },
   "keywords": [
     "music",
@@ -20,7 +21,6 @@
     "electron": "^27.1.0"
   },
   "dependencies": {
-    "discord-rpc": "^4.0.1",
     "node-id3": "^0.2.3"
   }
 }
