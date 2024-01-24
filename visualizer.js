@@ -5,7 +5,7 @@ const {
 function setupVisualizer(canvas, audio) {
 	var v = new Visualiser(audio);
 	var ctx = canvas.getContext("2d")
-	v.setMode("bBezier")
+	v.setMode("oFBezier")
 	setTimeout(() => renderFrame(v, canvas, ctx), 0);
 	return v;
 }

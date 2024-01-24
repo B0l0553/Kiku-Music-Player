@@ -419,7 +419,7 @@ document.onreadystatechange = () => {
 			e.preventDefault();
 			e.stopPropagation();
 		    console.log(e.dataTransfer.files[0].path);
-			var w = GetMetadata(e.dataTransfer.files[0].path, "./cache/");
+			var w = GetMetadata(e.dataTransfer.files[0].path, __dirname + "/cache/");
 			playMusic(w);
 		});
 
