@@ -3,3 +3,7 @@ Cache/
 usrdata.json
 *.bat
 rpcApi.js
+kmp-win32-x64/
+old/
+.vscode/
+rpcApi.js
