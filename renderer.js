@@ -1,26 +1,24 @@
 const { ipcRenderer, dialog, app, BrowserWindow } = require("electron");
 const fs = require("fs");
 const path = require("path")
-const {
-	SetRPC,
-	StartRPC,
-	PauseRPC
-} = require("./rpcApi.js")
-let InternalPlaylist=[],pPtr=0,loop=0,contextData=null;
+let InternalPlaylist=[],pPtr=0,loop=0,contextData=null,vHandle;
 const {
 	GetUserData,
 	WriteUserData,
-	getFileB64
+	getFileB64,
+	GetMetadata
 } = require("./mapi.js");
 
 const { 
-	CreateVisualizer, 
-	RefreshVisualizer,
-	ChangeBarWidth,
-	ChangeMode,
-	ChangeDiff,
-	changeCursorCoords,
+	setupVisualizer
 } = require("./visualizer.js");
+
+const { 
+	changeBarWidth,
+	changeDiff,
+	setArtist,
+	setTitle
+} = require("./graphics.js");
 
 const {
 	changeMS
@@ -73,73 +71,6 @@ document.onreadystatechange = () => {
 			return(result);
 		}
 
-		function clearWrapper() {
-			wrapper.textContent = "";
-		}
-		
-		function changePageWithId(_id) {
-			clearWrapper();
-			switch(_id) {
-				case "home":
-					pageTitle.textContent = "HOME"
-					//FetchHome();
-					break;
-				case "music":
-					pageTitle.textContent = "MUSICS"
-					fetchMusic();
-					break;
-				case "album":
-					pageTitle.textContent = "ALBUMS"
-					fetchAlbum();
-					break;
-				case "artist":
-					pageTitle.textContent = "ARTISTS"
-					break;
-				case "option":
-					break;
-				default:
-					pageTitle.textContent = "HOME"
-					//FetchHome();
-					break;
-			}
-
-			userdata.last_page = _id;
-			WriteUserData(userdata);
-		}
-		
-		function togglePlayback() {
-			controls.classList.toggle("hide");
-			userdata.playback_open = !controls.classList.contains("hide");
-		
-			if(userdata.playback_open) {
-				controlHide.setAttribute('title', "Close Playback");
-				controlHide.innerHTML = '<i class="gg-arrow-down-r"></i>';
-				progress.classList.toggle("hidden");
-				progressWrapper.classList.toggle("hidden");
-				playbackLength.classList.toggle("hidden");
-				playbackTime.classList.toggle("hidden");
-				playbackMImg.classList.toggle("hidden");
-				playbackMTitle.classList.toggle("hidden");
-			} else {
-				controlHide.setAttribute('title', "Close Playback");
-				controlHide.innerHTML = '<i class="gg-arrow-up-r"></i>';
-				progress.classList.toggle("hidden");
-				progressWrapper.classList.toggle("hidden");
-				playbackLength.classList.toggle("hidden");
-				playbackTime.classList.toggle("hidden");
-				playbackMImg.classList.toggle("hidden");
-				playbackMTitle.classList.toggle("hidden");
-			}
-		
-			WriteUserData(userdata);
-		}
-
-		function hidePlayback() {
-			if(userdata.playback_open === true) {
-				togglePlayback();
-			}
-		}
-
 		function insertList(_element, _list, _basename = false) {
 			if(!_list) return;
 			if(_list.length === 0) {
@@ -178,54 +109,29 @@ document.onreadystatechange = () => {
 			//console.log(`No childs with content: ${_value} to remove!`);
 		}
 
-		function setTitle(value) {
-			playbackMTitle.textContent = value;
-			playbackTitle.textContent = value;
-
-			if(playbackTitle.clientWidth > playbackTitle.parentElement.clientWidth) {
-				var td = (playbackTitle.parentElement.clientWidth - playbackTitle.clientWidth)/window.innerWidth*100;
-				var animation = `
-				@keyframes animleftright {
-					0%,
-					20% {
-						transform: translateX(0%);
-					}
-					80%,
-					100% {
-						transform: translateX(${td-4}vw);
-					}
-				}
-				.prout {
-					animation: animleftright 5s infinite alternate ease-in-out;
-				}
-				`
-				$("styleMain").textContent = animation;
-				playbackTitle.classList.value = "prout";
-			} else {
-				playbackTitle.classList.value = "";
-			}
-			if($("playback__mtC").clientWidth < playbackMTitle.clientWidth) {
-				playbackMTitle.classList.add("animate");
-			}
-		}
-
 		function setThumb(value) {
-			playbackMImg.src = value;
-			//playbackImg.src = value;
-			visCanvas.style.backgroundImage = `url("${value}")`;
+			//playbackMImg.src = value;
+			playbackImg.src = value;
+			playbackBodyBg.style.backgroundImage = `url("${value.replace("\\", "/")}")`;
+			playbackBodyBg.style.backgroundSize = "120vw";
+			playbackBodyBg.style.backgroundPosition = "center";
+			playbackBodyBg.style.filter = "blur(32px) brightness(0.6)";
+
+			//visCanvas.style.backgroundImage = `url("${value}")`;
+			//changeBackground(playbackImg);
 			userdata.thumb = value;
 		}
 
 		function clearPlaylist() {
 			InternalPlaylist = [];
 			pPtr = -1;
-			updatePlaylistDisplay();
+			//updatePlaylistDisplay();
 		}
 
 		function addMusic(data) {
 			data.i = InternalPlaylist.length;
 			InternalPlaylist.push(data);
-			updatePlaylistDisplay();
+			//updatePlaylistDisplay();
 		}
 
 		function setMusic(i) {
@@ -233,34 +139,32 @@ document.onreadystatechange = () => {
 			playMusic(InternalPlaylist[i]);
 		}
 
-		//! Why did I do this, this is fundamentaly flawed wtf ???
-		//FML mannn
 		function playMusic(data) {
 			if(data == null) {
-				console.error("Tried to play, but data was null");
+				console.error("Tried to play, but data was null: ", data);
 				return;
 			}
 			changeMS(player, togglePause, data);
-			var src = `http://localhost/serveMusic.php?hash=${data.hash}.${data.data.dataformat}`;
-			var thumbSrc = `http://localhost/covers/${data.cover_hash}`;
+			var src = data.path;
+			var thumbSrc = data.tags.image;
 			if(player.currentSrc != src) {
 				player.pause();
 				player.src = src;
 				player.load();
 				player.currentTime = 0;
-				playbackLength.textContent = getTime(data.length);
+				//playbackLength.textContent = getTime(data.length);
 				setThumb(thumbSrc);
 				setTitle(data.tags.title);
-				RefreshVisualizer(player);
+				setArtist(data.tags.artist);
 				togglePause();
 				userdata.last_music_data = data;
 				WriteUserData(userdata);
 			}
-			pBodyAlbum.textContent = data.tags.album;
-			pBodyArtist.textContent = data.tags.artist;
-			PauseRPC();
-			SetRPC(data.tags.title, data.tags.artist, thumbSrc, data.tags.album);
-			StartRPC(0.001, data.length);
+			// pBodyAlbum.textContent = data.tags.album;
+			// pBodyArtist.textContent = data.tags.artist;
+			//PauseRPC();
+			//SetRPC(data.tags.title, data.tags.artist, thumbSrc, data.tags.album);
+			//StartRPC(0.001, data.length);
 		}
 
 		function playPrevious() {
@@ -273,7 +177,7 @@ document.onreadystatechange = () => {
 		}
 
 		function playNext() {
-			console.log("Playing Next Music... preincremented ptr=", pPtr);
+			console.log("Playing Next Music... ptr=", pPtr);
 			if(pPtr < InternalPlaylist.length-1) {
 				playMusic(InternalPlaylist[++pPtr]);
 			}
@@ -334,25 +238,6 @@ document.onreadystatechange = () => {
 			return line;
 		}
 
-		function createAlbumBox(data) {
-			let box = document.createElement("div");
-			let thumb = document.createElement("img");
-			let title = document.createElement("span");
-			let artist = document.createElement("span");
-
-			title.textContent = data.title;
-			artist.textContent = data.artist;
-			thumb.src = "http://localhost/covers/" + data.cover;
-			title.classList.add("album__text");
-			artist.classList.add("album__text");
-			thumb.classList.add("album__thumb");
-			box.classList.add("album__box");
-			box.appendChild(thumb);
-			box.appendChild(title);
-			box.appendChild(artist);
-			return box;
-		}
-
 		// je veux mourir
 		function fetchMusic(search = "") {
 			let xhr = new XMLHttpRequest();
@@ -373,25 +258,6 @@ document.onreadystatechange = () => {
 			xhr.send(null);
 		}
 
-		function fetchAlbum(search = "") {
-			let xhr = new XMLHttpRequest();
-			xhr.open("GET", `http://localhost/search.php?JSON_DATA={"title":"${search}","type":"album"}`);
-			xhr.setRequestHeader("Accept", "application/json");
-			xhr.setRequestHeader("Content-Type", "application/json");
-			xhr.onreadystatechange = function () {
-				if(xhr.readyState === 4) {
-					if(xhr.status === 200) {
-						const res = JSON.parse(xhr.responseText);
-						//console.log(res);
-						for(let i = 0; i < res.length; i++) {
-							wrapper.appendChild(createAlbumBox(res[i]));
-						}
-					}
-				}
-			};
-			xhr.send(null);
-		}
-
 		function getTime(s) {
 			var m = Math.floor(s/60);
 			var s = Math.floor(s%60);
@@ -405,15 +271,15 @@ document.onreadystatechange = () => {
 					return;
 				}
 				player.play();
-				pause.setAttribute('title', "Pause");
-				pause.innerHTML = '<i class="gg-play-pause-r"></i>';
-				StartRPC(player.currentTime, InternalPlaylist[pPtr].length);
+				//pause.setAttribute('title', "Pause");
+				//pause.innerHTML = '<i class="gg-play-pause-r"></i>';
+				//StartRPC(player.currentTime, InternalPlaylist[pPtr].length);
 				return;
 			}
 			player.pause();
-			pause.setAttribute('title', "Play");
-			pause.innerHTML = '<i class="gg-play-button-r"></i>';
-			PauseRPC();
+			//pause.setAttribute('title', "Play");
+			//pause.innerHTML = '<i class="gg-play-button-r"></i>';
+			//PauseRPC();
 		}
 
 		function moveMusicTimestampTo(_time) {	
@@ -430,8 +296,8 @@ document.onreadystatechange = () => {
 			if(_volume < 0) _volume = 0;
 			if(_volume > 100) _volume = 100;
 		
-			_volume = Math.floor(_volume);
-			ChangeDiff(_volume);
+			_volume = Math.trunc(_volume);
+			changeDiff(_volume);
 			showVToaster();
 			volumeSlider.style.width = `${_volume}%`
 			volumeText.textContent = `${_volume}%`
@@ -467,31 +333,16 @@ document.onreadystatechange = () => {
 		}
 
 		function refreshVisSize() {
-			var w = vwTOpx(40);
-			var h = vwTOpx(40);
+			var w = vwTOpx(50);
+			var h = vhTOpx(70);
 
-			if(w > 600) w = 600;
-			if(h > 600) h = 600;
-
+			if(w > 1024) w = 1024;
+			//if(h > 512) h = 512;
 			visCanvas.width = w;
 			visCanvas.height = h;
 
-			ChangeBarWidth(Math.floor(w/86));
+			changeBarWidth(Math.trunc(w/12), Math.trunc(w/28));
 		}
-
-		const homeBtn = document.getElementById("home-btn");
-		const musicBtn = document.getElementById("music-btn");
-		const albumBtn = document.getElementById("album-btn");
-		const artistBtn = document.getElementById("artist-btn");
-		const optionsBtn = document.getElementById("option-btn");
-
-		const controls = document.getElementById("playback__wrapper");
-		//const controlh = document.getElementById("playback__header");
-		const controlHide = document.getElementById("playback__showBtn");
-		
-		const pageTitle = document.getElementById("page__title");
-		const pageWrapper = document.getElementById("page__wrapper");
-		const wrapper = document.getElementById('inside__wrapper');
 
 		const pause = document.getElementById("playback__pause");
 		const playbackPrev = document.getElementById("playback__before");
@@ -501,41 +352,27 @@ document.onreadystatechange = () => {
 
 		const player = document.getElementById("player");
 		const progressWrapper = document.getElementsByClassName("playback__progressWrapper")[0];
-		const progressBodyWrapper = document.getElementsByClassName("playback__progressWrapper")[1];
-		const progress = document.getElementById("playbackProgress");
 		const progressBody = document.getElementById("pBody__progress");
-		//const progressHandle = document.getElementById("playbackHandle");
-		const playbackLength = document.getElementById("playback__length");
-		const playbackTime = document.getElementById("playback__time");
+		const playbackBodyBg = document.getElementById("bg-img");
 		const pBodyLength = document.getElementById("pBody__length");
 		const pBodyTime = document.getElementById("pBody__time");
-		const playbackMImg = document.getElementById("playback__minithumb");
-		const playbackMTitle = document.getElementById("playback__minititle");
 		const playbackImg = document.getElementById("playback__thumb");
 		const playbackTitle = document.getElementById("playback__title");
-		const playbackPlaylistDisplay = document.getElementById("playback__playlist");
-		const pBodyAlbum = document.getElementById("pBody__album");
-		const pBodyArtist = document.getElementById("pBody__artist");
 		const visCanvas = document.getElementById("visualiz");
-		const cRect = visCanvas.getBoundingClientRect();
 		const volumeSlider = document.getElementById("volumeSlider");
 		const volumeText = document.getElementById("volume__text");
 		const volumeToaster = document.getElementById("volume-toast");
 
 		progressWrapper.addEventListener("click", (e) => {
-			player.currentTime = player.duration*((e.clientX-progressWrapper.offsetLeft)/vwTOpx(40));
-		});
-
-		progressBodyWrapper.addEventListener("click", (e) => {
-			player.currentTime = player.duration*((e.clientX-progressBodyWrapper.offsetLeft)/progressBodyWrapper.offsetWidth);
+			player.currentTime = player.duration*((e.clientX-progressWrapper.offsetLeft)/progressWrapper.offsetWidth);
 		});
 		
 		player.addEventListener('timeupdate', () => {
 			var percent = (player.currentTime / player.duration) * 100;
-			progress.style.width = `${percent}%`;
+			//progress.style.width = `${percent}%`;
 			progressBody.style.width = `${percent}%`;
 			//progressHandle.style.left = `${percent}%`;
-			playbackTime.textContent = getTime(player.currentTime);
+			//playbackTime.textContent = getTime(player.currentTime);
 			pBodyTime.textContent = getTime(player.currentTime);
 			pBodyLength.textContent = getTime(player.duration);
 			userdata.playtime = player.currentTime;
@@ -544,13 +381,10 @@ document.onreadystatechange = () => {
 		});
 
 		player.addEventListener("ended", () => {
-			//togglePause();
 			playNext();
 		});
 		
-		CreateVisualizer(player, visCanvas);
-		/*if(userdata.last_music_data != null)
-			addMusic(userdata.last_music_data);*/
+		vHandle = setupVisualizer(visCanvas, player);
 		
 		clearPlaylist();
 		if(userdata.last_music_data != null) {
@@ -561,73 +395,10 @@ document.onreadystatechange = () => {
 		setMusicVolume(userdata.volume*100 || 50);
 		refreshVisSize();
 		player.currentTime = userdata.playtime || 0;
-		
-		if(userdata.last_page) {
-			changePageWithId(userdata.last_page);
-		} else {
-			changePageWithId("home");
-		}
-
-		if(userdata.playback_open) {
-			togglePlayback();
-		}
-
-		homeBtn.addEventListener('click', () => {
-			hidePlayback();
-			
-			if(userdata.last_page != "home") {
-				changePageWithId("home");
-			}
-		});
-
-		playbackPrev.addEventListener('click', () => {
-			playPrevious();
-		});
-
-		playbackNext.addEventListener('click', () => {
-			playNext();
-		});
-
-		musicBtn.addEventListener('click', () => {
-			hidePlayback();
-			if(userdata.last_page != "music") {
-				changePageWithId("music");
-			}
-		});
-
-		albumBtn.addEventListener('click', () => {
-			hidePlayback();
-			if(userdata.last_page != "album") {
-				changePageWithId("album");
-			}
-		});
-
-		artistBtn.addEventListener('click', () => {
-			hidePlayback();
-			if(userdata.last_page != "artist") {
-				changePageWithId("artist");
-			}
-		});
-
-		optionsBtn.addEventListener('click', () => {
-			hidePlayback();
-			if(userdata.last_page != "option") {
-				changePageWithId("option");
-			}
-		});
-
-		pause.addEventListener("click", () => {
-			togglePause();
-		});
-
-		controlHide.addEventListener('click', () => togglePlayback());
 
 		volumeToaster.addEventListener("animationend", () => {
 			volumeToaster.classList.add("hidden");
 		});
-
-		//visCanvas.addEventListener('mousemove', (e) => changeCursorCoords(e.clientX-358, e.y));
-		//visCanvas.addEventListener('mouseout', (e) => changeCursorCoords(-1, -1));
 
 		document.onclick = hideMenu;
 		cPlayNext.addEventListener("click", () => {
@@ -637,6 +408,19 @@ document.onreadystatechange = () => {
 
 		window.addEventListener("resize", () => {
 			refreshVisSize();
+		});
+
+		document.addEventListener("dragover", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+		});
+
+		document.addEventListener("drop", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+		    console.log(e.dataTransfer.files[0].path);
+			var w = GetMetadata(e.dataTransfer.files[0].path, "./cache/");
+			playMusic(w);
 		});
 
 		document.addEventListener("keydown", (e) => {
@@ -662,10 +446,15 @@ document.onreadystatechange = () => {
 					e.preventDefault();
 					moveMusicTimestampTo(player.currentTime + 10);
 					break;
+				case "F5":
+					e.preventDefault();
+					ipcRenderer.send('refresh');
 				default:
 					console.log(e.key);
 					break;
 			}
 		});
+		
 	}
+	
 }

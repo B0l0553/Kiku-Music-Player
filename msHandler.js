@@ -18,7 +18,7 @@ function changeMS(musicPlayer, tP, data) {
 
 	// Set album art (NOTE: image files must be hosted in "http" or "https" protocol to be shown)
 	trackInfo.artwork = [
-		{ src: `http://localhost/covers/${data.cover_hash}`, sizes: '512x512', type: 'image/jpg' }
+		{ src: data.tags.image, sizes: '512x512', type: 'image/jpg' }
 	];
 
 	// Then, we create a new MediaMetadata and pass our trackInfo JSON variable

@@ -27,6 +27,11 @@ body {
 	user-select: none;
 }
 
+@font-face {
+    font-family: 'MPLUS1Code';
+    src: url('./assets/fonts/MPLUS1Code-VariableFont_wght.ttf');
+}
+
 #titlebar {
 	top: 0;
 	display: block;
@@ -42,12 +47,6 @@ body {
 	margin-bottom: 32px;
 	padding: 8px;
 	overflow-y: auto;
-}
-
-.home__page {
-	display: flex;
-	flex-direction: column;
-	flex-wrap: nowrap;
 }
 
 #titlebar #drag-region {
@@ -117,44 +116,6 @@ body {
 	height: 16px;
 }
 
-#page-controls {
-	display: grid;
-	grid-template-columns: repeat(4, 48px);
-	position: absolute;
-	top: 0;
-	left: 0;
-	height: 100%;
-	-webkit-app-region: no-drag;
-}
-
-#page-controls .button {
-	grid-row: 1 / span 1;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	width: 100%;
-	height: 100%;
-	user-select: none;
-}
-
-#page-controls .button:hover {
-	background-color: rgba(255, 255, 255, 0.1);
-}
-
-#page-controls .button:active {
-	background-color: rgba(255, 255, 255, 0.2);
-}
-
-#page-controls .icon {
-	grid-row: 1 / span 1;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	width: 100%;
-	height: 100%;
-	user-select: none;
-}
-
 #playback__wrapper {
 	display: flex;
 	flex-direction: column;
@@ -169,24 +130,12 @@ body {
 }
 
 #playback__body {
-	background-color: #1A2933;
+	/*background-color: #1A2933;*/
 	height: 100%;
 	width: 100%;
 	display: flex;
 	flex-direction: row;
 	justify-content: center;
-	align-items: center;
-}
-
-#playback__header {
-	height: 32px;
-	background: rgba(255, 255, 255, 0.25);
-	backdrop-filter: blur(10px);
-	/*cursor: pointer;*/
-	/*justify-content: center;*/
-	display: flex;
-	flex-direction: row;
-	flex-wrap: nowrap;
 	align-items: center;
 }
 
@@ -201,9 +150,8 @@ body {
 }
 
 #playback__thumb {
-	width: 40vw;
-	max-width: 512px;
-	image-rendering: optimizeQuality;
+	max-width: 30vw;
+	max-height: 30vw;
 }
 
 #playback__title {
@@ -224,11 +172,6 @@ body {
 
 #title__container {
 	inline-size: 40vw;
-}
-
-#visualiz {
-	background-size: contain;
-	background-repeat: no-repeat;
 }
 
 #volume-toast {

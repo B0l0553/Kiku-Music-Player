@@ -7,10 +7,10 @@ function createWindow () {
     height: 768,
     frame: false,
     resizable: true,
-    minHeight: 512,
-    minWidth: 512,
+    minHeight: 500,
+    minWidth: 900,
     backgroundColor: '#fff',
-    icon: "icons/icon.jpg",
+    icon: "./assets/icons/icon.jpg",
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: true,

@@ -10,22 +10,9 @@
     <title>Akio Music Player</title>
   </head>
   <body>
+	<img id="bg-img" style="position: absolute; height: 110vh; width: 110vw; z-index: -1; left: -5vw; top: -5vh;"></img>
 	<header id="titlebar">
 		<div id="drag-region">
-			<div id="page-controls">
-				<div class="button" id="home-btn" title="Home">
-					<i class="gg-home-alt"></i>
-				</div>
-				<div class="button" id="music-btn" title="Musics">
-					<i class="gg-music"></i>
-				</div>
-				<div class="button" id="album-btn" title="Albums">
-					<i class="gg-disc"></i>
-				</div>
-				<div class="button" id="artist-btn" title="Artists">
-					<i class="gg-user-list"></i>
-				</div>
-			</div>
 			<div id="window-controls">
 				<div class="button" id="option-btn">
 					<i class="gg-options"></i>
@@ -42,9 +29,7 @@
 			</div>
 		</div>
 	</header>
-	
 	<div id="app" class="scrollbar-app">
-		
 		<div id="contextMenu" class="context-menu" style="display: none">
 			<ul>
 				<li><span id="context__playNext">Play Next</span></li>
@@ -52,56 +37,17 @@
 				<li><span>Add to playlist</span></li>
 			</ul>
 		</div>
-		<div id="playback__wrapper" class="hide">
-			<div id="playback__header">
-				<div id="playback__showBtn" class="playback__button" title="Open Playback">
-					<i class="gg-arrow-up-r"></i>
-				</div>
-				<div id="playback__before" class="playback__button" title="Play previous music">
-					<i class="gg-play-track-prev-r"></i>
-				</div>
-				<div id="playback__pause" class="playback__button" title="Play">
-					<i class="gg-play-button-r"></i>
-				</div>
-				<div id="playback__next" class="playback__button"  title="Skip current to next">
-					<i class="gg-play-track-next-r"></i>
-				</div>
-				<div id="playback__random" class="playback__button" title="Randomize">
-					<i class="gg-move-up"></i>
-				</div>
-				<div id="playback__repeat" class="playback__button" title="Repeat album">
-					<i class="gg-repeat"></i>
-				</div>
-				<!--<div class="separator-vertical"></div>-->
-				<div id="playback__time">
-					<span>0:00</span>
-				</div>
-				<div class="playback__progressWrapper">
-					<div id="playbackProgress" class="playback__progressBar"></div>
-					<!--<div id="playbackHandle" class="playback__progressHandle"></div>-->
-				</div>
-				<div id="playback__length">
-					<span>0:00</span>
-				</div>
-				<img id="playback__minithumb" height="32px" width="32px" />
-				<div id="playback__mtC">
-					<span id="playback__minititle">NO SONG</span>
-				</div>
-			</div>
+		<div id="playback__wrapper">
 			<div id="playback__body">
+				
 				<div class="wrapper flex-column">
-					<div class="wrapper nowrap flex-row">
-						<div class="wrapper">
-							<!--<img id="playback__thumb" draggable="false" />-->
-							<canvas id="visualiz"></canvas>
+					<div class="wrapper nowrap flex-row" style="align-items: center;">
+						<div class="wrapper" style="margin-right: 2vw;display: flex;justify-content: center;align-items: center;">
+							<img id="playback__thumb" draggable="false" />
 						</div>
-						<div class="wrapper flex-column" style="max-width: 40vw;">
-							<span id="playback__title"></span>
-							<div id="pBody__album"></div>
-							<div id="pBody__artist"></div>
-							<div id="playback__playlist">
-
-							</div>
+						<div class="wrapper flex-column" style="max-width: 50vw; justify-content: space-between; backdrop-filter: blur(10px) brightness(0.5); border-radius: 0.3rem;">
+							<canvas id="visualiz"></canvas>
+							<!-- <div id="playback__playlist"></div> -->
 						</div>
 					</div>
 					<div id="pbProgress__wrapper" class="playback__progressWrapper">
@@ -119,18 +65,7 @@
 				</div>
 			</div>
 		</div>
-
-		<div id="pages__wrapper">
-			<div class="home__page" id="page__wrapper">
-				<div id="page__title">
-					<h1>HOME</h1>
-					<!--<div class="button rounded" id="home-fetch-button">FETCH</div>-->
-				</div>
-				<div class="separator"></div>
-				<div class="wrapper flex-row" id="inside__wrapper"></div>
-			</div>
-		</div>
-		<div id="volume-toast">
+		<div id="volume-toast" class="hidden">
 			<i class="gg-volume"></i>
 			<div class="volume__sliderWrapper">
 				<div id="volumeSlider" class="volume__sliderBar"></div>
@@ -141,11 +76,11 @@
 	</div>
     <script src="./renderer.js"></script>
 	<script src="./vanilla-tilt.min.js"></script>
-	<script type="text/javascript">
+	<!-- <script type="text/javascript">
 		VanillaTilt.init(document.querySelector("#visualiz"), {
 			max: 5,
 			speed: 200
 		});
-	</script>
+	</script> -->
   </body>
 </html>
