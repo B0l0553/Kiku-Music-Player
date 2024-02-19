@@ -38,29 +38,54 @@
 			</ul>
 		</div>
 		<div id="playback__wrapper">
-			<div id="playback__body">
+			<div id="playback__body" style="overflow: hidden; display: flex; flex-direction: column;">
 				
-				<div class="wrapper flex-column">
-					<div class="wrapper nowrap flex-row" style="align-items: center;">
-						<div class="wrapper" style="margin-right: 2vw;display: flex;justify-content: center;align-items: center;">
-							<img id="playback__thumb" draggable="false" />
+				<div id="playback__window" class="wrapper flex-row">
+					<div class="wrapper" style="margin-right: 2vw;display: flex;justify-content: center;align-items: center; flex-direction: column;">
+						<img id="playback__thumb" draggable="false" />
+						<div class="control__wrapper">
+							<div class="control__button">
+								<i id="control__pause" class="gg-play-track-prev"></i>
+							</div>
+							<div class="control__button">
+								<i id="control__pause" class="gg-play-button"></i>
+							</div>
+							<div class="control__button">
+								<i id="control__pause" class="gg-play-track-next"></i>
+							</div>
 						</div>
-						<div class="wrapper flex-column" style="max-width: 50vw; justify-content: space-between; backdrop-filter: blur(10px) brightness(0.5); border-radius: 0.3rem;">
-							<canvas id="visualiz"></canvas>
-							<!-- <div id="playback__playlist"></div> -->
+						<div style="width: 100%; position:relative; margin-top: 1rem;">
+							<div id="pbProgress__wrapper" class="playback__progressWrapper">
+								<div id="pBody__progress" class="playback__progressBar"></div>
+								<!--<div id="playbackHandle" class="playback__progressHandle"></div>-->
+							</div>
+							<div class="pBody__timeinfo">
+								<div id="pBody__time">
+									<span>0:00</span>
+								</div>
+								<div id="pBody__length">
+									<span>0:00</span>
+								</div>
+							</div>
 						</div>
+						
 					</div>
-					<div id="pbProgress__wrapper" class="playback__progressWrapper">
-						<div id="pBody__progress" class="playback__progressBar"></div>
-						<!--<div id="playbackHandle" class="playback__progressHandle"></div>-->
-					</div>
-					<div class="pBody__timeinfo">
-						<div id="pBody__time">
-							<span>0:00</span>
-						</div>
-						<div id="pBody__length">
-							<span>0:00</span>
-						</div>
+					<canvas id="visualiz" style="margin-right: 0.75rem;"></canvas>
+					
+					<!-- <div id="playback__playlist"></div> -->
+					
+				</div>
+				
+			</div>
+			<div id="settings__body" class="hidden">
+				<div id="settings__wrapper">
+					<div id="settings__time"></div>
+					<div class="wrapper">
+						<div class="settings__title">Visualiser</div>
+						<label class="switch">
+							<input class="inputs" id="visuCheck" type="checkbox">
+							<span class="slider"></span>
+						</label>
 					</div>
 				</div>
 			</div>

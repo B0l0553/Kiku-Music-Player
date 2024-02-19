@@ -1,0 +1,10 @@
+{
+	"height": 59,
+	"width": 49,
+	"frameTick": 10,
+	"animations": {
+		"idle": 4,
+		"running": 7,
+		"barking": 10
+	}
+}

@@ -1,0 +1,18 @@
+{
+	"x": 46,
+	"y": -16,
+	"height": 32,
+	"width": 32,
+	"frameCount": 0,
+	"frameTick": 0,
+	"dependencies": [
+		"angry",
+		"happy",
+		"hungry",
+		"sleepy",
+		"asking",
+		"asked",
+		"question",
+		"love"
+	]
+}

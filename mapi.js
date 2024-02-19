@@ -45,23 +45,16 @@ class Album {
 }
 
 class Cache {
-	musics = [];
-	albums = [];	//* Already Scanned albums
-	toscan = [];	//? Musics files pending scan
-	remove = [];	// Temp for removal
-	u_favs = [];	// User favorites
+	last_music_data;
+	thumb;
 }
 
 class UsrData {
-	last_page;
-	playback_open = false;
 	volume;
 	playtime;
-	last_music_data;
-	//last_played;
-	//duration;
-	//title;
-	//thumb;
+	totalTime;
+	vis_mode;
+	wave_show;
 }
 
 function GetJSONFromFile(_path, callback) {
@@ -87,8 +80,6 @@ function GetSettings() {
 		var ap = new AppSettings();
 		console.log("Settings JSON Valid");
 		ap.cachePath 	=	json.cachePath;
-		ap.musicFolders = 	json.musicFolders;
-		ap.currentTheme =	json.currentTheme;
 		return ap;
 	}
 
@@ -104,11 +95,8 @@ function GetCache() {
 	if(json) {
 		var a = new Cache();
 		console.log("Cache JSON Valid");
-		a.albums = json.albums;
-		a.musics = json.musics;
-		a.toscan = json.toscan;
-		a.remove = json.remove;
-		a.u_favs = json.u_favs;
+		a.last_music_data 	= json.last_music_data || [];
+		a.thumb 			= json.thumb || "";
 		return a;
 	}
 
@@ -122,28 +110,34 @@ function GetUserData() {
 		return null;
 	})
 	
-	if(json) {
-		//console.log("UsrData JSON Valid");
-		var tu = new UsrData();
-		tu.playback_open 	= json.playback_open;
-		tu.last_page 		= json.last_page;
-		tu.volume 			= json.volume;
-		tu.playtime 		= json.playtime;
-		tu.last_music_data  = json.last_music_data;
-		//tu.last_played 		= json.last_played;
-		//tu.duration 		= json.duration;
-		//tu.title 			= json.title;
-		//tu.thumb 			= json.thumb;
-		return tu;
-	} 
+	var tu = new UsrData();
+	tu.volume 			= json.volume || .5;
+	tu.playtime 		= json.playtime || 0;
+	tu.totalTime		= json.totalTime || 0;
+	tu.playing			= json.playing || 0;
+	tu.vis_mode			= json.vis_mode || "bBezier";
+	tu.wave_show		= json.wave_show || true;
+	return tu;
+}
 
-	return new UsrData();
+function gHistory() {
+	var json = GetJSONFromFile(path.join(__dirname, "history.json"), (_path) => {
+		fs.writeFileSync(_path, JSON.stringify({}, null, 4));
+		return {};
+	})
+
+	return json;
+}
+
+function wHistory(_history) {
+	var fpath = path.join(__dirname, "history.json");
+	fs.writeFile(fpath, JSON.stringify(_history, null, 4), () => {});
 }
 
 function WriteUserData(_usrdata) {
 	//console.log("Writing to usrdata");
 	var fpath = path.join(__dirname, "usrdata.json");
-	fs.writeFile(fpath, JSON.stringify(_usrdata, null, 4), ()=>{});
+	fs.writeFileSync(fpath, JSON.stringify(_usrdata, null, 4));
 }
 
 function WriteCache(_albums) {
@@ -366,10 +360,13 @@ function getFileB64(_path) {
 }
 
 module.exports = {
+	GetJSONFromFile,
 	GetAlbums,
 	GetMusics,
 	GetMetadata,
 	GetSettings,
+	gHistory,
+	wHistory,
 	WriteSettings,
 	GetCache,
 	WriteCache,

@@ -1,12 +1,17 @@
 const { ipcRenderer, dialog, app, BrowserWindow } = require("electron");
 const fs = require("fs");
 const path = require("path")
-let InternalPlaylist=[],pPtr=0,loop=0,contextData=null,vHandle;
+let InternalPlaylist=[],pPtr=toPlay=loop=optionOpn=0,contextData=null,vHandle,visCanvas,chiCanvas;
 const {
 	GetUserData,
 	WriteUserData,
 	getFileB64,
-	GetMetadata
+	GetMetadata,
+	GetCache,
+	WriteCache,
+	gHistory,
+	wHistory,
+	GetJSONFromFile
 } = require("./mapi.js");
 
 const { 
@@ -17,16 +22,19 @@ const {
 	changeBarWidth,
 	changeDiff,
 	setArtist,
-	setTitle
+	setTitle,
+	changeVisSize,
+	setAlbum,
+	Chibi,
+	appendChibi,
+	setNextTitle,
+	chibis,
+	cObject
 } = require("./graphics.js");
 
 const {
 	changeMS
 } = require("./msHandler.js")
-
-window.onbeforeunload = () => {
-	ipcMain.removeAllListeners();
-}
 
 document.onreadystatechange = () => {
 	if(document.readyState === 'complete') {
@@ -43,32 +51,11 @@ document.onreadystatechange = () => {
 		});
 
 		const userdata = GetUserData();
-		console.log(userdata);
+		const cache = GetCache();
+		const history = gHistory();
 
 		function $(value) {
 			return document.getElementById(value);
-		}
-
-		function vwTOpx(value) {
-			var w = window,
-			  d = document,
-			  e = d.documentElement,
-			  g = d.getElementsByTagName('body')[0],
-			  x = w.innerWidth || e.clientWidth || g.clientWidth;
-		   
-			var result = (x*value)/100;
-			return(result);
-		}
-
-		function vhTOpx(value) {
-			var w = window,
-			  d = document,
-			  e = d.documentElement,
-			  g = d.getElementsByTagName('body')[0],
-			  y = w.innerHeight|| e.clientHeight|| g.clientHeight;
-		   
-			var result = (y*value)/100;
-			return(result);
 		}
 
 		function insertList(_element, _list, _basename = false) {
@@ -112,14 +99,14 @@ document.onreadystatechange = () => {
 		function setThumb(value) {
 			//playbackMImg.src = value;
 			playbackImg.src = value;
-			playbackBodyBg.style.backgroundImage = `url("${value.replace("\\", "/")}")`;
+			playbackBodyBg.style.backgroundImage = `url("${playbackImg.src}")`;
 			playbackBodyBg.style.backgroundSize = "120vw";
 			playbackBodyBg.style.backgroundPosition = "center";
 			playbackBodyBg.style.filter = "blur(32px) brightness(0.6)";
 
 			//visCanvas.style.backgroundImage = `url("${value}")`;
 			//changeBackground(playbackImg);
-			userdata.thumb = value;
+			cache.thumb = value;
 		}
 
 		function clearPlaylist() {
@@ -156,10 +143,24 @@ document.onreadystatechange = () => {
 				setThumb(thumbSrc);
 				setTitle(data.tags.title);
 				setArtist(data.tags.artist);
-				togglePause();
-				userdata.last_music_data = data;
-				WriteUserData(userdata);
+				setAlbum(data.tags.album);
+				cache.last_music_data = data;
+				WriteCache(cache);
+				if(userdata.playing || toPlay) {
+					toPlay = 0;
+					togglePause();
+					if(history[`${data.tags.title.toLowerCase()}-${data.tags.artist.toLowerCase()}`] == undefined) {
+						history[`${data.tags.title.toLowerCase()}-${data.tags.artist.toLowerCase()}`] = {};
+						history[`${data.tags.title.toLowerCase()}-${data.tags.artist.toLowerCase()}`]["timesPlayed"]=0;
+						history[`${data.tags.title.toLowerCase()}-${data.tags.artist.toLowerCase()}`]["path"]=data.path;
+					}
+					history[`${data.tags.title.toLowerCase()}-${data.tags.artist.toLowerCase()}`]["path"]=data.path;
+					history[`${data.tags.title.toLowerCase()}-${data.tags.artist.toLowerCase()}`]["timesPlayed"]++;
+					history[`${data.tags.title.toLowerCase()}-${data.tags.artist.toLowerCase()}`]["last_played"] = (new Date().getTime());
+					history.totalPlay++;
+				}
 			}
+			wHistory(history);
 			// pBodyAlbum.textContent = data.tags.album;
 			// pBodyArtist.textContent = data.tags.artist;
 			//PauseRPC();
@@ -185,7 +186,6 @@ document.onreadystatechange = () => {
 
 		function updatePlaylistDisplay() {
 			console.log("Updating Playlist display with new playlist: ", InternalPlaylist);
-			playbackPlaylistDisplay.textContent = "";
 			InternalPlaylist.forEach(music => {
 				playbackPlaylistDisplay.appendChild(createPlaylistLine(music));
 			})
@@ -238,26 +238,6 @@ document.onreadystatechange = () => {
 			return line;
 		}
 
-		// je veux mourir
-		function fetchMusic(search = "") {
-			let xhr = new XMLHttpRequest();
-			xhr.open("GET", `http://localhost/search.php?JSON_DATA={"title":"${search}"}`);
-			xhr.setRequestHeader("Accept", "application/json");
-			xhr.setRequestHeader("Content-Type", "application/json");
-			xhr.onreadystatechange = function () {
-				if(xhr.readyState === 4) {
-					if(xhr.status === 200) {
-						const res = JSON.parse(xhr.responseText);
-						//console.log(res);
-						for(let i = 0; i < res.length; i++) {
-							wrapper.appendChild(createMusicLine(res[i]));
-						}
-					}
-				}
-			};
-			xhr.send(null);
-		}
-
 		function getTime(s) {
 			var m = Math.floor(s/60);
 			var s = Math.floor(s%60);
@@ -271,11 +251,13 @@ document.onreadystatechange = () => {
 					return;
 				}
 				player.play();
+				userdata.playing = 1;
 				//pause.setAttribute('title', "Pause");
 				//pause.innerHTML = '<i class="gg-play-pause-r"></i>';
 				//StartRPC(player.currentTime, InternalPlaylist[pPtr].length);
 				return;
 			}
+			userdata.playing = 0;
 			player.pause();
 			//pause.setAttribute('title', "Play");
 			//pause.innerHTML = '<i class="gg-play-button-r"></i>';
@@ -332,16 +314,29 @@ document.onreadystatechange = () => {
 			}
 		}
 
-		function refreshVisSize() {
-			var w = vwTOpx(50);
-			var h = vhTOpx(70);
+		function sec2time(timeInSeconds) {
+			var pad = function(num, size) { return ('000' + num).slice(size * -1); },
+			time = parseFloat(timeInSeconds).toFixed(3),
+			hours = Math.floor(time / 60 / 60),
+			minutes = Math.floor(time / 60) % 60,
+			seconds = Math.floor(time - minutes * 60),
+			milliseconds = time.slice(-3);
+		
+			return pad(hours, 2) + ':' + pad(minutes, 2) + ':' + pad(seconds, 2) + ',' + pad(milliseconds, 3);
+		}
 
-			if(w > 1024) w = 1024;
-			//if(h > 512) h = 512;
-			visCanvas.width = w;
-			visCanvas.height = h;
+		function addChibi(folder) {
+			var sprite = path.join(__dirname, `assets/sprites/${folder}/sprite.png`);
+			var json = path.join(__dirname, `assets/sprites/${folder}/spriteInfo.json`);
+			var chb = new Chibi(folder, sprite, GetJSONFromFile(json));
+			chb.x = Math.round(Math.random() * (visCanvas.width - 1) + 1);
+			
+			var spriteB = path.join(__dirname, `assets/sprites/misc/speechBubble.png`);
+			var jsonB = path.join(__dirname, `assets/sprites/misc/speechBubble.json`);
 
-			changeBarWidth(Math.trunc(w/12), Math.trunc(w/28));
+			var sbb = new cObject("speechBubble", spriteB, GetJSONFromFile(jsonB));
+			chb.attachObject(sbb);
+			appendChibi(chb);
 		}
 
 		const pause = document.getElementById("playback__pause");
@@ -358,42 +353,70 @@ document.onreadystatechange = () => {
 		const pBodyTime = document.getElementById("pBody__time");
 		const playbackImg = document.getElementById("playback__thumb");
 		const playbackTitle = document.getElementById("playback__title");
-		const visCanvas = document.getElementById("visualiz");
+		const playbackWin = document.getElementById("playback__window");
+		visCanvas = document.getElementById("visualiz");
 		const volumeSlider = document.getElementById("volumeSlider");
 		const volumeText = document.getElementById("volume__text");
 		const volumeToaster = document.getElementById("volume-toast");
+		const test = document.getElementById("time");
+		const formatSeconds = s => (new Date(s * 100)).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0];
 
 		progressWrapper.addEventListener("click", (e) => {
-			player.currentTime = player.duration*((e.clientX-progressWrapper.offsetLeft)/progressWrapper.offsetWidth);
+			var r = progressWrapper.getBoundingClientRect();
+			player.currentTime = player.duration*((e.clientX-r.x)/r.width);
 		});
-		
+
 		player.addEventListener('timeupdate', () => {
 			var percent = (player.currentTime / player.duration) * 100;
-			//progress.style.width = `${percent}%`;
 			progressBody.style.width = `${percent}%`;
-			//progressHandle.style.left = `${percent}%`;
-			//playbackTime.textContent = getTime(player.currentTime);
 			pBodyTime.textContent = getTime(player.currentTime);
 			pBodyLength.textContent = getTime(player.duration);
 			userdata.playtime = player.currentTime;
 			userdata.volume = player.volume;
-			WriteUserData(userdata);
 		});
+		
 
 		player.addEventListener("ended", () => {
+			userdata.playing = 0;
 			playNext();
 		});
+
+		
 		
 		vHandle = setupVisualizer(visCanvas, player);
+		vHandle.setDecibels(-63, -27);
+		vHandle.setSmoothing(0.2);
+		vHandle.setFftSize(4096);
+		vHandle.setMode(userdata.vis_mode, visCanvas);
+		vHandle.setRefreshRate(60);
+		vHandle.showWaveform = false;
+		//vHandle.showChibis();
+
+		addChibi("jolteon");
+		addChibi("eevee");
+		addChibi("vaporeon");
+		addChibi("meowth");
+
+		setTimeout(() => changeVisSize(visCanvas), 250);
+		setInterval(() => {
+			WriteUserData(userdata);
+		}, 1000);
 		
+		setInterval(() => {
+			if(userdata.playing) {
+				userdata.totalTime += .1
+				//(userdata.totalTime/10).toLocaleString('en-US', { minimumFractionDigits: 1 });
+				$("settings__time").textContent = (Math.trunc(userdata.totalTime*10)/100).toLocaleString("en-US", {minimumFractionDigits: 2});
+				$("settings__time").textContent = $("settings__time").textContent.replace(/,\s?/g, "");
+			}
+		}, 10);
+		$("settings__time").textContent = "You've listened to music for " + userdata.totalTime + " while using this app";
+		setMusicVolume(userdata.volume*100 || 50);
 		clearPlaylist();
-		if(userdata.last_music_data != null) {
-			addMusic(userdata.last_music_data);
+		if(cache.last_music_data != null) {
+			addMusic(cache.last_music_data);
 			playNext();
 		}
-		
-		setMusicVolume(userdata.volume*100 || 50);
-		refreshVisSize();
 		player.currentTime = userdata.playtime || 0;
 
 		volumeToaster.addEventListener("animationend", () => {
@@ -401,13 +424,24 @@ document.onreadystatechange = () => {
 		});
 
 		document.onclick = hideMenu;
-		cPlayNext.addEventListener("click", () => {
+		$("option-btn").addEventListener("click", () => {
+			$("settings__body").classList.toggle("hidden");
+		});
 
+		$("settings__body").addEventListener("click", (e) => {
+			e.target.classList.toggle("hidden");
+		});
+
+		$("settings__wrapper").addEventListener("click", (e) => {
+			//e.preventDefault();
+			e.stopPropagation();
+		});
+		cPlayNext.addEventListener("click", () => {
 			addMusic(contextData);
-		})
+		});
 
 		window.addEventListener("resize", () => {
-			refreshVisSize();
+			changeVisSize(visCanvas);
 		});
 
 		document.addEventListener("dragover", (e) => {
@@ -418,8 +452,9 @@ document.onreadystatechange = () => {
 		document.addEventListener("drop", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-		    console.log(e.dataTransfer.files[0].path);
 			var w = GetMetadata(e.dataTransfer.files[0].path, __dirname + "/cache/");
+			console.log(w);
+			toPlay = 1
 			playMusic(w);
 		});
 
@@ -429,14 +464,19 @@ document.onreadystatechange = () => {
 				case " ":
 					e.preventDefault();
 					togglePause();
+					chibis.forEach((c) => {
+						if(c.y + c.height + c.dy >= visCanvas.height) c.dy = -(Math.random() * (2.5 - 1) + 1 );
+					});
 					break;
 				case "ArrowUp":
 					e.preventDefault();
 					setMusicVolume(player.volume*100 + 2);
+					//vHandle.setDecibels(-55+(30*(player.volume-0.5)), -20+(30*(player.volume-0.5)));
 					break;
 				case "ArrowDown":
 					e.preventDefault();
 					setMusicVolume(player.volume*100 - 2);
+					//vHandle.setDecibels(-55+(30*(player.volume-0.5)), -20+(30*(player.volume-0.5)));
 					break;
 				case "ArrowLeft":
 					e.preventDefault();
@@ -455,6 +495,11 @@ document.onreadystatechange = () => {
 			}
 		});
 		
+		window.onbeforeunload = () => {
+			ipcMain.removeAllListeners();
+			WriteCache(cache);
+			WriteUserData(userdata);
+			wHistory(history);
+		}
 	}
-	
 }
