@@ -2,6 +2,7 @@ node_modules/
 Cache/
 usrdata.json
 cache.json
+history.json
 *.bat
 rpcApi.js
 kmp-win32-x64/
