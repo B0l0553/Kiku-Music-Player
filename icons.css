@@ -404,7 +404,6 @@
     top: 6px;
     left: 9px
 }
-
 .gg-play-pause {
     box-sizing: border-box;
     position: relative;
@@ -413,7 +412,8 @@
     width: 8px;
     height: 10px;
     border-left: 3px solid;
-    border-right: 3px solid
+    border-right: 3px solid;
+    margin: 6px 7px 6px 7px;
 }
 
 .gg-play-track-next {

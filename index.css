@@ -310,10 +310,6 @@ body {
 	margin-right: 1rem;
 }
 
-.gg-play-pause {
-	margin: 6px 7px 6px 7px;
-}
-
 .control__button:hover {
 	cursor: pointer;
 }
@@ -324,7 +320,6 @@ body {
 	width: 60px;
 	height: 34px;
 }
-  
 
 .switch .inputs {
 	opacity: 0;
@@ -358,7 +353,7 @@ body {
   
 .inputs:checked + .slider {
 	background-color: #2196F3;
-  }
+}
   
 .inputs:focus + .slider {
 	box-shadow: 0 0 1px #2196F3;
@@ -378,10 +373,6 @@ body {
 	margin-top: 4px;
 }
 
-.slidecontainer {
-	width: 40vw;
-}
-
 .playback__button {
 	display: flex;
 	justify-content: center;
@@ -397,44 +388,9 @@ body {
 	color: #000;
 }
 
-.hide {
-	transform: translate(0px, calc(100vh - 64px));
-}
-
-#page__title {
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-	justify-content: center;
-	font-size: 2.5rem;
-}
-
-.dummy {
-	height: 6rem;
-	/*animation: 1s ease loading alternate infinite;*/
-	min-width: 10rem;
-	border-radius: 0.35rem;
-	margin-right: 0.5rem;
-	content-visibility: auto;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	border: transparent 2px solid;
-	transition: border-color 500ms;
-	background: rgba(255, 255, 255, 0.05);
-}
-
-.dummy:hover {
-	border-color: violet;
-}
-
 .hidden {
 	visibility: collapse !important;
 	display: none !important;
-}
-
-.hide-context {
-	opacity: 0%;
 }
 
 .separator-vertical {
@@ -453,20 +409,7 @@ body {
 	margin-bottom: 0.5rem;
 }
 
-.separator-title {
-	display: flex;
-	flex-direction: row;
-	margin-top: 0.5rem;
-	margin-bottom: 0.5rem;
-	user-select: none;
-}
-
-.separator-text {
-	margin-right: 1rem;
-}
-
 .wrapper {
-	
 	min-height: 7rem;
 	padding: 0.75rem;
 	display: flex;
@@ -475,36 +418,6 @@ body {
 	border: transparent solid 2px;
 	/*margin-bottom: 2rem;*/
 	white-space: nowrap;
-}
-
-.border-an {
-	border: transparent solid 2px;
-}
-
-.bg {
-	background:rgba(255, 255, 255, 0.05);
-}
-
-.mb-2 {
-	margin-bottom: 2rem;
-}
-
-.flex-row {
-	flex-direction: row;
-	flex-wrap: wrap;
-}
-
-.flex-column {
-	flex-direction: column;
-	flex-wrap: wrap;
-}
-
-.nowrap {
-	flex-wrap: nowrap;
-}
-
-.border-an:hover {
-	border:rgba(255, 255, 255, 0.2) solid 2px;
 }
 
 .music__line {
@@ -536,31 +449,6 @@ body {
 	border: transparent solid 2px;
 	background-color: rgba(0, 0, 0, 0.644);
 	padding: .5rem;
-}
-
-.smoll-text {
-	font-size: 0.75rem;
-	font-weight: 600;
-	margin: 0.25rem;
-}
-
-.striped {
-	background: repeating-linear-gradient(
-		45deg, rgba(255, 208, 0, 0.5), rgba(255, 208, 0, 0.5) 0.50rem, transparent 0px, transparent 1rem
-	);
-}
-
-.rounded {
-	border-radius: 0.5rem;
-}
-
-.opt-container {
-	display: flex;
-	flex-direction: column;
-}
-
-.setting-title {
-	margin-right: 1rem;
 }
 
 .playback__progressWrapper {
@@ -626,145 +514,6 @@ body {
 	font-size: .75rem;
 }
 
-.settings__cacheWrapper {
-	background: #17252e;
-	border-radius: 0.25rem;
-	padding: 0.5rem;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-}
-
-#settings__cacheAdvancedWrapper {
-	visibility: collapse;
-	display: none;
-}
-
-#settings__cacheAdvancedWrapper.visible {
-	visibility: visible;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-}
-
-.settings__cacheListWrapper {
-	display: flex;
-	flex-direction: column;
-	margin: 0.25rem;
-	flex-wrap: wrap;
-	justify-content: center;
-}
-
-.settings__list {
-	display: flex;
-	flex-direction: column;
-	max-height: 10rem;
-	width: 100%;
-	margin-top: 0.25rem;
-	margin-bottom: 0.75rem;
-	font-size: 0.75rem;
-	border: rgba(255, 255, 255, 1) solid;
-	border-width: 2px 2px 2px 0px;
-	overflow: auto;
-}
-
-.settings__list.list__nothing {
-	justify-content: center;
-	align-items: center;
-	font-size: 2.5rem;
-	border: #00000000 2px solid;
-}
-
-.settings__list.list__nothing:hover {
-	border-color:rgba(255, 255, 255, 0.2);
-}
-
-.settings__list .list__element {
-	color: white;
-	display: flex;
-	flex-direction: row;
-	flex-wrap: nowrap;
-	border: #FFF solid;
-	border-width: 0px 0px 0px 2px;
-	padding-left: 8px;
-	justify-content: space-between;
-	padding-top: 0.1rem;
-	padding-bottom: 0.1rem;
-	/*font-size: 1rem;*/
-}
-
-.settings__list .list__element:hover {
-	background: rgb(192, 159, 255);
-	color: black;
-	font-weight: 700;
-	border-color: black;
-	
-}
-
-.settings__inputWrapper {
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-}
-
-.settings__inputWrapper.between {
-	justify-content: space-between;
-}
-
-.settings__inputWrapper.centered {
-	justify-content: center;
-}
-
-.settings__inputWrapper .button {
-	background: #004b7e;
-	border-radius: 0.25rem;
-	border: solid transparent 0.125rem;
-	justify-content: center;
-	align-items: center;
-	display: flex;
-	transition: all 250ms;
-	cursor: pointer;
-	padding: 4px;
-	margin-left: 1rem;
-	font-weight: 900;
-}
-
-.settings__inputWrapper .button.icon {
-	background: #004b7e;
-	border-radius: 0.25rem;
-	border: solid transparent 0.125rem;
-	justify-content: center;
-	align-items: center;
-	display: flex;
-	transition: all 250ms;
-	cursor: pointer;
-	padding: 4px;
-	font-size: small;
-	height: 2rem;
-	width: 2rem;
-	margin-left: 1rem;
-}
-
-.settings__cacheListWrapper .button.icon:hover {
-	border-color: #a778ff;
-}
-
-.settings__cacheListWrapper .button:hover {
-	border-color: #a778ff;
-}
-
-.settings__cacheListWrapper .button:active {
-	filter: invert(1);
-	
-	/*background: #FFF;
-	color: #000;*/
-}
-
-.settings__inputWrapper input[type="text"] {
-	height: 1.5rem;
-	width: 20rem;
-}
-
 .scrollbar-app::-webkit-scrollbar-track {
 	background-color: #1A2933;
 }
@@ -784,35 +533,6 @@ body {
 	background-color: #FF9100; 
 }
 
-.context-menu {
-	position: absolute;
-	text-align: center;
-	background: lightgray;
-	border: 1px solid black;
-}
-
-.context-menu ul {
-	padding: 0px;
-	margin: 0px;
-	min-width: 150px;
-	list-style: none;
-}
-
-.context-menu ul li {
-	padding-bottom: 7px;
-	padding-top: 7px;
-	border: 1px solid black;
-}
-
-.context-menu ul li a {
-	text-decoration: none;
-	color: black;
-}
-
-.context-menu ul li:hover {
-	background: darkgray;
-}
-
 .album__box {
 	display: flex;
 	flex-direction: column;
@@ -823,22 +543,6 @@ body {
 	margin: 0.5rem;
 }
 
-.album__thumb {
-	width: 100%;
-}
-.album__text {
-	font-size: .75rem;
-	text-wrap: wrap;
-}
-
-.test {
-	animation: leftright 3s infinite alternate;
-}
-
-.hidden {
-	opacity: 0%;
-}
-
 .hideAnim {
 	animation: h 2.5s normal;
 }
@@ -847,9 +551,4 @@ body {
 	100% { opacity: 0%; }
 	50% { opacity: 100%; }
 	0% { opacity: 100%; }
-}
-
-@keyframes loading {
-	0% { background: rgba(255, 255, 255, 0.05); }
-	100% { background: rgba(255, 255, 255, 0.15); }
 }
