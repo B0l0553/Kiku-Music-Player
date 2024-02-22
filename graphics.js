@@ -586,7 +586,6 @@ function renderFrame(visualiser, canvas, ctx) {
 	
 	drawText(0, 25+taSize/2, ta, "MPLUS1Code", `${taSize}`);
 	drawText(0, 75+tftSize/1.25, title, "MPLUS1Code", `${tftSize}`);
-
 	ctx.beginPath();
 	ctx.strokeStyle = "white";
 	ctx.lineWidth = 2;

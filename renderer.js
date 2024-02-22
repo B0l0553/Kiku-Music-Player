@@ -221,11 +221,11 @@ document.onreadystatechange = () => {
 			if(_volume > 100) _volume = 100;
 		
 			_volume = Math.trunc(_volume);
-			//vHandle.setDecibels(-96+(33*(1-player.volume)), -(27*(1-player.volume)));
 			showVToaster();
 			volumeSlider.style.width = `${_volume}%`
 			volumeText.textContent = `${_volume}%`
 			player.volume = _volume/100;
+			vHandle.setDecibels((player.volume) * (-50 + 66.3) - 66.3, (player.volume) * (-20 + 30) - 32);
 		}
 
 		function showVToaster() {
