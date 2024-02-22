@@ -45,13 +45,13 @@
 						<img id="playback__thumb" draggable="false" />
 						<div class="control__wrapper">
 							<div class="control__button">
-								<i id="control__pause" class="gg-play-track-prev"></i>
+								<i id="control__prev" class="gg-play-track-prev"></i>
 							</div>
 							<div class="control__button">
 								<i id="control__pause" class="gg-play-button"></i>
 							</div>
 							<div class="control__button">
-								<i id="control__pause" class="gg-play-track-next"></i>
+								<i id="control__next" class="gg-play-track-next"></i>
 							</div>
 						</div>
 						<div style="width: 100%; position:relative; margin-top: 1rem;">
@@ -71,12 +71,16 @@
 						
 					</div>
 					<canvas id="visualiz" style="margin-right: 0.75rem;"></canvas>
-					
-					<!-- <div id="playback__playlist"></div> -->
-					
 				</div>
-				
 			</div>
+			
+			<div id="playlist__body" class="hide">
+				<div id="playlist__wrapper" class="scrollbar-app"></div>
+				<div id="playlist__header" class="hide">
+					<i class="gg-disc" ></i>
+				</div>
+			</div>
+			
 			<div id="settings__body" class="hidden">
 				<div id="settings__wrapper">
 					<div id="settings__time"></div>

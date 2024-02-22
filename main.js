@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require("path");
+const mapi = require("./mapi");
 
 function createWindow () {
   const win = new BrowserWindow({
@@ -27,13 +28,19 @@ app.whenReady().then(() => {
     win.minimize();
   });
 
-  ipcMain.on("refresh", (event) => {
+  ipcMain.on("refresh", (event, arg) => {
     const win = BrowserWindow.fromWebContents(event.sender);
+    mapi.WriteUserData(arg[0]);
+    mapi.WriteCache(arg[1]);
+    mapi.wHistory(arg[2]);
     win.reload();
   });
 
-  ipcMain.on("close", (event) => {
+  ipcMain.on("close", (event, arg) => {
     const win = BrowserWindow.fromWebContents(event.sender);
+    mapi.WriteUserData(arg[0]);
+    mapi.WriteCache(arg[1]);
+    mapi.wHistory(arg[2]);
     win.close();
 });
   

@@ -377,13 +377,12 @@ function renderFrame(visualiser, canvas, ctx) {
 			
 		}
 		// curve through the last two bp
-		ctx.quadraticCurveTo(bp[bp.length-1].x+bp.length*spacing+barWidth/2-offsetRight, bp[bp.length-1].y+canvas.height-offsetBottom, canvas.width+barWidth/2, canvas.height- ctx.lineWidth-offsetBottom);
+		ctx.quadraticCurveTo(bp[bp.length-1].x+bp.length*spacing+barWidth/2-offsetRight, bp[bp.length-1].y+canvas.height- ctx.lineWidth-offsetBottom, canvas.width+barWidth/2, canvas.height- ctx.lineWidth-offsetBottom);
 		if(filled) {
 			ctx.lineTo(canvas.width, canvas.height-offsetBottom);
 			ctx.lineTo(0, canvas.height-offsetBottom);
 			ctx.fill();
 		} else {
-			
 			ctx.stroke();
 		}
 		ctx.closePath();

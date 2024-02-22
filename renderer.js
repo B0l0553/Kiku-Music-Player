@@ -1,7 +1,7 @@
 const { ipcRenderer, dialog, app, BrowserWindow } = require("electron");
 const fs = require("fs");
 const path = require("path")
-let InternalPlaylist=[],pPtr=toPlay=loop=optionOpn=0,contextData=null,vHandle,visCanvas,chiCanvas;
+let InternalPlaylist=[],pPtr=toPlay=loop=optionOpn=0,contextData=null,vHandle,visCanvas;
 const {
 	GetUserData,
 	WriteUserData,
@@ -43,11 +43,11 @@ document.onreadystatechange = () => {
 		});
 		
 		document.getElementById('close-button').addEventListener("click", () => {
-			ipcRenderer.send("close");
+			ipcRenderer.send("close", [userdata, cache, history]);
 		});
 		
 		document.getElementById('refresh-button').addEventListener("click", () => {
-			ipcRenderer.send('refresh');
+			ipcRenderer.send('refresh', [userdata, cache, history]);
 		});
 
 		const userdata = GetUserData();
@@ -58,70 +58,60 @@ document.onreadystatechange = () => {
 			return document.getElementById(value);
 		}
 
-		function insertList(_element, _list, _basename = false) {
-			if(!_list) return;
-			if(_list.length === 0) {
-				const fel = document.getElementById(_element);
-				fel.classList.add("list__nothing");
-				fel.innerText = "Nothing :(";
-				return;
+		function createMPWrapper(data) {
+			var wtt = document.createElement("div");
+			wtt.textContent = data.tags.title;
+			var wal = document.createElement("div");
+			wal.textContent = data.tags.album;
+			var wat = document.createElement("div");
+			wat.textContent = data.tags.artist;
+			var wtm = document.createElement("div");
+			wtm.textContent = data.tags.length;
+			var inf = document.createElement("div");
+
+			inf.appendChild(wtt);
+			inf.appendChild(wal);
+			inf.appendChild(wat);
+			inf.appendChild(wtm);
+
+			var ico = document.createElement("img");
+
+			ico.src = data.tags.image;
+
+			var twr = document.createElement("div");
+			twr.classList.add("playlist__music")
+			twr.appendChild(ico);
+			twr.appendChild(inf);
+			twr.onclick = () => {
+				setMusic(data.i);
 			}
 
-			const fel = document.getElementById(_element);
-			_list.forEach(el => {
-				const nsp = document.createElement("span");
-				if(_basename) nsp.textContent = path.basename(el);
-				else nsp.textContent = el;
-				nsp.classList.add("list__element");
-				fel.appendChild(nsp);
-			})
-
-			const title = document.getElementById(_element + "Title");
-			if(title !== undefined && title) {
-				title.innerText = `Waiting to be scanned ( ${_list.length} )`;
-			}
-		}
-
-		function deleteFromListWithValue(_list, _value) {
-			if(!_value || !_list) return;
-			
-			const fel = document.getElementById(_list);
-			fel.childNodes.forEach((value, key) => {
-				if(value.textContent == _value) {
-					fel.removeChild(value);
-					//return;
-				}
-			});
-
-			//console.log(`No childs with content: ${_value} to remove!`);
+			return twr;
 		}
 
 		function setThumb(value) {
-			//playbackMImg.src = value;
 			playbackImg.src = value;
 			playbackBodyBg.style.backgroundImage = `url("${playbackImg.src}")`;
 			playbackBodyBg.style.backgroundSize = "120vw";
 			playbackBodyBg.style.backgroundPosition = "center";
 			playbackBodyBg.style.filter = "blur(32px) brightness(0.6)";
-
-			//visCanvas.style.backgroundImage = `url("${value}")`;
-			//changeBackground(playbackImg);
 			cache.thumb = value;
 		}
 
 		function clearPlaylist() {
 			InternalPlaylist = [];
-			pPtr = -1;
-			//updatePlaylistDisplay();
+			resetPointer();
+			$("playlist__wrapper").textContent = "";
 		}
 
 		function addMusic(data) {
 			data.i = InternalPlaylist.length;
 			InternalPlaylist.push(data);
-			//updatePlaylistDisplay();
+			$("playlist__wrapper").appendChild(createMPWrapper(data));
 		}
 
 		function setMusic(i) {
+			if(i == pPtr || i > InternalPlaylist.length-1 || i < 0) return;
 			pPtr = i;
 			playMusic(InternalPlaylist[i]);
 		}
@@ -161,11 +151,6 @@ document.onreadystatechange = () => {
 				}
 			}
 			wHistory(history);
-			// pBodyAlbum.textContent = data.tags.album;
-			// pBodyArtist.textContent = data.tags.artist;
-			//PauseRPC();
-			//SetRPC(data.tags.title, data.tags.artist, thumbSrc, data.tags.album);
-			//StartRPC(0.001, data.length);
 		}
 
 		function playPrevious() {
@@ -183,59 +168,18 @@ document.onreadystatechange = () => {
 				playMusic(InternalPlaylist[++pPtr]);
 			}
 		}
-
-		function updatePlaylistDisplay() {
-			console.log("Updating Playlist display with new playlist: ", InternalPlaylist);
-			InternalPlaylist.forEach(music => {
-				playbackPlaylistDisplay.appendChild(createPlaylistLine(music));
-			})
+		
+		function playCurrent() {
+			if(pPtr < InternalPlaylist.length-1 && pPtr >= 0) {
+				playMusic(InternalPlaylist[pPtr]);
+			} else {
+				resetPointer();
+				playMusic(InternalPlaylist[pPtr]);
+			}
 		}
 
-		function createPlaylistLine(data) {
-			let line = document.createElement('div');
-			let title = document.createElement('div');
-			let length = document.createElement('div');
-			line.classList.add("playlist__line");
-			line.addEventListener('click', () => setMusic(data.i));
-			title.textContent = data.tags.title;
-			title.classList.add("item");
-			length.textContent = getTime(data.length);
-			length.classList.add("item");
-			line.appendChild(title);
-			line.appendChild(length);
-			return line;
-		}
-
-		function createMusicLine(data) {
-			let line = document.createElement('div');
-			let title = document.createElement('div');
-			let album = document.createElement('div');
-			let artist = document.createElement('div');
-			let length = document.createElement('div');
-
-			line.classList.add("music__line");
-			line.addEventListener('click', () => {
-				clearPlaylist();
-				addMusic(data);
-				playNext();
-
-			} );
-			line.addEventListener('contextmenu', (e) => rightClick(e, data));
-
-			title.textContent = data.tags.title;
-			title.classList.add("item");
-			album.textContent = data.tags.album;
-			album.classList.add("item");
-			artist.textContent = data.tags.artist;
-			artist.classList.add("item");
-			length.textContent = getTime(data.length);
-			length.classList.add("item");
-
-			line.appendChild(title);
-			line.appendChild(album);
-			line.appendChild(artist);
-			line.appendChild(length);
-			return line;
+		function resetPointer() {
+			pPtr = 0;
 		}
 
 		function getTime(s) {
@@ -253,12 +197,13 @@ document.onreadystatechange = () => {
 				player.play();
 				userdata.playing = 1;
 				//pause.setAttribute('title', "Pause");
-				//pause.innerHTML = '<i class="gg-play-pause-r"></i>';
+				$("control__pause").classList.value = "gg-play-pause";
 				//StartRPC(player.currentTime, InternalPlaylist[pPtr].length);
 				return;
 			}
 			userdata.playing = 0;
 			player.pause();
+			$("control__pause").classList.value = "gg-play-button";
 			//pause.setAttribute('title', "Play");
 			//pause.innerHTML = '<i class="gg-play-button-r"></i>';
 			//PauseRPC();
@@ -339,12 +284,7 @@ document.onreadystatechange = () => {
 			appendChibi(chb);
 		}
 
-		const pause = document.getElementById("playback__pause");
-		const playbackPrev = document.getElementById("playback__before");
-		const playbackNext = document.getElementById("playback__next");
-
-		const cPlayNext = document.getElementById("context__playNext");
-
+		const playlistBody = $("playlist__body");
 		const player = document.getElementById("player");
 		const progressWrapper = document.getElementsByClassName("playback__progressWrapper")[0];
 		const progressBody = document.getElementById("pBody__progress");
@@ -378,10 +318,9 @@ document.onreadystatechange = () => {
 
 		player.addEventListener("ended", () => {
 			userdata.playing = 0;
+			toPlay = 1;
 			playNext();
 		});
-
-		
 		
 		vHandle = setupVisualizer(visCanvas, player);
 		vHandle.setDecibels(-63, -27);
@@ -389,8 +328,10 @@ document.onreadystatechange = () => {
 		vHandle.setFftSize(4096);
 		vHandle.setMode(userdata.vis_mode, visCanvas);
 		vHandle.setRefreshRate(60);
-		vHandle.showWaveform = false;
-		//vHandle.showChibis();
+		vHandle.showWaveform = userdata.wave_show;
+		if(userdata.showchibi) {
+			vHandle.showChibis();
+		}
 
 		addChibi("jolteon");
 		addChibi("eevee");
@@ -400,7 +341,7 @@ document.onreadystatechange = () => {
 		setTimeout(() => changeVisSize(visCanvas), 250);
 		setInterval(() => {
 			WriteUserData(userdata);
-		}, 1000);
+		}, 10000);
 		
 		setInterval(() => {
 			if(userdata.playing) {
@@ -413,9 +354,10 @@ document.onreadystatechange = () => {
 		$("settings__time").textContent = "You've listened to music for " + userdata.totalTime + " while using this app";
 		setMusicVolume(userdata.volume*100 || 50);
 		clearPlaylist();
-		if(cache.last_music_data != null) {
+		console.log(cache.last_music_data.length)
+		if(cache.last_music_data != 0) {
 			addMusic(cache.last_music_data);
-			playNext();
+			playCurrent();
 		}
 		player.currentTime = userdata.playtime || 0;
 
@@ -436,9 +378,27 @@ document.onreadystatechange = () => {
 			//e.preventDefault();
 			e.stopPropagation();
 		});
-		cPlayNext.addEventListener("click", () => {
-			addMusic(contextData);
+
+		$("control__pause").addEventListener("click", (e) => {
+			e.stopPropagation();
+			togglePause();
 		});
+
+		$("control__prev").addEventListener("click", (e) => {
+			e.stopPropagation();
+			playPrevious();
+		});
+
+		$("control__next").addEventListener("click", (e) => {
+			e.stopPropagation();
+			playNext();
+		});
+
+		$("playlist__header").addEventListener("click", (e) => {
+			e.stopPropagation();
+			playlistBody.classList.toggle("hide");
+			$("playlist__header").classList.toggle("hide");
+		})
 
 		window.addEventListener("resize", () => {
 			changeVisSize(visCanvas);
@@ -452,10 +412,18 @@ document.onreadystatechange = () => {
 		document.addEventListener("drop", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-			var w = GetMetadata(e.dataTransfer.files[0].path, __dirname + "/cache/");
-			console.log(w);
+
+			clearPlaylist();
+
+			for(let i = 0; i < e.dataTransfer.files.length; i++) {
+				var w = GetMetadata(e.dataTransfer.files[i].path, __dirname + "/cache/");
+				console.log("added " + w);
+				addMusic(w);
+			}
+
 			toPlay = 1
-			playMusic(w);
+			
+			playCurrent();
 		});
 
 		document.addEventListener("keydown", (e) => {
@@ -481,25 +449,28 @@ document.onreadystatechange = () => {
 				case "ArrowLeft":
 					e.preventDefault();
 					moveMusicTimestampTo(player.currentTime - 10);
+					if(e.shiftKey) {
+						playPrevious();
+					}
 					break;
 				case "ArrowRight":
 					e.preventDefault();
-					moveMusicTimestampTo(player.currentTime + 10);
+					if(e.shiftKey) {
+						playNext();
+					} else {
+						moveMusicTimestampTo(player.currentTime + 10);
+					}
 					break;
 				case "F5":
 					e.preventDefault();
 					ipcRenderer.send('refresh');
 				default:
-					console.log(e.key);
 					break;
 			}
 		});
 		
 		window.onbeforeunload = () => {
 			ipcMain.removeAllListeners();
-			WriteCache(cache);
-			WriteUserData(userdata);
-			wHistory(history);
 		}
 	}
 }

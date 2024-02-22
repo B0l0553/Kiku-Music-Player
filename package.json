@@ -1,6 +1,6 @@
 {
   "name": "bruh",
-  "version": "1.0.0",
+  "version": "0.2.6",
   "description": "A local music player made with w/ electron and vanillajs",
   "main": "main.js",
   "scripts": {

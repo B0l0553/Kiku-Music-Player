@@ -420,7 +420,7 @@
     box-sizing: border-box;
     position: relative;
     display: block;
-    transform: scale(var(--ggs,1.75 ));
+    transform: scale(var(--ggs,1.75));
     width: 3px;
     height: 10px;
     background: currentColor

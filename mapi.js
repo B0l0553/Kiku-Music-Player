@@ -117,6 +117,7 @@ function GetUserData() {
 	tu.playing			= json.playing || 0;
 	tu.vis_mode			= json.vis_mode || "bBezier";
 	tu.wave_show		= json.wave_show || true;
+	tu.showchibi 		= json.showchibi || false;
 	return tu;
 }
 
@@ -218,16 +219,16 @@ function GetMetadata(_path, _cachePath) {
 
 	const tags = NodeID3.read(_path);
 
-	fMusic.tags.album 		= tags.album;
-	fMusic.tags.artist 		= tags.artist;
-	fMusic.tags.bpm			= tags.bpm;
-	fMusic.tags.comment 	= tags.comment;
-	fMusic.tags.composer	= tags.composer;
-	fMusic.tags.genre		= tags.genre;
-	fMusic.tags.length		= tags.length;
-	fMusic.tags.title		= tags.title;
-	fMusic.tags.track		= tags.trackNumber;
-	fMusic.tags.year		= tags.year;
+	fMusic.tags.artist 		= tags.artist 		|| "unknown artist";
+	fMusic.tags.bpm			= tags.bpm			|| 0;
+	fMusic.tags.comment 	= tags.comment 		|| "";
+	fMusic.tags.composer	= tags.composer		|| "unknown";
+	fMusic.tags.genre		= tags.genre		|| "unknown";
+	fMusic.tags.length		= tags.length		|| 0;
+	fMusic.tags.title		= tags.title		|| fMusic.filename;
+	fMusic.tags.album 		= tags.album 		|| fMusic.title + " - Single";
+	fMusic.tags.track		= tags.trackNumber 	|| 0;
+	fMusic.tags.year		= tags.year			|| 0;
 
 	// Extracting image
 	if(tags.image !== undefined) {
@@ -239,8 +240,10 @@ function GetMetadata(_path, _cachePath) {
 		if(!fs.existsSync(finalPath)) fs.writeFileSync(finalPath, tags.image.imageBuffer);
 
 		fMusic.tags.image = finalPath;
+	} else {
+		fMusic.tags.image = path.join(__dirname, "assets/images/unknown.png");
 	}
-
+	console.log(fMusic);
 	return fMusic;
 }
 
