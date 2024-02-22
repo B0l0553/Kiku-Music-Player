@@ -1,11 +1,13 @@
 {
   "name": "kmp",
-  "version": "0.2.48",
+  "version": "0.2.49",
   "description": "A local music player made with w/ electron and vanillajs",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "make": "electron-packager . \"kmp\" --platform=win32 --arch=x64"
+    "make-win32": "electron-packager . \"kmp\" --platform=win32 --arch=x64",
+    "make-linux": "electron-packager . \"kmp\" --platform=linux --arch=x64",
+    "make-arm64": "electron-packager . \"kmp\" --platform=linux --arch=arm64"
   },
   "keywords": [
     "music",
