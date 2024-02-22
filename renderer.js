@@ -196,7 +196,6 @@ document.onreadystatechange = () => {
 				}
 				player.play();
 				userdata.playing = 1;
-				//pause.setAttribute('title', "Pause");
 				$("control__pause").classList.value = "gg-play-pause";
 				//StartRPC(player.currentTime, InternalPlaylist[pPtr].length);
 				return;
@@ -204,8 +203,6 @@ document.onreadystatechange = () => {
 			userdata.playing = 0;
 			player.pause();
 			$("control__pause").classList.value = "gg-play-button";
-			//pause.setAttribute('title', "Play");
-			//pause.innerHTML = '<i class="gg-play-button-r"></i>';
 			//PauseRPC();
 		}
 
