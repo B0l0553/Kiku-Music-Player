@@ -556,7 +556,7 @@ function renderFrame(visualiser, canvas, ctx) {
 			drawBezier(bp, false, waveOffset + 10, -barWidth/4, 1, "white");
 			break;
 		case "bezier":
-			drawBezier(bp, false, 196);
+			drawBezier(bp, false, waveOffset + 10, -barWidth/4, 1, "white");
 			break;
 		case "tOFBezier":
 			drawTangent(bp, bpb);
