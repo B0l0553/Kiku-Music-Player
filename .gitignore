@@ -1,11 +1,9 @@
 node_modules/
 Cache/
-usrdata.json
-cache.json
-history.json
+data/*.json
 *.bat
 rpcApi.js
-kmp-win32-x64/
+kmp-*/
 old/
 .vscode/
 rpcApi.js

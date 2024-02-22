@@ -224,7 +224,7 @@ document.onreadystatechange = () => {
 			if(_volume > 100) _volume = 100;
 		
 			_volume = Math.trunc(_volume);
-			changeDiff(_volume);
+			//vHandle.setDecibels(-96+(33*(1-player.volume)), -(27*(1-player.volume)));
 			showVToaster();
 			volumeSlider.style.width = `${_volume}%`
 			volumeText.textContent = `${_volume}%`
@@ -235,7 +235,6 @@ document.onreadystatechange = () => {
 			volumeToaster.classList.remove("hideAnim");
 			volumeToaster.classList.remove("hidden");
 			volumeToaster.getAnimations().forEach(i => { i.cancel() });
-			//volumeToaster.classList.toggle("show");
 			volumeToaster.classList.add("hideAnim");
 		}
 
@@ -439,12 +438,10 @@ document.onreadystatechange = () => {
 				case "ArrowUp":
 					e.preventDefault();
 					setMusicVolume(player.volume*100 + 2);
-					//vHandle.setDecibels(-55+(30*(player.volume-0.5)), -20+(30*(player.volume-0.5)));
 					break;
 				case "ArrowDown":
 					e.preventDefault();
 					setMusicVolume(player.volume*100 - 2);
-					//vHandle.setDecibels(-55+(30*(player.volume-0.5)), -20+(30*(player.volume-0.5)));
 					break;
 				case "ArrowLeft":
 					e.preventDefault();

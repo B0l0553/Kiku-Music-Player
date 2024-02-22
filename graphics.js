@@ -1,6 +1,6 @@
 const path = require("path");
 const { GetJSONFromFile } = require("./mapi");
-let barWidth = barWidthB = diffVolume = bpLength = bpbLength = dWaveform = dVisualizer = 0;
+let barWidth = barWidthB = bpLength = bpbLength = dWaveform = dVisualizer = 0;
 let title = album = artist = next = "";
 let chibis = [];
 let sceneObject = [];
@@ -249,11 +249,6 @@ function setArtist(value) {
 
 function setNextTitle(value) {
 	next = value;
-}
-
-function changeDiff(v) {
-	diffVolume = 16*(v/100)-4;
-	//diffVolume = v;
 }
 
 function changeBarWidth(_nWidth, _nWidthB=_nWidth) {
@@ -617,6 +612,7 @@ function renderFrame(visualiser, canvas, ctx) {
 			chibis[i].stateCooldown -= unit;
 			chibis[i].moodCooldown -= unit;
 			chibis[i].frameTickUp += unit;
+			chibis[i].energy = 100;
 			
 			if(chibis[i].stateCooldown < 0 && chibis[i].stateComplete) {
 				chibis[i].stateCooldown = 600;
@@ -862,7 +858,6 @@ function renderFrame(visualiser, canvas, ctx) {
 
 module.exports = {
 	changeBarWidth,
-	changeDiff,
 	setTitle,
 	setAlbum,
 	setArtist,
