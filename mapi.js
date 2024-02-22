@@ -68,7 +68,7 @@ function GetJSONFromFile(_path, callback) {
 }
 
 function GetSettings() {
-	var json = GetJSONFromFile(path.join(__dirname, "settings.json"), (_path) => {
+	var json = GetJSONFromFile(path.join(__dirname, "/data/settings.json"), (_path) => {
 
 		var as = new AppSettings()
 		as.cachePath = path.join(__dirname, "Cache");
@@ -87,7 +87,7 @@ function GetSettings() {
 }
 
 function GetCache() {
-	var json = GetJSONFromFile(path.join(__dirname, "cache.json"), (_path) => {
+	var json = GetJSONFromFile(path.join(__dirname, "/data/cache.json"), (_path) => {
 		fs.writeFileSync(_path, JSON.stringify(new Cache(), null, 4));
 		return null;
 	});
@@ -105,7 +105,7 @@ function GetCache() {
 }
 
 function GetUserData() {
-	var json = GetJSONFromFile(path.join(__dirname, "usrdata.json"), (_path) => {
+	var json = GetJSONFromFile(path.join(__dirname, "/data/usrdata.json"), (_path) => {
 		fs.writeFileSync(_path, JSON.stringify(new UsrData(), null, 4));
 		return null;
 	})
@@ -122,7 +122,7 @@ function GetUserData() {
 }
 
 function gHistory() {
-	var json = GetJSONFromFile(path.join(__dirname, "history.json"), (_path) => {
+	var json = GetJSONFromFile(path.join(__dirname, "/data/history.json"), (_path) => {
 		fs.writeFileSync(_path, JSON.stringify({}, null, 4));
 		return {};
 	})
@@ -131,23 +131,23 @@ function gHistory() {
 }
 
 function wHistory(_history) {
-	var fpath = path.join(__dirname, "history.json");
+	var fpath = path.join(__dirname, "/data/history.json");
 	fs.writeFile(fpath, JSON.stringify(_history, null, 4), () => {});
 }
 
 function WriteUserData(_usrdata) {
 	//console.log("Writing to usrdata");
-	var fpath = path.join(__dirname, "usrdata.json");
+	var fpath = path.join(__dirname, "/data/usrdata.json");
 	fs.writeFileSync(fpath, JSON.stringify(_usrdata, null, 4));
 }
 
 function WriteCache(_albums) {
-	var fpath = path.join(__dirname, "cache.json");
+	var fpath = path.join(__dirname, "/data/cache.json");
 	fs.writeFileSync(fpath, JSON.stringify(_albums, null, 4));
 }
 
 function WriteSettings(_settings) {
-	var fpath = path.join(__dirname, "settings.json");
+	var fpath = path.join(__dirname, "/data/settings.json");
 	fs.writeFileSync(fpath, JSON.stringify(_settings, null, 4));
 }
 
@@ -207,7 +207,7 @@ function GetAudioFiles(_path) {
 	return audioFiles;
 }
 
-function GetMetadata(_path, _cachePath) {
+function GetMetadata(_path) {
 	if(!IsFile(_path)) return null;
 	//console.log("Getting metadata for " + _path)
 	var fMusic = new MusicMeta();
@@ -235,7 +235,7 @@ function GetMetadata(_path, _cachePath) {
 		const hashSum = crypto.createHash('sha256');
 		hashSum.update(tags.image.imageBuffer);
 		const hex = hashSum.digest('hex');
-		var finalPath = path.join(_cachePath, hex + "." + tags.image.mime.split('/')[1]);
+		var finalPath = path.join(path.join(__dirname, "/cache/"), hex + "." + tags.image.mime.split('/')[1]);
 
 		if(!fs.existsSync(finalPath)) fs.writeFileSync(finalPath, tags.image.imageBuffer);
 

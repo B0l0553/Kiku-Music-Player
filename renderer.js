@@ -415,7 +415,7 @@ document.onreadystatechange = () => {
 			clearPlaylist();
 
 			for(let i = 0; i < e.dataTransfer.files.length; i++) {
-				var w = GetMetadata(e.dataTransfer.files[i].path, __dirname + "/cache/");
+				var w = GetMetadata(e.dataTransfer.files[i].path);
 				console.log("added " + w);
 				addMusic(w);
 			}
