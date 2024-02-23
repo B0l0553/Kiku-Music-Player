@@ -226,6 +226,22 @@ body {
 	border-radius: .5rem;
 	background-color: #254053;
 	padding: 2rem;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-wrap: wrap;
+	flex-direction: row;
+}
+
+.cat {
+	width: 20rem;
+	height: 20rem;
+	margin: 2rem
+}
+.cat:active {
+	width: 19rem;
+	height: 19rem;
+	margin: 2.5rem
 }
 
 #settings__title {

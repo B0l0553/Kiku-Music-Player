@@ -397,7 +397,38 @@ document.onreadystatechange = () => {
 			e.stopPropagation();
 			playlistBody.classList.toggle("hide");
 			$("playlist__header").classList.toggle("hide");
-		})
+		});
+
+		$("princeofallsayans").addEventListener("mouseup", (e) => {
+			e.stopPropagation();
+			var a = document.createElement("audio");
+			a.src = path.join(__dirname, "/assets/audio/bw.mp3");
+			a.volume = 0.5;
+			a.play();
+		});
+
+		$("cleanseroftheearth").addEventListener("mouseup", (e) => {
+			e.stopPropagation();
+			var a = document.createElement("audio");
+			a.src = path.join(__dirname, "/assets/audio/bleh.mp3");
+			a.volume = 0.25;
+			a.play();
+		});
+
+		$("thestrongestalien").addEventListener("mouseup", (e) => {
+			e.stopPropagation();
+			var a = document.createElement("audio");
+			a.src = path.join(__dirname, "/assets/audio/fith.mp3");
+			a.volume = 0.25;
+			a.play();
+		});
+		$("janitor").addEventListener("mouseup", (e) => {
+			e.stopPropagation();
+			var a = document.createElement("audio");
+			a.src = path.join(__dirname, "/assets/audio/hn.mp3");
+			a.volume = 0.25;
+			a.play();
+		});
 
 		window.addEventListener("resize", () => {
 			changeVisSize(visCanvas);
