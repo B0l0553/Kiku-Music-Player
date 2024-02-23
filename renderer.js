@@ -73,20 +73,24 @@ document.onreadystatechange = () => {
 			inf.appendChild(wal);
 			inf.appendChild(wat);
 			inf.appendChild(wtm);
+			inf.classList.add("playlist__music-info")
 
 			var ico = document.createElement("img");
-
 			ico.src = data.tags.image;
 
 			var twr = document.createElement("div");
-			twr.classList.add("playlist__music")
+			twr.classList.add("playlist__music");
 			twr.appendChild(ico);
 			twr.appendChild(inf);
-			twr.onclick = () => {
+
+			var bg = document.createElement("div");
+			bg.style.background = `url("${ico.src}")`;
+			bg.classList.add("playlist__music-wrapper");
+			bg.appendChild(twr);
+			bg.onclick = () => {
 				setMusic(data.i);
 			}
-
-			return twr;
+			return bg;
 		}
 
 		function setThumb(value) {
@@ -236,8 +240,7 @@ document.onreadystatechange = () => {
 		}
 
 		function hideMenu() {
-			document.getElementById("contextMenu")
-					.style.display = "none"
+			document.getElementById("contextMenu").style.display = "none"
 		}
 	  
 		function rightClick(e, data) {
@@ -343,11 +346,11 @@ document.onreadystatechange = () => {
 			if(userdata.playing) {
 				userdata.totalTime += .1
 				//(userdata.totalTime/10).toLocaleString('en-US', { minimumFractionDigits: 1 });
-				$("settings__time").textContent = (Math.trunc(userdata.totalTime*10)/100).toLocaleString("en-US", {minimumFractionDigits: 2});
-				$("settings__time").textContent = $("settings__time").textContent.replace(/,\s?/g, "");
+				// $("settings__time").textContent = (Math.trunc(userdata.totalTime*10)/100).toLocaleString("en-US", {minimumFractionDigits: 2});
+				// $("settings__time").textContent = $("settings__time").textContent.replace(/,\s?/g, "");
 			}
 		}, 10);
-		$("settings__time").textContent = "You've listened to music for " + userdata.totalTime + " while using this app";
+		// $("settings__time").textContent = "You've listened to music for " + userdata.totalTime + " while using this app";
 		setMusicVolume(userdata.volume*100 || 50);
 		clearPlaylist();
 		console.log(cache.last_music_data.length)
