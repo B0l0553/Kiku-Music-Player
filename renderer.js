@@ -419,14 +419,14 @@ document.onreadystatechange = () => {
 			e.stopPropagation();
 			var a = document.createElement("audio");
 			a.src = path.join(__dirname, "/assets/audio/fith.mp3");
-			a.volume = 0.25;
+			a.volume = 0.5;
 			a.play();
 		});
 		$("janitor").addEventListener("mouseup", (e) => {
 			e.stopPropagation();
 			var a = document.createElement("audio");
 			a.src = path.join(__dirname, "/assets/audio/hn.mp3");
-			a.volume = 0.25;
+			a.volume = 0.5;
 			a.play();
 		});
 
