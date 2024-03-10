@@ -4,7 +4,8 @@ let barWidth = barWidthB = bpLength = bpbLength = dWaveform = dVisualizer = 0;
 let title = album = artist = next = "";
 let chibis = [];
 let sceneObject = [];
-
+let desp = undefined;
+let background = undefined;
 class Chibi {
 	name;
 	image;
@@ -235,6 +236,13 @@ function appendChibi(chibi) {
 	chibis.push(chibi);
 }
 
+function setSVGFilter(value) {
+	desp = value;
+}
+function setBackground(value) {
+	background = value;
+}
+
 function setTitle(value) {
 	title = value;
 }
@@ -306,6 +314,23 @@ function getAverageColor() {
 	}
 }
 
+function groupPerN(data, grpSize) {
+	let nGrp = data.length-1/grpSize;
+	let remaining = data.length-1;
+	let grpContainer = [];
+	for(let i = 0; i < nGrp; i++) {
+		var tGrp = [];
+		for(let j = 0; j < grpSize; j++) {
+			if(remaining == 0) break;
+			tGrp.push(data[j+i*grpSize]);
+			remaining--;
+		}
+		grpContainer.push(tGrp);
+		if(remaining == 0) break;
+	}
+	return grpContainer;
+}
+
 function vwTOpx(value) {
 	var w = window,
 	  d = document,
@@ -330,7 +355,7 @@ function vhTOpx(value) {
 
 function changeVisSize(canvas) {
 	var w = vwTOpx(50);
-	var h = vhTOpx(60);
+	var h = vhTOpx(70);
 
 	if(w > 1024) w = 1024;
 	//if(h > 450) h = 450;
@@ -436,25 +461,23 @@ function renderFrame(visualiser, canvas, ctx) {
 		ctx.closePath();
 	}
 	
-	function drawWave(data) {
-		ctx.lineWidth=2;
-		const sliceWidth = (canvas.width * 1) / data.length;
-		let x = 0;
+	function drawWave(x, y, fx, data) {
+		let dx = x;
+		var e = groupPerN(data, 32);
+		const sliceWidth = (fx * 1) / e.length-1;
+
+		for (let i = 0; i < e.length; i++) {
+			let mx = (max(e[i]) - 128) * 1.5 + 8;
+			let mn = (min(e[i]) - 128) * 1.5 - 8;
+			
+			if(mx - mn < 8) mn -= mn - mx;
 	
-		for (let i = 0; i < data.length; i++) {
-			const v = data[i] * 150.0;
-			const y = canvas.height - 37 + v;
-	
-			if (i === 0) {
-			ctx.moveTo(x, y);
-			} else {
-			ctx.lineTo(x, y);
-			}
-			x += sliceWidth;
+			ctx.beginPath();
+			ctx.fillStyle = "rgba(100, 150, 200, 1)";
+			ctx.roundRect(dx, y-mn, sliceWidth, mn-mx, [40]);
+			ctx.fill();
+			dx += sliceWidth + 2;
 		}
-	
-		ctx.lineTo(canvas.width, canvas.height - 37);
-		ctx.stroke();
 	}
 
 	function getRange(data, start, end, threshold, amplification = 1, spacing = 1) {
@@ -533,7 +556,7 @@ function renderFrame(visualiser, canvas, ctx) {
 		case "tOFBezier":
 		case "oFBezier":
 		case "fBezier":
-			var dataArray = visualiser.getVisualiserUIntData()
+			dataArray = visualiser.getVisualiserUIntData()
 			// bp.push(... getAllPointNormalized(dataArray, 225));
 			// bpb.push(... getAllPointNormalized(dataArray, 225));
 			bp.push(... getPointsUInt8(dataArray, 1, 12, 225, barWidth));
@@ -562,6 +585,11 @@ function renderFrame(visualiser, canvas, ctx) {
 			drawTangent(bp, bpb);
 		case "oFBezier":
 			drawBezier(bp, true, waveOffset + 10, barWidth, 1, "#365486");
+			
+			if(visualiser.showWaveform) {
+				var wData = visualiser.getWaveformData();
+				drawWave(0, canvas.height - waveOffset*2, canvas.width, wData);
+			}
 		case "fBezier":
 			drawBezier(bpb, true, waveOffset + 10, bpb[0].x+barWidth, 1, "#7FC7D9");
 			break;
@@ -578,14 +606,14 @@ function renderFrame(visualiser, canvas, ctx) {
 	}
 
 	
-	var tftSize = Math.trunc(canvas.width/title.length*1.25-2)
+	var tftSize = Math.trunc(canvas.width/title.length*1.5)
 	var ta = `${artist} // ${album}`;
 	var taSize = Math.trunc(canvas.width/(ta.length))
 	if(tftSize < 32)  tftSize = 32
 	if(tftSize > 300) tftSize = 300
 	
-	drawText(0, 25+taSize/2, ta, "MPLUS1Code", `${taSize}`);
-	drawText(0, 75+tftSize/1.25, title, "MPLUS1Code", `${tftSize}`);
+	drawText(0, 50+taSize/2, ta, "MPLUS1Code", `${taSize}`);
+	drawText(0, 50+taSize+tftSize/1.25, title, "MPLUS1Code", `${tftSize}`);
 	ctx.beginPath();
 	ctx.strokeStyle = "white";
 	ctx.lineWidth = 2;
@@ -593,9 +621,17 @@ function renderFrame(visualiser, canvas, ctx) {
 	ctx.lineTo(canvas.width, canvas.height - waveOffset - 1);
 	ctx.stroke();
 
-	if(visualiser.showWaveform) {
+	if(visualiser.activeBackground) {
+		dataArray = visualiser.getVisualiserUIntData()
+		var av = getAverage(dataArray, 0, 24);
+		var value = av/255;
+		desp.setAttribute("scale", 500 + 700*value)
+		background.style.filter = `url(#SphereMapTest) brightness(${0.4 + 0.2*value}) blur(32px)`;
+	}
+
+	if(visualiser.showWaveform && visualiser.mode != "oFBezier") {
 		var dataArray = visualiser.getWaveformData();
-		drawWave(dataArray);
+		drawWave(0, canvas.height - waveOffset/2, canvas.width, dataArray);
 	}
 
 	if(visualiser.showChibi) {
@@ -604,7 +640,7 @@ function renderFrame(visualiser, canvas, ctx) {
 			sceneObject[i].update(unit);
 			sceneObject[i].draw(ctx);
 		}
-
+		
 		for(let i = 0; i < chibis.length; i++) {
 			chibis[i].dy += .1;
 			chibis[i].dx = 0;
@@ -866,5 +902,7 @@ module.exports = {
 	Chibi,
 	cObject,
 	appendChibi,
-	chibis
+	chibis,
+	setSVGFilter,
+	setBackground
 }
