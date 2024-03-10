@@ -1,7 +1,7 @@
 const { ipcRenderer, dialog, app, BrowserWindow } = require("electron");
 const fs = require("fs");
 const path = require("path")
-let InternalPlaylist=[],pPtr=toPlay=loop=optionOpn=0,contextData=null,vHandle,visCanvas;
+let InternalPlaylist=[],pPtr=toPlay=loop=optionOpn=0,contextData=null,vHandle,visCanvas,keys={};
 const {
 	GetUserData,
 	WriteUserData,
@@ -29,7 +29,10 @@ const {
 	appendChibi,
 	setNextTitle,
 	chibis,
-	cObject
+	cObject,
+	desp,
+	setSVGFilter,
+	setBackground
 } = require("./graphics.js");
 
 const {
@@ -77,6 +80,7 @@ document.onreadystatechange = () => {
 
 			var ico = document.createElement("img");
 			ico.src = data.tags.image;
+			ico.draggable = false;
 
 			var twr = document.createElement("div");
 			twr.classList.add("playlist__music");
@@ -85,6 +89,7 @@ document.onreadystatechange = () => {
 
 			var bg = document.createElement("div");
 			bg.style.background = `url("${ico.src}")`;
+			bg.style.backgroundPosition = "center";
 			bg.classList.add("playlist__music-wrapper");
 			bg.appendChild(twr);
 			bg.onclick = () => {
@@ -98,7 +103,7 @@ document.onreadystatechange = () => {
 			playbackBodyBg.style.backgroundImage = `url("${playbackImg.src}")`;
 			playbackBodyBg.style.backgroundSize = "120vw";
 			playbackBodyBg.style.backgroundPosition = "center";
-			playbackBodyBg.style.filter = "blur(32px) brightness(0.6)";
+			playbackBodyBg.style.filter = "url(#SphereMapTest) brightness(0.6) blur(32px)";
 			cache.thumb = value;
 		}
 
@@ -200,13 +205,13 @@ document.onreadystatechange = () => {
 				}
 				player.play();
 				userdata.playing = 1;
-				$("control__pause").classList.value = "gg-play-pause";
+				$("control__pause").src = path.join(__dirname, "assets/icons/audio-pause.svg")
 				//StartRPC(player.currentTime, InternalPlaylist[pPtr].length);
 				return;
 			}
 			userdata.playing = 0;
 			player.pause();
-			$("control__pause").classList.value = "gg-play-button";
+			$("control__pause").src = path.join(__dirname, "assets/icons/audio-play.svg")
 			//PauseRPC();
 		}
 
@@ -241,21 +246,6 @@ document.onreadystatechange = () => {
 
 		function hideMenu() {
 			document.getElementById("contextMenu").style.display = "none"
-		}
-	  
-		function rightClick(e, data) {
-			e.preventDefault();
-			contextData = data;
-			console.log("Recorded context data");
-			var menu = document.getElementById("contextMenu")
-			if (menu.style.display == "block") {
-				menu.style.left = e.pageX + "px";
-				menu.style.top = e.pageY + "px";
-			} else {	  
-				menu.style.display = 'block';
-				menu.style.left = e.pageX + "px";
-				menu.style.top = e.pageY + "px";
-			}
 		}
 
 		function sec2time(timeInSeconds) {
@@ -313,8 +303,7 @@ document.onreadystatechange = () => {
 			userdata.playtime = player.currentTime;
 			userdata.volume = player.volume;
 		});
-		
-
+	
 		player.addEventListener("ended", () => {
 			userdata.playing = 0;
 			toPlay = 1;
@@ -323,14 +312,17 @@ document.onreadystatechange = () => {
 		
 		vHandle = setupVisualizer(visCanvas, player);
 		vHandle.setDecibels(-63, -27);
-		vHandle.setSmoothing(0.2);
+		vHandle.setSmoothing(0);
 		vHandle.setFftSize(4096);
 		vHandle.setMode(userdata.vis_mode, visCanvas);
 		vHandle.setRefreshRate(60);
-		vHandle.showWaveform = userdata.wave_show;
+		vHandle.activeBackground = true;
+		setSVGFilter($("despMap"))
+		setBackground(playbackBodyBg);
 		if(userdata.showchibi) {
 			vHandle.showChibis();
 		}
+		vHandle.showWaveform = false;
 
 		addChibi("jolteon");
 		addChibi("eevee");
@@ -344,12 +336,12 @@ document.onreadystatechange = () => {
 		
 		setInterval(() => {
 			if(userdata.playing) {
-				userdata.totalTime += .1
+				userdata.totalTime += 1
 				//(userdata.totalTime/10).toLocaleString('en-US', { minimumFractionDigits: 1 });
 				// $("settings__time").textContent = (Math.trunc(userdata.totalTime*10)/100).toLocaleString("en-US", {minimumFractionDigits: 2});
 				// $("settings__time").textContent = $("settings__time").textContent.replace(/,\s?/g, "");
 			}
-		}, 10);
+		}, 1000);
 		// $("settings__time").textContent = "You've listened to music for " + userdata.totalTime + " while using this app";
 		setMusicVolume(userdata.volume*100 || 50);
 		clearPlaylist();
@@ -398,6 +390,11 @@ document.onreadystatechange = () => {
 			playlistBody.classList.toggle("hide");
 			$("playlist__header").classList.toggle("hide");
 		});
+		$("history__header").addEventListener("click", (e) => {
+			e.stopPropagation();
+			$("history__body").classList.toggle("hide");
+			$("history__header").classList.toggle("hide");
+		});
 
 		$("princeofallsayans").addEventListener("mouseup", (e) => {
 			e.stopPropagation();
@@ -434,12 +431,12 @@ document.onreadystatechange = () => {
 			changeVisSize(visCanvas);
 		});
 
-		document.addEventListener("dragover", (e) => {
+		$("playback__window").addEventListener("dragover", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
 		});
 
-		document.addEventListener("drop", (e) => {
+		$("playback__window").addEventListener("drop", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
 
@@ -456,12 +453,38 @@ document.onreadystatechange = () => {
 			playCurrent();
 		});
 
+		$("playlist__body").addEventListener("dragover", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+		});
+
+		$("playlist__body").addEventListener("drop", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+
+			for(let i = 0; i < e.dataTransfer.files.length; i++) {
+				var w = GetMetadata(e.dataTransfer.files[i].path);
+				console.log("added " + w);
+				addMusic(w);
+			}
+		});
+
+		document.onkeyup = (e) => {
+			switch(e.key) {
+				case " ":
+					keys['space'] = false;
+					break;
+			}
+		}
+
 		document.addEventListener("keydown", (e) => {
 			
 			switch(e.key) {
 				case " ":
 					e.preventDefault();
+					if(keys["space"]) return;
 					togglePause();
+					keys['space'] = true;
 					chibis.forEach((c) => {
 						if(c.y + c.height + c.dy >= visCanvas.height) c.dy = -(Math.random() * (2.5 - 1) + 1 );
 					});
