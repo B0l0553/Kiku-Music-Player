@@ -116,7 +116,7 @@ function GetUserData() {
 	tu.totalTime		= json.totalTime || 0;
 	tu.playing			= json.playing || 0;
 	tu.vis_mode			= json.vis_mode || "bBezier";
-	tu.wave_show		= json.wave_show || true;
+	tu.wave_show		= json.wave_show || false;
 	tu.showchibi 		= json.showchibi || false;
 	return tu;
 }
