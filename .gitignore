@@ -1,9 +1,6 @@
 node_modules/
 Cache/
 data/*.json
-*.bat
-rpcApi.js
 kmp-*/
 old/
 .vscode/
-rpcApi.js

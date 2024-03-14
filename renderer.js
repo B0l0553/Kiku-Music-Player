@@ -1,7 +1,11 @@
+const VERSION = "0.4.73"
+
 const { ipcRenderer, dialog, app, BrowserWindow } = require("electron");
 const fs = require("fs");
 const path = require("path")
 let InternalPlaylist=[],pPtr=toPlay=loop=optionOpn=0,contextData=null,vHandle,visCanvas,keys={};
+
+
 const {
 	GetUserData,
 	WriteUserData,
@@ -11,7 +15,8 @@ const {
 	WriteCache,
 	gHistory,
 	wHistory,
-	GetJSONFromFile
+	GetJSONFromFile,
+	aCache
 } = require("./mapi.js");
 
 const { 
@@ -32,12 +37,16 @@ const {
 	cObject,
 	desp,
 	setSVGFilter,
-	setBackground
+	setBackground,
 } = require("./graphics.js");
 
 const {
 	changeMS
 } = require("./msHandler.js")
+
+function openLink(link) {
+	require("electron").shell.openExternal(link);
+}
 
 document.onreadystatechange = () => {
 	if(document.readyState === 'complete') {
@@ -56,6 +65,7 @@ document.onreadystatechange = () => {
 		const userdata = GetUserData();
 		const cache = GetCache();
 		const history = gHistory();
+		redrawHistory();
 
 		function $(value) {
 			return document.getElementById(value);
@@ -98,13 +108,85 @@ document.onreadystatechange = () => {
 			return bg;
 		}
 
+		function createMHItem(data) {
+			var wtt = document.createElement("div");
+			wtt.textContent = data.title;
+			var wal = document.createElement("div");
+			wal.textContent = data.album;
+			var wat = document.createElement("div");
+			wat.textContent = data.artist;
+			var inf = document.createElement("div");
+
+			inf.appendChild(wtt);
+			inf.appendChild(wal);
+			inf.appendChild(wat);
+			inf.classList.add("playlist__music-info")
+
+			var ico = document.createElement("img");
+			ico.src = data.image;
+			ico.draggable = false;
+
+			var twr = document.createElement("div");
+			twr.classList.add("playlist__music");
+			twr.appendChild(ico);
+			twr.appendChild(inf);
+
+			var bg = document.createElement("div");
+			bg.style.background = `url("${ico.src}")`;
+			bg.style.backgroundPosition = "center";
+			bg.classList.add("playlist__music-wrapper");
+			bg.appendChild(twr);
+			bg.onclick = () => {
+				(async () => { 
+					var w = GetMetadata(data.path);
+					clearPlaylist();
+					addMusic(w);
+					playCurrent();
+				})();
+			}
+			bg.onauxclick = () => {
+				(async () => { 
+					var w = GetMetadata(data.path);
+					addMusic(w);
+				})();
+			}
+			return bg;
+		}
+
+		function updateHistory(data) {
+			var mthn = `${data.tags.title.toLowerCase()}-${data.tags.artist.toLowerCase()}`; 
+			if(history[mthn] == undefined) {
+				history[mthn] = {};
+				history[mthn]["timesPlayed"]=0;
+				history[mthn]["path"]=data.path;
+				history[mthn]["title"]=data.tags.title;
+				history[mthn]["artist"]=data.tags.artist;
+				history[mthn]["album"]=data.tags.album;
+				history[mthn]["image"]=data.tags.image;
+			}
+			history[mthn]["timesPlayed"]++;
+			history[mthn]["last_played"] = (new Date().getTime());
+			wHistory(history);
+			redrawHistory();
+		}
+
+		function redrawHistory() {
+			$("history__wrapper").textContent = "";
+
+			for (const [key, value] of Object.entries(history)) {
+				$("history__wrapper").appendChild(createMHItem(history[key]))
+			}
+		}
+
 		function setThumb(value) {
 			playbackImg.src = value;
+			// playbackBodyBg.src = playbackImg.src;
 			playbackBodyBg.style.backgroundImage = `url("${playbackImg.src}")`;
 			playbackBodyBg.style.backgroundSize = "120vw";
-			playbackBodyBg.style.backgroundPosition = "center";
-			playbackBodyBg.style.filter = "url(#SphereMapTest) brightness(0.6) blur(32px)";
-			cache.thumb = value;
+			playbackBodyBg.style.backgroundRepeat = "no-repeat";
+			// playbackBodyBg.style.backgroundPosition = "center";
+			playbackBodyBg.style.filter = "brightness(0.6)";
+
 		}
 
 		function clearPlaylist() {
@@ -117,6 +199,8 @@ document.onreadystatechange = () => {
 			data.i = InternalPlaylist.length;
 			InternalPlaylist.push(data);
 			$("playlist__wrapper").appendChild(createMPWrapper(data));
+			cache.currentPlaylist = InternalPlaylist;
+			cache.pLen = InternalPlaylist.length;
 		}
 
 		function setMusic(i) {
@@ -130,6 +214,7 @@ document.onreadystatechange = () => {
 				console.error("Tried to play, but data was null: ", data);
 				return;
 			}
+			console.log(data);
 			changeMS(player, togglePause, data);
 			var src = data.path;
 			var thumbSrc = data.tags.image;
@@ -143,23 +228,14 @@ document.onreadystatechange = () => {
 				setTitle(data.tags.title);
 				setArtist(data.tags.artist);
 				setAlbum(data.tags.album);
-				cache.last_music_data = data;
+				cache.cPtr = pPtr;
 				WriteCache(cache);
 				if(userdata.playing || toPlay) {
 					toPlay = 0;
 					togglePause();
-					if(history[`${data.tags.title.toLowerCase()}-${data.tags.artist.toLowerCase()}`] == undefined) {
-						history[`${data.tags.title.toLowerCase()}-${data.tags.artist.toLowerCase()}`] = {};
-						history[`${data.tags.title.toLowerCase()}-${data.tags.artist.toLowerCase()}`]["timesPlayed"]=0;
-						history[`${data.tags.title.toLowerCase()}-${data.tags.artist.toLowerCase()}`]["path"]=data.path;
-					}
-					history[`${data.tags.title.toLowerCase()}-${data.tags.artist.toLowerCase()}`]["path"]=data.path;
-					history[`${data.tags.title.toLowerCase()}-${data.tags.artist.toLowerCase()}`]["timesPlayed"]++;
-					history[`${data.tags.title.toLowerCase()}-${data.tags.artist.toLowerCase()}`]["last_played"] = (new Date().getTime());
-					history.totalPlay++;
+					updateHistory(data)
 				}
 			}
-			wHistory(history);
 		}
 
 		function playPrevious() {
@@ -172,19 +248,22 @@ document.onreadystatechange = () => {
 		}
 
 		function playNext() {
-			console.log("Playing Next Music... ptr=", pPtr);
 			if(pPtr < InternalPlaylist.length-1) {
 				playMusic(InternalPlaylist[++pPtr]);
+				return true;
 			}
+			return false;
 		}
 		
 		function playCurrent() {
-			if(pPtr < InternalPlaylist.length-1 && pPtr >= 0) {
+			console.log(`${pPtr} - ${InternalPlaylist.length}`);
+			if(pPtr < InternalPlaylist.length && pPtr >= 0) {
 				playMusic(InternalPlaylist[pPtr]);
 			} else {
 				resetPointer();
 				playMusic(InternalPlaylist[pPtr]);
 			}
+			
 		}
 
 		function resetPointer() {
@@ -225,16 +304,16 @@ document.onreadystatechange = () => {
 			player.currentTime = _time;
 		}
 
-		function setMusicVolume(_volume) {
+		function setMusicVolume(_volume, _show = true) {
 			if(_volume < 0) _volume = 0;
 			if(_volume > 100) _volume = 100;
 		
 			_volume = Math.trunc(_volume);
-			showVToaster();
+			if(_show) showVToaster();
 			volumeSlider.style.width = `${_volume}%`
 			volumeText.textContent = `${_volume}%`
 			player.volume = _volume/100;
-			vHandle.setDecibels((player.volume) * (-50 + 66.3) - 66.3, (player.volume) * (-20 + 30) - 32);
+			vHandle.setDecibels((player.volume) * (-35 + 66.3) - 66.3, (player.volume) * (-15 + 30) - 32);
 		}
 
 		function showVToaster() {
@@ -242,10 +321,6 @@ document.onreadystatechange = () => {
 			volumeToaster.classList.remove("hidden");
 			volumeToaster.getAnimations().forEach(i => { i.cancel() });
 			volumeToaster.classList.add("hideAnim");
-		}
-
-		function hideMenu() {
-			document.getElementById("contextMenu").style.display = "none"
 		}
 
 		function sec2time(timeInSeconds) {
@@ -307,22 +382,23 @@ document.onreadystatechange = () => {
 		player.addEventListener("ended", () => {
 			userdata.playing = 0;
 			toPlay = 1;
-			playNext();
+			if(!playNext()) {
+				player.currentTime = 0;
+				$("control__pause").src = path.join(__dirname, "assets/icons/audio-play.svg");
+			}
 		});
 		
 		vHandle = setupVisualizer(visCanvas, player);
-		vHandle.setDecibels(-63, -27);
-		vHandle.setSmoothing(0);
+		vHandle.setSmoothing(0.4);
 		vHandle.setFftSize(4096);
 		vHandle.setMode(userdata.vis_mode, visCanvas);
-		vHandle.setRefreshRate(60);
+		vHandle.setRefreshRate(75);
 		vHandle.activeBackground = true;
-		setSVGFilter($("despMap"))
 		setBackground(playbackBodyBg);
 		if(userdata.showchibi) {
 			vHandle.showChibis();
 		}
-		vHandle.showWaveform = false;
+		vHandle.showWaveform = true;
 
 		addChibi("jolteon");
 		addChibi("eevee");
@@ -337,26 +413,28 @@ document.onreadystatechange = () => {
 		setInterval(() => {
 			if(userdata.playing) {
 				userdata.totalTime += 1
-				//(userdata.totalTime/10).toLocaleString('en-US', { minimumFractionDigits: 1 });
-				// $("settings__time").textContent = (Math.trunc(userdata.totalTime*10)/100).toLocaleString("en-US", {minimumFractionDigits: 2});
-				// $("settings__time").textContent = $("settings__time").textContent.replace(/,\s?/g, "");
 			}
+			$("sampleRate").textContent = vHandle.audioCtx.sampleRate;
+			$("fftSize").textContent = vHandle.analyser.fftSize;
 		}, 1000);
-		// $("settings__time").textContent = "You've listened to music for " + userdata.totalTime + " while using this app";
-		setMusicVolume(userdata.volume*100 || 50);
+		setMusicVolume(userdata.volume*100 || 50, false);
 		clearPlaylist();
-		console.log(cache.last_music_data.length)
-		if(cache.last_music_data != 0) {
-			addMusic(cache.last_music_data);
+		
+		if(cache.pLen != 0) {
+			let tcache = new aCache(cache);
+			for(let j = 0; j < tcache.pLen; j++) {
+				addMusic(tcache.currentPlaylist[j]);
+			}
+			pPtr = tcache.cPtr;
 			playCurrent();
 		}
+		
 		player.currentTime = userdata.playtime || 0;
 
 		volumeToaster.addEventListener("animationend", () => {
 			volumeToaster.classList.add("hidden");
 		});
 
-		document.onclick = hideMenu;
 		$("option-btn").addEventListener("click", () => {
 			$("settings__body").classList.toggle("hidden");
 		});
@@ -396,40 +474,17 @@ document.onreadystatechange = () => {
 			$("history__header").classList.toggle("hide");
 		});
 
-		$("princeofallsayans").addEventListener("mouseup", (e) => {
-			e.stopPropagation();
-			var a = document.createElement("audio");
-			a.src = path.join(__dirname, "/assets/audio/bw.mp3");
-			a.volume = 0.5;
-			a.play();
-		});
-
-		$("cleanseroftheearth").addEventListener("mouseup", (e) => {
-			e.stopPropagation();
-			var a = document.createElement("audio");
-			a.src = path.join(__dirname, "/assets/audio/bleh.mp3");
-			a.volume = 0.25;
-			a.play();
-		});
-
-		$("thestrongestalien").addEventListener("mouseup", (e) => {
-			e.stopPropagation();
-			var a = document.createElement("audio");
-			a.src = path.join(__dirname, "/assets/audio/fith.mp3");
-			a.volume = 0.5;
-			a.play();
-		});
-		$("janitor").addEventListener("mouseup", (e) => {
-			e.stopPropagation();
-			var a = document.createElement("audio");
-			a.src = path.join(__dirname, "/assets/audio/hn.mp3");
-			a.volume = 0.5;
-			a.play();
-		});
-
 		window.addEventListener("resize", () => {
 			changeVisSize(visCanvas);
+			
 		});
+
+		ipcRenderer.on("cpu", (e, data) => {
+			$("cpu").textContent = `${Math.round(data*10)/10}%`
+		})
+		ipcRenderer.on("ram", (e, data) => {
+			$("ram").textContent = `${Math.round(data/1000)}MB`
+		})
 
 		$("playback__window").addEventListener("dragover", (e) => {
 			e.preventDefault();
@@ -444,7 +499,6 @@ document.onreadystatechange = () => {
 
 			for(let i = 0; i < e.dataTransfer.files.length; i++) {
 				var w = GetMetadata(e.dataTransfer.files[i].path);
-				console.log("added " + w);
 				addMusic(w);
 			}
 
@@ -468,6 +522,16 @@ document.onreadystatechange = () => {
 				addMusic(w);
 			}
 		});
+
+		$("github__red").onclick = () => {
+			openLink('https://github.com/B0l0553/Kiku-Music-Player');
+		}
+
+		$("twitter__red").onclick = () => {
+			openLink('https://twitter.com/b0l0553');
+		}
+
+		$("version").textContent = VERSION;
 
 		document.onkeyup = (e) => {
 			switch(e.key) {
@@ -514,7 +578,7 @@ document.onreadystatechange = () => {
 					break;
 				case "F5":
 					e.preventDefault();
-					ipcRenderer.send('refresh');
+					ipcRenderer.send('refresh', [userdata, cache, history]);
 				default:
 					break;
 			}

@@ -1,120 +1,125 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src * self blob: data: gap:; style-src * self 'unsafe-inline' blob: data: gap:; script-src * 'self' 'unsafe-eval' 'unsafe-inline' blob: data: gap:; object-src * 'self' blob: data: gap:; img-src * self 'unsafe-inline' blob: data: gap:; connect-src self * 'unsafe-inline' blob: data: gap:; frame-src * self blob: data: gap:;">
-	<link rel="stylesheet" href="index.css" />
-	<link rel="stylesheet" href="icons.css" />
-	<style id="styleMain"></style>
-	<audio id="player" preload="auto"></audio>
-    <title>Akio Music Player</title>
-  </head>
-  <body>
-	
-	<img id="bg-img" style="position: absolute; height: 150vh; width: 150vw; z-index: -1; left: -25vw; top: -25vh;" />
-	<header id="titlebar">
-		<div id="drag-region">
-			<div id="window-controls">
-				<div class="button" id="option-btn">
-					<i class="gg-options"></i>
-				</div>
-				<div class="button" id="min-button">
-					<i class="gg-minimize-alt"></i>
-				</div>
-				<div class="button" id="refresh-button">
-					<i class="gg-sync"></i>
-				</div>
-				<div class="button" id="close-button">
-					<i class="gg-close-r"></i>
-				</div>
-			</div>
-		</div>
-	</header>
-	<div id="app" class="scrollbar-app">
-		<div id="contextMenu" class="context-menu" style="display: none">
-			<ul>
-				<li><span id="context__playNext">Play Next</span></li>
-				<li><span>Add to favorites</span></li>
-				<li><span>Add to playlist</span></li>
-			</ul>
-		</div>
-		<div id="playback__wrapper">
-			<div id="playback__body" style="overflow: hidden; display: flex; flex-direction: column;">
-				
-				<div id="playback__window" class="wrapper flex-row">
-					<div class="wrapper" style="margin-right: 2vw;display: flex;justify-content: center;align-items: center; flex-direction: column;">
-						<img id="playback__thumb" draggable="false" />
-						<div class="control__wrapper">
-							<div class="control__button">
-								<img id="control__prev" src="assets/icons/audio-previous.svg"/>
-							</div>
-							<div class="control__button">
-								<img id="control__pause" src="assets/icons/audio-play.svg"/>
-							</div>
-							<div class="control__button">
-								<img id="control__next" src="assets/icons/audio-next.svg"/>
-							</div>
-						</div>
-						<div style="width: 100%; position:relative; margin-top: .5rem;">
-							<div id="pbProgress__wrapper" class="playback__progressWrapper">
-								<div id="pBody__progress" class="playback__progressBar"></div>
-								<!--<div id="playbackHandle" class="playback__progressHandle"></div>-->
-							</div>
-							<div class="pBody__timeinfo">
-								<div id="pBody__time">
-									<span>0:00</span>
-								</div>
-								<div id="pBody__length">
-									<span>0:00</span>
-								</div>
-							</div>
-						</div>
-						
+  	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="Content-Security-Policy" content="default-src * self blob: data: gap:; style-src * self 'unsafe-inline' blob: data: gap:; script-src * 'self' 'unsafe-eval' 'unsafe-inline' blob: data: gap:; object-src * 'self' blob: data: gap:; img-src * self 'unsafe-inline' blob: data: gap:; connect-src self * 'unsafe-inline' blob: data: gap:; frame-src * self blob: data: gap:;">
+		<link rel="stylesheet" href="index.css" />
+		<audio id="player" preload="auto"></audio>
+		<title>Akio Music Player</title>
+  	</head>
+  	<body>
+		<div id="bg-img" style="position: absolute; height: 100vh; width: 100vw; z-index: -2;"></div>
+		<div id="bg-matrix"></div>
+		<header id="titlebar">
+			<div id="drag-region">
+				<div id="window-controls">
+					<div class="button" id="option-btn">
+						<i class="gg-options"></i>
 					</div>
-					<canvas id="visualiz" style="margin-right: 0.75rem;"></canvas>
+					<div class="button" id="min-button">
+						<img src="assets/icons/window-minimize.svg" draggable="false"/>
+					</div>
+					<div class="button" id="refresh-button">
+						<img src="assets/icons/window-refresh.svg" draggable="false"/>
+					</div>
+					<div class="button" id="close-button">
+						<img src="assets/icons/window-close.svg" draggable="false" />
+					</div>
 				</div>
 			</div>
-			
-			<div id="history__body" class="hide">
-				<div id="history__wrapper" class="scrollbar-app"></div>
-				<div id="history__header" class="hide">
-					<i class="gg-folder"></i>
+		</header>
+		<div id="app" class="scrollbar-app">
+			<div id="playback__wrapper">
+				<div id="playback__body" style="overflow: hidden; display: flex; flex-direction: column;">
+					<div id="playback__window" class="wrapper flex-row">
+						<div class="wrapper" style="margin-right: 2vw;display: flex;justify-content: center;align-items: center; flex-direction: column;">
+							<img id="playback__thumb" draggable="false" />
+							<div class="under__thumb">
+								<div class="control__wrapper">
+									<div class="control__button">
+										<img id="control__prev" src="assets/icons/audio-previous.svg" draggable="false"/>
+									</div>
+									<div class="control__button">
+										<img id="control__pause" src="assets/icons/audio-play.svg" draggable="false"/>
+									</div>
+									<div class="control__button">
+										<img id="control__next" src="assets/icons/audio-next.svg" draggable="false"/>
+									</div>
+								</div>
+								<div style="width: 100%; position:relative; margin-top: .5rem;">
+									<div id="pbProgress__wrapper" class="playback__progressWrapper">
+										<div id="pBody__progress" class="playback__progressBar"></div>
+										<!--<div id="playbackHandle" class="playback__progressHandle"></div>-->
+									</div>
+									<div class="pBody__timeinfo">
+										<div id="pBody__time">
+											<span>0:00</span>
+										</div>
+										<div id="pBody__length">
+											<span>0:00</span>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<canvas id="visualiz" style="margin-right: 1rem;"></canvas>
+					</div>
 				</div>
+
+				<div id="playlist__body" class="menu__body hide">
+					<div id="playlist__wrapper" class="menu__wrapper scrollbar-app"></div>
+					<div id="playlist__header" class="menu__header hide">
+						<img src="assets/icons/list-music.svg" draggable="false" />
+					</div>
+				</div>
+
+				<div id="history__body" class="menu__body hide">
+					<div id="history__wrapper" class="menu__wrapper scrollbar-app"></div>
+					<div id="history__header" class="menu__header hide">
+						<img src="assets/icons/window-history.svg" draggable="false" />
+					</div>
+				</div>
+				
+				<div id="settings__body" class="hidden">
+					<div id="settings__wrapper">
+					</div>
+				</div>
+
+				
+			</div>
+			<div id="volume-toast" class="hidden">
+				<img draggable="false" src="assets/icons/audio-volume-up.svg" />
+				<div class="volume__sliderWrapper">
+					<div id="volumeSlider" class="volume__sliderBar"></div>
+					<!--<div id="playbackHandle" class="playback__progressHandle"></div>-->
+				</div>
+				<p id="volume__text"></p>
 			</div>
 
-			<div id="playlist__body" class="hide">
-				<div id="playlist__wrapper" class="scrollbar-app"></div>
-				<div id="playlist__header" class="hide">
-					<i class="gg-disc" ></i>
+			<div id="footer">
+				<div style="flex-wrap: nowrap;display: flex;">
+					<p>© 2024 Kiku Music Player, All Right Reserved</p>
+					<div class="fIcon" id="github__red">
+						<img src="assets/icons/logo-github.svg" draggable="false"/>
+					</div>
+					<div class="fIcon" id="twitter__red">
+						<img src="assets/icons/logo-x.svg" draggable="false"/>
+					</div>
+					<div class="fIcon">
+						<img src="assets/icons/logo-discord.svg" draggable="false"/>
+					</div>
 				</div>
-			</div>
-			
-			<div id="settings__body" class="hidden">
-				<div id="settings__wrapper">
-					<img draggable="false" class="cat" id="princeofallsayans" src="assets/images/cat-watermelon.gif" />
-					<img draggable="false" class="cat" id="cleanseroftheearth" src="assets/images/bleh.png" />
-					<img draggable="false" class="cat" id="janitor" src="assets/images/mrfresh.jpg" />
-					<img draggable="false" class="cat" id="thestrongestalien" src="assets/images/gnarp.jpeg" />
+				<div style="flex-wrap: nowrap;display: flex;">
+					<p id="fps"></p>
+					<p id="cpu">0%</p>
+					<p id="ram">0MB</p>
+					<p id="fftSize">????</p>
+					<p id="sampleRate">????</p>
+					<p id="version"></p>
 				</div>
 			</div>
 		</div>
-		<div id="volume-toast" class="hidden">
-			<i class="gg-volume"></i>
-			<div class="volume__sliderWrapper">
-				<div id="volumeSlider" class="volume__sliderBar"></div>
-				<!--<div id="playbackHandle" class="playback__progressHandle"></div>-->
-			</div>
-			<p id="volume__text"></p>
-		</div>
-	</div>
-    <script src="./renderer.js"></script>
-	<svg style="display:none; visibility: collapse;" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="svg-root" width="381" height="166" z-index="-1">
-		<defs>
-			<filter id="SphereMapTest" filterUnits="objectBoundingBox" x="-0.45" y="-1.29" width="1.6" height="3.5">
-				<feImage id="mapa" result="Map" xlink:href="data:image/png;base64,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"></feImage>
-				<feDisplacementMap id="despMap" in="SourceGraphic" in2="map" scale="500" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
-			</filter>
-		</defs>
-	</svg>
-  </body>
+	</body>
+	
+	<script src="./renderer.js"></script>
 </html>
