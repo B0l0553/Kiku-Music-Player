@@ -32,7 +32,7 @@ class Visualiser {
 		this.analyser = this.audioCtx.createAnalyser();
 		this.ctxSrc.connect(this.analyser);
 		this.analyser.connect(this.audioCtx.destination);
-		this.setFftSize(4096);
+		this.setFftSize(128);
 		this.buffer = new Float32Array(this.analyser.frequencyBinCount);
 		this.UIntBuffer = new Uint8Array(this.analyser.frequencyBinCount);
 	}
@@ -78,8 +78,8 @@ class Visualiser {
 	}
 
 	getWaveformData() {
-		this.analyser.getFloatTimeDomainData(this.buffer);
-		return this.buffer;
+		this.analyser.getByteTimeDomainData(this.UIntBuffer);
+		return this.UIntBuffer;
 	}
 }
 

@@ -42,7 +42,7 @@ app.whenReady().then(() => {
     mapi.WriteCache(arg[1]);
     mapi.wHistory(arg[2]);
     win.close();
-});
+  });
   
   createWindow();
 
@@ -50,7 +50,24 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
-  })
+  });
+
+  setInterval(() => {
+    let totalUsage = 0.0;
+    let ramUsage = 0;
+    for (const processMetric of app.getAppMetrics()) {
+      totalUsage += processMetric.cpu.percentCPUUsage;
+    }
+    
+    const win = BrowserWindow.getAllWindows()[0];
+    win.webContents.send("cpu", totalUsage);
+    process.getProcessMemoryInfo().then((data) => { 
+      win.webContents.send("ram", data.private + data.shared);
+    })
+
+    
+    
+  }, 1000);
 })
 
 app.on('window-all-closed', () => {

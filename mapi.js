@@ -44,9 +44,17 @@ class Album {
 	length;
 }
 
-class Cache {
-	last_music_data;
-	thumb;
+class aCache {
+	constructor(c = undefined) {
+		if(c != undefined) {
+			this.currentPlaylist = c.currentPlaylist;
+			this.cPtr = c.cPtr;
+			this.pLen = c.pLen;
+		}
+	}
+	currentPlaylist;
+	cPtr;
+	pLen;
 }
 
 class UsrData {
@@ -88,20 +96,18 @@ function GetSettings() {
 
 function GetCache() {
 	var json = GetJSONFromFile(path.join(__dirname, "/data/cache.json"), (_path) => {
-		fs.writeFileSync(_path, JSON.stringify(new Cache(), null, 4));
+		fs.writeFileSync(_path, JSON.stringify(new aCache(), null, 4));
 		return null;
 	});
 
 	if(json) {
-		var a = new Cache();
-		console.log("Cache JSON Valid");
-		a.last_music_data 	= json.last_music_data || [];
-		a.thumb 			= json.thumb || "";
+		var a = new aCache();
+		a.currentPlaylist = json.currentPlaylist;
+		a.cPtr = json.cPtr;
+		a.pLen = json.pLen;
 		return a;
 	}
-
-	console.log("Hi!");
-	return new Cache();
+	return new aCache();
 }
 
 function GetUserData() {
@@ -111,7 +117,7 @@ function GetUserData() {
 	})
 	
 	var tu = new UsrData();
-	tu.volume 			= json.volume || .5;
+	tu.volume 			= json.volume || .2;
 	tu.playtime 		= json.playtime || 0;
 	tu.totalTime		= json.totalTime || 0;
 	tu.playing			= json.playing || 0;
@@ -209,22 +215,20 @@ function GetAudioFiles(_path) {
 
 function GetMetadata(_path) {
 	if(!IsFile(_path)) return null;
-	//console.log("Getting metadata for " + _path)
 	var fMusic = new MusicMeta();
 	var file = fs.lstatSync(_path);
 	fMusic.path = _path;
 	fMusic.filename = path.basename(_path);
 	fMusic.lastEdited = file.birthtime;
-	fMusic.uniqueId = crypto.randomInt(0xffffff);
-
 	const tags = NodeID3.read(_path);
+	
 
 	fMusic.tags.artist 		= tags.artist 		|| "unknown artist";
 	fMusic.tags.bpm			= tags.bpm			|| 0;
 	fMusic.tags.comment 	= tags.comment 		|| "";
 	fMusic.tags.composer	= tags.composer		|| "unknown";
 	fMusic.tags.genre		= tags.genre		|| "unknown";
-	fMusic.tags.length		= tags.length		|| 0;
+	fMusic.tags.length 		= 0;
 	fMusic.tags.title		= tags.title		|| fMusic.filename;
 	fMusic.tags.album 		= tags.album 		|| fMusic.title + " - Single";
 	fMusic.tags.track		= tags.trackNumber 	|| 0;
@@ -243,7 +247,6 @@ function GetMetadata(_path) {
 	} else {
 		fMusic.tags.image = path.join(__dirname, "assets/images/unknown.png");
 	}
-	console.log(fMusic);
 	return fMusic;
 }
 
@@ -275,97 +278,12 @@ function PeekMusicFolders(_pathArray) {
 	return musics;
 }
 
-function GetUnscannedFiles(_pathArray, _musics) {
-	if(_pathArray.length < 1) return [];
-	//if(_musics.length < 1) return [];
-
-	var nscnd = [];
-	_pathArray.forEach(path => {
-		GetAudioFiles(path).forEach(musicf => {
-			if(!CheckIfInMusics(_musics, musicf)) {
-				nscnd.push(musicf);
-			}
-			
-			/*if(!_musics.includes(musicf)) {
-				nscnd.push(musicf);
-			}*/
-		})
-	})
-
-	return nscnd;
-}
-
-function CheckIfInMusics(_musics, _value) {
-	for(let i = 0; i < _musics; i++) {
-		if(_value == _musics[i].path) return true;
-	}
-
-	return false;
-}
-
-function VerifyFiles(_pathArray, _musics) {
-	if(_pathArray.length < 1) return [];
-
-	var toremove = [];
-	_musics.forEach(music => {
-		if(!fs.existsSync(music)) {
-			toremove.push(music);
-		}
-	});
-
-	return toremove;
-}
-
-function GetMusics(_pathArray) {
-	if(_pathArray.length < 1) return [];
-
-	var musics = [];
-	_pathArray.forEach(el => {
-		musics.push(... GetAudioFiles(el));
-	})
-
-	var formMusics = [];
-	musics.forEach(el => {
-		formMusics.push(GetMetadata(el));
-	})
-
-	return formMusics;
-}
-
-function AlbumExists(albums, name) {
-	return (albums[name] !== null || albums[name] !== undefined)
-}
-
-function GetAlbums(_toscan) {
-	if(_toscan < 1) return [];
-	
-	var albums = [];
-	
-	for(let i = 0; i < _toscan.length; i++) {
-		
-		if(AlbumExists(albums, _toscan[i].tags.Album)) {
-			albums[_toscan[i].tags.Album].musics.push(_toscan);
-			tAlbum.tracks++;
-		} else {
-			var tAlbum = new Album();
-			tAlbum.name = _toscan[i].tags.album;
-			tAlbum.tracks = 1;
-			tAlbum.musics = [_toscan];
-			albums.push(tAlbum);
-		}
-	}
-
-	return albums;
-}
-
 function getFileB64(_path) {
 	return fs.readFileSync(_path).toString('base64');
 }
 
 module.exports = {
 	GetJSONFromFile,
-	GetAlbums,
-	GetMusics,
 	GetMetadata,
 	GetSettings,
 	gHistory,
@@ -376,10 +294,8 @@ module.exports = {
 	GetUserData,
 	WriteUserData,
 	PeekMusicFolders,
-	GetUnscannedFiles,
-	VerifyFiles,
 	getFileB64,
 	MusicMeta,
-	Cache,
+	aCache,
 	AppSettings,
 }
