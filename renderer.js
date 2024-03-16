@@ -351,6 +351,7 @@ document.onreadystatechange = () => {
 		const playlistBody = $("playlist__body");
 		const player = document.getElementById("player");
 		const progressWrapper = document.getElementsByClassName("playback__progressWrapper")[0];
+		const progressHandle = $("playbackHandle");
 		const progressBody = document.getElementById("pBody__progress");
 		const playbackBodyBg = document.getElementById("bg-img");
 		const pBodyLength = document.getElementById("pBody__length");
@@ -365,14 +366,31 @@ document.onreadystatechange = () => {
 		const test = document.getElementById("time");
 		const formatSeconds = s => (new Date(s * 100)).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0];
 
-		progressWrapper.addEventListener("click", (e) => {
+		progressWrapper.addEventListener("mousedown", (e) => {
 			var r = progressWrapper.getBoundingClientRect();
 			player.currentTime = player.duration*((e.clientX-r.x)/r.width);
+
+			function mouseMove(_e) {
+				var cx = _e.clientX
+				if(cx < r.x) cx = r.x;
+				else if(cx > r.x + r.width) cx = r.x+r.width;
+				player.currentTime = player.duration*((cx-r.x)/r.width);
+			}
+
+			function handleMouseUp() {
+				document.removeEventListener("mousemove", mouseMove);
+				document.removeEventListener("mouseup", handleMouseUp);
+			}
+
+			document.addEventListener("mousemove", mouseMove);
+			document.addEventListener("mouseup", handleMouseUp);
 		});
 
 		player.addEventListener('timeupdate', () => {
 			var percent = (player.currentTime / player.duration) * 100;
+			var r = progressWrapper.getBoundingClientRect();
 			progressBody.style.width = `${percent}%`;
+			progressHandle.style.left = `${r.width*(percent/100)}px`;
 			pBodyTime.textContent = getTime(player.currentTime);
 			pBodyLength.textContent = getTime(player.duration);
 			userdata.playtime = player.currentTime;
@@ -476,7 +494,6 @@ document.onreadystatechange = () => {
 
 		window.addEventListener("resize", () => {
 			changeVisSize(visCanvas);
-			
 		});
 
 		ipcRenderer.on("cpu", (e, data) => {
@@ -484,6 +501,19 @@ document.onreadystatechange = () => {
 		})
 		ipcRenderer.on("ram", (e, data) => {
 			$("ram").textContent = `${Math.round(data/1000)}MB`
+		})
+		ipcRenderer.on("fullscreen", (e, data) => {
+			if(data === true) {
+				$("titlebar").classList.add("hidden");
+				$("app").classList.add("notitle");
+				$("playlist__body").classList.add("notitle");
+				$("history__body").classList.add("notitle");
+			} else {
+				$("titlebar").classList.remove("hidden");
+				$("app").classList.remove("notitle");
+				$("playlist__body").classList.remove("notitle");
+				$("history__body").classList.remove("notitle");
+			}
 		})
 
 		$("playback__window").addEventListener("dragover", (e) => {

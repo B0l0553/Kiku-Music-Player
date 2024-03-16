@@ -19,6 +19,26 @@ function createWindow () {
     }
   })
 
+  setInterval(() => {
+    let totalUsage = 0.0;
+    let ramUsage = 0;
+    for (const processMetric of app.getAppMetrics()) {
+      totalUsage += processMetric.cpu.percentCPUUsage;
+    }
+    
+    win.webContents.send("cpu", totalUsage);
+    process.getProcessMemoryInfo().then((data) => { 
+      win.webContents.send("ram", data.private + data.shared);
+    })
+  }, 1000);
+
+  win.on("enter-full-screen", () => {
+    win.webContents.send("fullscreen", true);
+  })
+  win.on("leave-full-screen", () => {
+    win.webContents.send("fullscreen", false);
+  })
+
   win.loadFile('index.html');
 }
 
@@ -52,22 +72,7 @@ app.whenReady().then(() => {
     }
   });
 
-  setInterval(() => {
-    let totalUsage = 0.0;
-    let ramUsage = 0;
-    for (const processMetric of app.getAppMetrics()) {
-      totalUsage += processMetric.cpu.percentCPUUsage;
-    }
-    
-    const win = BrowserWindow.getAllWindows()[0];
-    win.webContents.send("cpu", totalUsage);
-    process.getProcessMemoryInfo().then((data) => { 
-      win.webContents.send("ram", data.private + data.shared);
-    })
-
-    
-    
-  }, 1000);
+  
 })
 
 app.on('window-all-closed', () => {
