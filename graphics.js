@@ -235,9 +235,6 @@ function appendChibi(chibi) {
 	chibis.push(chibi);
 }
 
-function setSVGFilter(value) {
-	desp = value;
-}
 function setBackground(value) {
 	background = value;
 }
@@ -256,11 +253,6 @@ function setArtist(value) {
 
 function setNextTitle(value) {
 	next = value;
-}
-
-function changeBarWidth(_nWidth, _nWidthB=_nWidth) {
-	barWidth = _nWidth;
-	barWidthB= _nWidthB;
 }
 
 function min(arr) {
@@ -349,7 +341,7 @@ function vhTOpx(value) {
 	return(result);
 }
 
-function changeVisSize(canvas, vw = 50, vh = 60) {
+function changeVisSize(canvas, vw = 55, vh = 65) {
 	var w = vwTOpx(vw);
 	var h = vhTOpx(vh);
 
@@ -359,8 +351,10 @@ function changeVisSize(canvas, vw = 50, vh = 60) {
 	canvas.height = h;
 	canvas.style.width = `${w}px`;
 	canvas.style.height = `${h}px`;
-
-	changeBarWidth(Math.trunc(w/(bpLength-2)), Math.trunc(w/(bpbLength-2)));
+	
+	barWidth = Math.trunc(w/(bpLength-2));
+	barWidthB= Math.trunc(w/(bpbLength-2));
+	// changeBarWidth(Math.trunc(w/(bpLength-2)), Math.trunc(w/(bpbLength-2)));
 }
 
 function renderFrame(visualiser, canvas, ctx) {
@@ -414,21 +408,21 @@ function renderFrame(visualiser, canvas, ctx) {
 		ctx.shadowBlur=0;
 	}
 	
-	function drawBar(p, offsetRight, offsetBottom, pointOffset) {
+	function drawBar(p, offsetRight, offsetBottom, pointOffset, shadow = 0) {
+		ctx.shadowBlur=shadow;
+		ctx.fillStyle = "white"
 		for(var i = 0; i < p.length; i++) {
 			var dy = p[i].y-pointOffset;
 			if(dy > -barWidth/1.5) dy=-barWidth/1.5;
 			ctx.beginPath();
 			ctx.roundRect(p[i].x + i - offsetRight, canvas.height - offsetBottom, barWidth / 2, dy, [40]);
-			var h = 300 + p[i].y;
-			var s = 100 + "%";
-			var l = -p[i].y < 64 ? -p[i].y * 50 / 64 + "%" : "50%";
-			ctx.fillStyle = "hsl(" + h + "," + s + "," + l + ")";
-			if(p[i].m) {
-				ctx.fillStyle = "#FFF";
-			}
+			// var h = 300 + p[i].y;
+			// var s = 100 + "%";
+			// var l = -p[i].y < 64 ? -p[i].y * 50 / 64 + "%" : "50%";
+			// ctx.fillStyle = "hsl(" + h + "," + s + "," + l + ")";
 			ctx.fill();
 		}
+		ctx.shadowBlur=0;
 	}
 	
 	function drawLine(bp) {
@@ -486,11 +480,12 @@ function renderFrame(visualiser, canvas, ctx) {
 	function drawWave(x, y, sx, ox, data, dataGroups = 8) {
 		let dx = x;
 		var e = groupPerN(data, dataGroups);
-		const sliceWidth = Math.round(sx / e.length-1);
+		const sliceWidth = Math.round(sx / e.length);
+		const ceiling = chToPx(25)
 
 		for (let i = 0; i < e.length; i++) {
-			let mx = (max(e[i]) - 128) * 1.5 + 4;
-			let mn = (min(e[i]) - 128) * 1.5 - 4;
+			let mx = ((max(e[i]) - 128) + 4)/128 * ceiling;
+			let mn = ((min(e[i]) - 128) - 4)/128 * ceiling;
 			
 			if(mx - mn < 4) mn -= mn - mx;
 
@@ -589,25 +584,29 @@ function renderFrame(visualiser, canvas, ctx) {
 	}
 	ctx.setLineDash([]);
 
-	drawText(cwToPx(2), chToPx(5), "作曲者", "MPLUS1Code", cwToPx(2.6));
+	drawText(cwToPx(2), chToPx(5), "作曲者", "MPLUS1Code", cwToPx(2.6), "white", 4);
 	drawTrapeze(cwToPx(12), chToPx(3.4), cwToPx(22), chToPx(.6), 5, "white");
 	drawText(cwToPx(2), chToPx(14), artist, "MPLUS1Code", cwToPx(6), "#A0E9FF", 4);
-	
-	drawText(cwToPx(2), chToPx(35), "曲名", "MPLUS1Code", cwToPx(2.6));
-	drawTrapeze(cwToPx(10), chToPx(33.5), cwToPx(24), chToPx(.6), 5, "white");
-	var ttlen = canvas.width/title.length;
-	drawText(cwToPx(2), chToPx(35) + ttlen*0.75, title, "MPLUS1Code", ttlen*0.8, "#DCF2F1", 4);
-	
-	drawText(cwToPx(100) - 77, chToPx(23), "曲集名", "MPLUS1Code", cwToPx(2.6));
-	drawTrapeze(cwToPx(89), chToPx(21.4), cwToPx(-22), chToPx(.6), 5, "white");
-	var alen = canvas.width/title.length*.8;
-	var aw = getTextWidth(album, "MPLUS1Code", alen)
-	if(aw > canvas.width/2) {
-		alen*=.5;
-		aw = getTextWidth(album, "MPLUS1Code", alen)
-	}
 
-	drawText(cwToPx(100) - aw, chToPx(30) + alen*.3, album, "MPLUS1Code", alen, "#A0E9FF", 4);
+	// drawText(cwToPx(100) - 77, chToPx(23), "曲集名", "MPLUS1Code", cwToPx(2.6), "white", 4);
+	// drawTrapeze(cwToPx(89), chToPx(21.4), cwToPx(-22), chToPx(.6), 5, "white");
+	// var alen = canvas.width/title.length;
+	// var aw = getTextWidth(album, "MPLUS1Code", alen)
+	// if(aw > canvas.width/2) {
+	// 	alen*=(canvas.width/2/aw);
+	// 	aw = getTextWidth(album, "MPLUS1Code", alen)
+	// }
+	// drawText(cwToPx(100) - aw, chToPx(23) + alen*0.95, album, "MPLUS1Code", alen, "#A0E9FF", 4);
+
+	drawText(cwToPx(2), chToPx(25), "曲名", "MPLUS1Code", cwToPx(2.6), "white", 4);
+	drawTrapeze(cwToPx(10), chToPx(23.5), cwToPx(24), chToPx(.6), 5, "white");
+	var ttlen = canvas.width/title.length*1.8;
+	var tw = getTextWidth(title, "MPLUS1Code", ttlen) 
+	if(tw > canvas.width) {
+		ttlen*=(canvas.width/tw)*0.95;
+		tw = getTextWidth(title, "MPLUS1Code", ttlen)
+	}
+	drawText(cwToPx(2), chToPx(25) + ttlen*0.85, title, "MPLUS1Code", ttlen, "#4361EE", 4);
 	
 	switch(visualiser.mode) {
 		case "bar":
@@ -616,7 +615,7 @@ function renderFrame(visualiser, canvas, ctx) {
 		case "fSBezier":
 		case "line":
 			dataArray = visualiser.getVisualiserUIntData()
-			bp.push(... getPointsUInt8P(dataArray, 0, 58, 300, barWidth));
+			bp.push(... getPointsUInt8(dataArray, 0, 58, 300, barWidth));
 			bpLength = bp.length;
 			//bp.push(... getRange(dataArray, 0, 58, 1100 + diffVolume, 11.5, barWidth));
 			//bp.push(... getRangeNormalized(dataArray, 0, 58, 125, -30, barWidth));
@@ -627,9 +626,9 @@ function renderFrame(visualiser, canvas, ctx) {
 			dataArray = visualiser.getVisualiserUIntData()
 			// bp.push(... getAllPointNormalized(dataArray, 225));
 			// bpb.push(... getAllPointNormalized(dataArray, 225));
-			bp.push(... getPointsUInt8(dataArray, 1, 10, chToPx(30), barWidth));
-			bpb.push(... getPointsUInt8([0, 0, 0, 0, 0], 0, 4, 0, barWidthB));
-			bpb.push(... getPointsUInt8(dataArray, 0, 28, chToPx(40), barWidthB));
+			bp.push(... getPointsUInt8(dataArray, 1, 12, chToPx(30), barWidth));
+			bpb.push(... getPointsUInt8([0, 0, 0, 0], 0, 3, 0, barWidthB));
+			bpb.push(... getPointsUInt8(dataArray, 0, 32, chToPx(43), barWidthB));
 			bpLength = bp.length;
 			bpbLength = bpb.length;
 			break;
@@ -644,8 +643,8 @@ function renderFrame(visualiser, canvas, ctx) {
 			drawBar(bp, -barWidth/2, waveOffset, 0);
 			break;
 		case "bBezier":
-			drawBar(bp, -barWidth/2, waveOffset, -75);
-			drawBezier(bp, false, waveOffset, -barWidth/4, 1, "white");
+			drawBar(bp, -barWidth/2, waveOffset, -75, 4);
+			setTimeout(() => drawBezier(bp, false, waveOffset, -barWidth/4, 1, "white", 4), 60);
 			break;
 		case "bezier":
 			drawBezier(bp, false, waveOffset, -barWidth/4, 1, "white");
@@ -657,7 +656,7 @@ function renderFrame(visualiser, canvas, ctx) {
 			
 			if(visualiser.showWaveform) {
 				var wData = visualiser.getWaveformData();
-				drawWave(0, canvas.height - 100 - waveOffset, canvas.width-1, 1, wData, visualiser.analyser.fftSize/256);
+				drawWave(0, canvas.height - chToPx(21.5), canvas.width+50, -canvas.width*0.2-51, wData, visualiser.analyser.fftSize/256);
 			}
 		case "fBezier":
 			drawBezier(bpb, true, waveOffset, bpb[0].x+barWidth, 1, /*"#7FC7D9"*/ "#FFF", 4);
@@ -679,9 +678,9 @@ function renderFrame(visualiser, canvas, ctx) {
 		var value = getAverage(dataArray, 0, 24)/255;
 		backa += (60/visualiser.refreshRate) / 1000;
 		if(backa >= Math.PI*2) backa = 0;
-		background.style.backgroundSize = `${150 + 40*value}vw`
+		background.style.backgroundSize = `${150 + 50*value}vw`
 		background.style.filter = `brightness(${.7 + .3*value}) blur(16px)`;
-		background.style.backgroundPosition = `-${(25 + 20*value) - (Math.cos(backa) * 12)/2}vw -${(50 + 20*value) - (Math.sin(backa) * 6)/2}vw`
+		background.style.backgroundPosition = `-${(25 + 25*value) - (Math.cos(backa) * 16)/2}vw -${(50 + 25*value) - (Math.sin(backa) * 24)/2}vw`
 	}
 
 	if(visualiser.showChibi) {
@@ -944,7 +943,6 @@ function renderFrame(visualiser, canvas, ctx) {
 }
 
 module.exports = {
-	changeBarWidth,
 	setTitle,
 	setAlbum,
 	setArtist,
@@ -955,6 +953,5 @@ module.exports = {
 	cObject,
 	appendChibi,
 	chibis,
-	setSVGFilter,
 	setBackground,
 }
