@@ -49,6 +49,12 @@ body {
 	overflow-y: auto;
 }
 
+#app.notitle {
+	height: 100%;
+	margin-top: 0;
+	margin-bottom: 0;
+}
+
 #titlebar #drag-region {
 	height: 100%;
 	width: 100%;
@@ -181,7 +187,8 @@ body {
 }
 
 #playback__window {
-	max-width: 90vw; 
+	max-width: 95vw; 
+	max-height: 80vh;
 	justify-content: center; 
 	/* backdrop-filter: blur(10px) brightness(0.5);  */
 	/* background-color: rgba(45, 52, 143, 0.705); */
@@ -287,16 +294,56 @@ body {
 }
 
 #settings__wrapper {
-	height: 80vh;
-	width: 60vw;
+	height: 90vh;
+	width: 50vw;
 	border-radius: .5rem;
 	background-color: #254053;
 	padding: 2rem;
 	display: flex;
+	justify-content: flex-start;
+	align-items: center;
+	flex-wrap: nowrap;
+	flex-direction: row;
+}
+
+#settings__nav {
+	width: 10vw;
+	height: 100%;
+	display: flex;
+	justify-content: flex-start;
+	align-items: flex-start;
+	flex-direction: column;
+	flex-wrap: nowrap;
+}
+
+#settings__content {
+	display: flex;
+	height: 100%;
+	width: 100%;
 	justify-content: center;
 	align-items: center;
-	flex-wrap: wrap;
-	flex-direction: row;
+	background-color: #ffffff11;
+	border: #1A2933 solid 2px;
+	border-radius: .5rem;
+	margin-left: 1rem;
+}
+
+.settings__tab {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border: #ffffff6b solid 2px;
+	border-radius: .5rem;
+	padding: .5rem;
+	font-size: 1.5rem;
+	font-family: "MPLUS1Code";
+	margin-bottom: 1rem;
+	cursor: pointer;
+}
+
+.settings__tab:hover {
+	border: #ffffffbe solid 2px;
 }
 
 .cat {
@@ -325,9 +372,14 @@ body {
 	backdrop-filter: blur(12px);
 	width: 35vw;
 	height: calc(100vh - 32px);
-	transition: transform .3s;
+	transition: transform .3s; 
 	border-left: solid white 2px;
 	z-index: 1;
+}
+
+.menu__body.notitle {
+	height: 100vh;
+	top:-32px;
 }
 
 .menu__body.hide {
@@ -620,14 +672,14 @@ body {
 
 .playback__progressHandle {
 	position: absolute;
-	height: 15px;
-	width: 15px;
-	left: calc(initial - 8px);
-	bottom: calc(32px / 2 - 7px);
-	background: blue;
+	height: 16px;
+	width: 6px;
+	left: -3px;
+	top: -4px;
+	background: white;
 	/*cursor: pointer;*/
-	border-radius: 100%;
-	visibility: hidden;
+	border-radius: .25rem;
+	/* visibility: hidden; */
 }
 
 .volume__sliderWrapper {
