@@ -378,7 +378,7 @@ function renderFrame(visualiser, canvas, ctx) {
 		return ctx.measureText(value).width;
 	}
 	
-	function drawBezier(bp, filled, offsetBottom=0, offsetRight=0, spacing=1, color="white", shadow=0) {
+	function drawBezier(bp, filled, offsetBottom=0, offsetRight=0, color="white", shadow=0) {
 		ctx.beginPath();
 		ctx.setLineDash([]);
 		ctx.strokeStyle = color;
@@ -386,17 +386,17 @@ function renderFrame(visualiser, canvas, ctx) {
 		ctx.lineWidth = 4;
 		ctx.shadowBlur=shadow;
 		// move to the first point
-		ctx.moveTo(0-barWidth/2, canvas.height- 1-offsetBottom);
+		ctx.moveTo(0-barWidth/2, canvas.height-offsetBottom);
 		for (var i = 0; i < bp.length-1; i++)
 		{
 			var xc = (bp[i].x + bp[i + 1].x) / 2;
 			var yc = (bp[i].y + bp[i + 1].y) / 2;
 			//ctx.quadraticCurveTo(bp[i].x+i*spacing+barWidth/2-offsetRight, bp[i].y-offsetBottom, xc+i*spacing+1+barWidth/2-offsetRight, yc-offsetBottom);
-			ctx.quadraticCurveTo(bp[i].x+i*spacing+barWidth/2-offsetRight, bp[i].y+canvas.height-1-offsetBottom, xc+i*spacing+1+barWidth/2-offsetRight, yc + canvas.height - 1- offsetBottom);
+			ctx.quadraticCurveTo(bp[i].x+barWidth/2-offsetRight, bp[i].y+canvas.height-offsetBottom, xc+1+barWidth/2-offsetRight, yc + canvas.height-offsetBottom);
 			
 		}
 		// curve through the last two bp
-		ctx.quadraticCurveTo(bp[bp.length-1].x+bp.length*spacing+barWidth/2-offsetRight, bp[bp.length-1].y+canvas.height- 1-offsetBottom, canvas.width+barWidth/2, canvas.height- 1-offsetBottom);
+		ctx.quadraticCurveTo(bp[bp.length-1].x+barWidth/2-offsetRight, bp[bp.length-1].y+canvas.height-offsetBottom, canvas.width+barWidth/2, canvas.height-offsetBottom);
 		if(filled) {
 			ctx.lineTo(canvas.width, canvas.height-offsetBottom);
 			ctx.lineTo(0, canvas.height-offsetBottom);
@@ -489,15 +489,13 @@ function renderFrame(visualiser, canvas, ctx) {
 			
 			if(mx - mn < 4) mn -= mn - mx;
 
-			
-	
 			ctx.beginPath();
 			ctx.fillStyle = "rgba(126, 249, 255, .8)";
 			ctx.roundRect(dx + ox, y-mn, sliceWidth, mn-mx, [40]);
 			ctx.fill();
 			dx += sliceWidth + 2;
 		}
-		ctx.fillStyle = "rgba(255, 255, 255, 1)";
+		ctx.fillStyle = "#FFF";
 	}
 
 	function getRange(data, start, end, threshold, amplification = 1, spacing = 1) {
@@ -599,14 +597,14 @@ function renderFrame(visualiser, canvas, ctx) {
 	// drawText(cwToPx(100) - aw, chToPx(23) + alen*0.95, album, "MPLUS1Code", alen, "#A0E9FF", 4);
 
 	drawText(cwToPx(2), chToPx(25), "曲名", "MPLUS1Code", cwToPx(2.6), "white", 4);
-	drawTrapeze(cwToPx(10), chToPx(23.5), cwToPx(24), chToPx(.6), 5, "white");
+	drawTrapeze(cwToPx(9.5), chToPx(23.5), cwToPx(24.5), chToPx(.6), 5, "white");
 	var ttlen = canvas.width/title.length*1.8;
 	var tw = getTextWidth(title, "MPLUS1Code", ttlen) 
 	if(tw > canvas.width) {
 		ttlen*=(canvas.width/tw)*0.95;
 		tw = getTextWidth(title, "MPLUS1Code", ttlen)
 	}
-	drawText(cwToPx(2), chToPx(25) + ttlen*0.85, title, "MPLUS1Code", ttlen, "#4361EE", 4);
+	drawText(cwToPx(2), chToPx(25) + ttlen*0.85, title, "MPLUS1Code", ttlen, /*"#4361EE"*/ "#06dba0", 4);
 	
 	switch(visualiser.mode) {
 		case "bar":
@@ -644,22 +642,22 @@ function renderFrame(visualiser, canvas, ctx) {
 			break;
 		case "bBezier":
 			drawBar(bp, -barWidth/2, waveOffset, -75, 4);
-			setTimeout(() => drawBezier(bp, false, waveOffset, -barWidth/4, 1, "white", 4), 60);
+			setTimeout(() => drawBezier(bp, false, waveOffset, -barWidth/4, "white", 4), 60);
 			break;
 		case "bezier":
-			drawBezier(bp, false, waveOffset, -barWidth/4, 1, "white");
+			drawBezier(bp, false, waveOffset, -barWidth/4, "white");
 			break;
 		case "tOFBezier":
 			drawTangent(bp, bpb);
 		case "oFBezier":
-			drawBezier(bp, true, waveOffset, barWidth, 1, /*"#365486"*/ "#4B6AC4", 4);
+			drawBezier(bp, true, waveOffset, barWidth, /*"#365486"*/ "#4B6AC4", 4);
 			
 			if(visualiser.showWaveform) {
 				var wData = visualiser.getWaveformData();
 				drawWave(0, canvas.height - chToPx(21.5), canvas.width+50, -canvas.width*0.2-51, wData, visualiser.analyser.fftSize/256);
 			}
 		case "fBezier":
-			drawBezier(bpb, true, waveOffset, bpb[0].x+barWidth, 1, /*"#7FC7D9"*/ "#FFF", 4);
+			drawBezier(bpb, true, waveOffset, bpb[0].x+barWidth, /*"#7FC7D9"*/ "#FFF", 4);
 			break;
 		case "fSBezier":
 			drawBezier(bp, true);

@@ -3,7 +3,7 @@ const VERSION = "0.4.70"
 const { ipcRenderer, dialog, app, BrowserWindow } = require("electron");
 const fs = require("fs");
 const path = require("path")
-let InternalPlaylist=[],pPtr=toPlay=loop=optionOpn=0,contextData=null,vHandle,visCanvas,keys={};
+let InternalPlaylist=[],pPtr=toPlay=loop=optionOpn=tMinus=0,contextData=null,vHandle,visCanvas,keys={};
 
 
 const {
@@ -138,9 +138,11 @@ document.onreadystatechange = () => {
 			bg.appendChild(twr);
 			bg.onclick = () => {
 				(async () => { 
+					if(`file:///${data.path.replaceAll("\\", "/")}` == decodeURI(player.src)) return;
 					var w = GetMetadata(data.path);
 					clearPlaylist();
 					addMusic(w);
+					toPlay=1;
 					playCurrent();
 				})();
 			}
@@ -214,7 +216,6 @@ document.onreadystatechange = () => {
 				console.error("Tried to play, but data was null: ", data);
 				return;
 			}
-			console.log(data);
 			changeMS(player, togglePause, data);
 			var src = data.path;
 			var thumbSrc = data.tags.image;
@@ -222,7 +223,7 @@ document.onreadystatechange = () => {
 				player.pause();
 				player.src = src;
 				player.load();
-				player.currentTime = 0;
+				player.currentTime = 1e-3;
 				//playbackLength.textContent = getTime(data.length);
 				setThumb(thumbSrc);
 				setTitle(data.tags.title);
@@ -256,7 +257,6 @@ document.onreadystatechange = () => {
 		}
 		
 		function playCurrent() {
-			console.log(`${pPtr} - ${InternalPlaylist.length}`);
 			if(pPtr < InternalPlaylist.length && pPtr >= 0) {
 				playMusic(InternalPlaylist[pPtr]);
 			} else {
@@ -284,12 +284,14 @@ document.onreadystatechange = () => {
 				}
 				player.play();
 				userdata.playing = 1;
+				vHandle.setRefreshRate(75);
 				$("control__pause").src = path.join(__dirname, "assets/icons/audio-pause.svg")
 				//StartRPC(player.currentTime, InternalPlaylist[pPtr].length);
 				return;
 			}
 			userdata.playing = 0;
 			player.pause();
+			vHandle.setRefreshRate(20);
 			$("control__pause").src = path.join(__dirname, "assets/icons/audio-play.svg")
 			//PauseRPC();
 		}
@@ -390,15 +392,16 @@ document.onreadystatechange = () => {
 			var percent = (player.currentTime / player.duration) * 100;
 			var r = progressWrapper.getBoundingClientRect();
 			progressBody.style.width = `${percent}%`;
-			progressHandle.style.left = `${r.width*(percent/100)}px`;
+			progressHandle.style.left = `${r.width*(percent/100)-3}px`;
 			pBodyTime.textContent = getTime(player.currentTime);
-			pBodyLength.textContent = getTime(player.duration);
+			pBodyLength.textContent = tMinus ? getTime(player.duration-player.currentTime) : getTime(player.duration);
 			userdata.playtime = player.currentTime;
 			userdata.volume = player.volume;
 		});
 	
 		player.addEventListener("ended", () => {
 			userdata.playing = 0;
+			vHandle.setRefreshRate(20);
 			toPlay = 1;
 			if(!playNext()) {
 				player.currentTime = 0;
@@ -407,10 +410,10 @@ document.onreadystatechange = () => {
 		});
 		
 		vHandle = setupVisualizer(visCanvas, player);
-		vHandle.setSmoothing(0.4);
+		vHandle.setSmoothing(0.35);
 		vHandle.setFftSize(4096);
 		vHandle.setMode(userdata.vis_mode, visCanvas);
-		vHandle.setRefreshRate(75);
+		vHandle.setRefreshRate(20);
 		vHandle.activeBackground = true;
 		setBackground(playbackBodyBg);
 		if(userdata.showchibi) {
@@ -447,7 +450,11 @@ document.onreadystatechange = () => {
 			playCurrent();
 		}
 		
-		player.currentTime = userdata.playtime || 0;
+		player.currentTime = userdata.playtime+1e-3 || 0;
+
+		pBodyLength.onclick = () => {
+			tMinus = !tMinus;
+		}
 
 		volumeToaster.addEventListener("animationend", () => {
 			volumeToaster.classList.add("hidden");

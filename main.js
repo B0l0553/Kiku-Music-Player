@@ -4,8 +4,8 @@ const mapi = require("./mapi");
 
 function createWindow () {
   const win = new BrowserWindow({
-    width: 1024,
-    height: 768,
+    width: 1000,
+    height: 600,
     frame: false,
     resizable: true,
     minHeight: 500,

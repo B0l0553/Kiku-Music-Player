@@ -161,8 +161,8 @@ body {
 }
 
 #playback__thumb {
-	max-width: 35vw;
-	max-height: 35vw;
+	width: 35vw;
+	height: 35vw;
 }
 
 .under__thumb {
@@ -326,6 +326,7 @@ body {
 	border: #1A2933 solid 2px;
 	border-radius: .5rem;
 	margin-left: 1rem;
+	flex-direction: column;
 }
 
 .settings__tab {
@@ -336,7 +337,7 @@ body {
 	border: #ffffff6b solid 2px;
 	border-radius: .5rem;
 	padding: .5rem;
-	font-size: 1.5rem;
+	font-size: 1.5vw;
 	font-family: "MPLUS1Code";
 	margin-bottom: 1rem;
 	cursor: pointer;
@@ -344,24 +345,6 @@ body {
 
 .settings__tab:hover {
 	border: #ffffffbe solid 2px;
-}
-
-.cat {
-	width: 20rem;
-	height: 20rem;
-	margin: 2rem
-}
-.cat:active {
-	width: 19rem;
-	height: 19rem;
-	margin: 2.5rem
-}
-
-#settings__title {
-	font-size: 3rem;
-	display: flex;
-	justify-content: center;
-	width: 100%;
 }
 
 .menu__body {
@@ -450,7 +433,7 @@ body {
 
 .playlist__music img {
 	/* width: 6rem; */
-	height: 100%;
+	max-width: 7vw;
 	margin-right: 1rem;
 }
 
@@ -563,6 +546,10 @@ body {
 	justify-content: space-between;
 	width: 100%;
 	margin-top: 4px;
+}
+
+#pBody__length {
+	cursor: pointer;
 }
 
 .playback__button {
