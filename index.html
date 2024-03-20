@@ -5,11 +5,14 @@
 		<meta http-equiv="Content-Security-Policy" content="default-src * self blob: data: gap:; style-src * self 'unsafe-inline' blob: data: gap:; script-src * 'self' 'unsafe-eval' 'unsafe-inline' blob: data: gap:; object-src * 'self' blob: data: gap:; img-src * self 'unsafe-inline' blob: data: gap:; connect-src self * 'unsafe-inline' blob: data: gap:; frame-src * self blob: data: gap:;">
 		<link rel="stylesheet" href="index.css" />
 		<audio id="player" preload="auto"></audio>
+		<img id="thumb" style="display: none;" />
 		<title>Akio Music Player</title>
   	</head>
   	<body>
+		
 		<div id="bg-img" style="position: absolute; height: 100vh; width: 100vw; z-index: -2;"></div>
 		<div id="bg-matrix"></div>
+		
 		<header id="titlebar">
 			<div id="drag-region">
 				<div id="window-controls">
@@ -32,8 +35,14 @@
 			<div id="playback__wrapper">
 				<div id="playback__body" style="overflow: hidden; display: flex; flex-direction: column;">
 					<div id="playback__window" class="wrapper flex-row">
-						<div class="wrapper" style="margin-right: 2vw;display: flex;justify-content: center;align-items: center; flex-direction: column;">
-							<img id="playback__thumb" draggable="false" />
+						<div class="wrapper" style="display: flex;justify-content: center;align-items: center; flex-direction: column;">
+							<div id="playback__thumb">
+								<div id="announcement__test" class="hide">
+									<div id="title__wrapper">
+										<div id="next__title"></div>
+									</div>
+								</div>
+							</div>
 							<div class="under__thumb">
 								<div class="control__wrapper">
 									<div class="control__button">
@@ -62,7 +71,7 @@
 								</div>
 							</div>
 						</div>
-						<canvas id="visualiz" style="margin-right: 1rem;"></canvas>
+						<canvas id="visualiz" style="margin-right: 1rem;margin-left: 2vw;"></canvas>
 					</div>
 				</div>
 
@@ -88,19 +97,37 @@
 							<div class="settings__tab">About</div>
 						</div>
 						<div id="settings__content">
-							<div id="content__general">
-								<div>OUTPUT_DEVICE</div>
+							<div class="tab__content" id="content__general">
+								<h1>General</h1>
+								<div>
+									<div>Output Device</div>
+									<select id="audio-output__select"></select>
+								</div>
 								<div>SHW_DEBUG_INF</div>
 								<div>LANGUAGE</div>
 								<div>CACHE</div>
 								<div>HISTORY</div>
 							</div>
-							<div id="content__visualiser">
-								<div>SHW_VIS</div>
-								<div>VIS_TYPE</div>
-								<div>VIS_REFRESH_RATE</div>
-								<div>VIS_RANGE</div>
-								<div>SHW_WAVEFORM</div>
+							<div class="tab__content" id="content__visualiser">
+								<h1>Visualiser</h1>
+								<div id="visualiser__modeSelector"></div>
+								<div>
+									<div>Background bounce</div>
+									<input type="checkbox" id="bouncingBackground__input" />
+								</div>
+								<div>
+									<div>Refresh rate</div>
+									<select id="vis-refresh__select">
+										<option value="170">165Hz</option>
+										<option value="144">144Hz</option>
+										<option value="75">60Hz</option>
+										<option value="35">30Hz</option>
+									</select>
+								</div>
+								<div>
+									<div>Render waveform</div>
+									<input type="checkbox" id="shwWaveform__input" />
+								</div>
 								<div>SHW_CHIBI</div>
 								<div>SHW_BGSTICKER</div>
 							</div>

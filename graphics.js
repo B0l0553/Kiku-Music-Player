@@ -1,7 +1,7 @@
 const path = require("path");
 const { GetJSONFromFile } = require("./mapi");
 let barWidth = barWidthB = bpLength = bpbLength = dWaveform = dVisualizer = backa = timerStart = timerEnd = 0;
-let title = album = artist = next = "";
+let title = album = artist = mode = "";
 let chibis = [];
 let sceneObject = [];
 let desp = background = undefined;
@@ -572,11 +572,25 @@ function renderFrame(visualiser, canvas, ctx) {
 		return Math.round((canvas.width*value)/100);
 	}
 
-	timerStart = Date.now();
+	function writeFPS() {
+		document.getElementById("fps").textContent = `${Math.round((timerStart - timerEnd)*10)/10}ms > ${Math.round(1/((timerStart - timerEnd)/1000))}fps `;
+	}
+
+	timerStart = window.performance.now();
+
+	if(visualiser.mode == "none") {
+		canvas.style.display = "none";
+		setTimeout(() => renderFrame(visualiser, canvas, ctx), 1000)
+		background.style.backgroundSize = `150vw`;
+		background.style.filter = `brightness(.7) blur(16px)`;
+		background.style.backgroundPosition = `center`;
+		writeFPS();
+		timerEnd = window.performance.now();
+		return;
+	}
 
 	var waveOffset = 0;
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	if(visualiser.mode == "none") return;
 	if(visualiser.showChibi) {
 		waveOffset = 90;
 	}
@@ -605,6 +619,8 @@ function renderFrame(visualiser, canvas, ctx) {
 		tw = getTextWidth(title, "MPLUS1Code", ttlen)
 	}
 	drawText(cwToPx(2), chToPx(25) + ttlen*0.85, title, "MPLUS1Code", ttlen, /*"#4361EE"*/ "#06dba0", 4);
+
+	if(visualiser.breakRender) return;
 	
 	switch(visualiser.mode) {
 		case "bar":
@@ -631,9 +647,14 @@ function renderFrame(visualiser, canvas, ctx) {
 			bpbLength = bpb.length;
 			break;
 
-		case "off":
 		default:
 			break;
+	}
+
+	if(visualiser.mode != mode) {
+		mode = visualiser.mode;
+		changeVisSize(canvas);
+		canvas.style.display = "initial";
 	}
 
 	switch(visualiser.mode) {
@@ -642,7 +663,7 @@ function renderFrame(visualiser, canvas, ctx) {
 			break;
 		case "bBezier":
 			drawBar(bp, -barWidth/2, waveOffset, -75, 4);
-			setTimeout(() => drawBezier(bp, false, waveOffset, -barWidth/4, "white", 4), 60);
+			drawBezier(bp, false, waveOffset, -barWidth/4, "white", 4);
 			break;
 		case "bezier":
 			drawBezier(bp, false, waveOffset, -barWidth/4, "white");
@@ -671,7 +692,7 @@ function renderFrame(visualiser, canvas, ctx) {
 			break;
 	}
 
-	if(visualiser.activeBackground) {
+	if(visualiser.bouncingBackground) {
 		dataArray = visualiser.getVisualiserUIntData()
 		var value = getAverage(dataArray, 0, 24)/255;
 		backa += (60/visualiser.refreshRate) / 1000;
@@ -934,10 +955,9 @@ function renderFrame(visualiser, canvas, ctx) {
 			// drawText(0+i*200, 410, `[ATTCH]		(${chibis[i].attachedObject.length})`, "Fira Code", "12")
 		}
 	}
-	document.getElementById("fps").textContent = `${timerStart - timerEnd}ms / ${Math.round(visualiser.refreshTime)}ms <=> ${Math.round(1/((timerStart - timerEnd)/1000))}fps / ${visualiser.refreshRate}fps`;
-
+	writeFPS();
 	setTimeout(() => renderFrame(visualiser, canvas, ctx), visualiser.refreshTime);
-	timerEnd = Date.now();
+	timerEnd = window.performance.now();
 }
 
 module.exports = {

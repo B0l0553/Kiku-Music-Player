@@ -3,7 +3,7 @@ const VERSION = "0.4.72"
 const { ipcRenderer, dialog, app, BrowserWindow } = require("electron");
 const fs = require("fs");
 const path = require("path")
-let InternalPlaylist=[],pPtr=toPlay=loop=optionOpn=tMinus=0,contextData=null,vHandle,visCanvas,keys={};
+let InternalPlaylist=[],pPtr=toPlay=loop=optionOpn=tMinus=announce=0,contextData=null,vHandle,visCanvas,keys={};
 
 
 const {
@@ -72,36 +72,22 @@ document.onreadystatechange = () => {
 		}
 
 		function createMPWrapper(data) {
-			var wtt = document.createElement("div");
-			wtt.textContent = data.tags.title;
-			var wal = document.createElement("div");
-			wal.textContent = data.tags.album;
-			var wat = document.createElement("div");
-			wat.textContent = data.tags.artist;
-			var wtm = document.createElement("div");
-			wtm.textContent = data.tags.length;
-			var inf = document.createElement("div");
 
-			inf.appendChild(wtt);
-			inf.appendChild(wal);
-			inf.appendChild(wat);
-			inf.appendChild(wtm);
-			inf.classList.add("playlist__music-info")
-
-			var ico = document.createElement("img");
-			ico.src = data.tags.image;
-			ico.draggable = false;
-
-			var twr = document.createElement("div");
-			twr.classList.add("playlist__music");
-			twr.appendChild(ico);
-			twr.appendChild(inf);
+			var body = `
+			<div class="playlist__music">
+				<img draggable="false" src="${data.tags.image}" />
+				<div class="playlist__music-info">
+					<div>${data.tags.title}</div>
+					<div>${data.tags.album}</div>
+					<div>${data.tags.artist}</div>
+				</div>
+			</div>`;
 
 			var bg = document.createElement("div");
-			bg.style.background = `url("${ico.src}")`;
+			bg.style.background = `url("${encodeURI(data.tags.image.replaceAll("\\", "/"))}")`;
 			bg.style.backgroundPosition = "center";
 			bg.classList.add("playlist__music-wrapper");
-			bg.appendChild(twr);
+			bg.innerHTML = body;
 			bg.onclick = () => {
 				setMusic(data.i);
 			}
@@ -109,33 +95,21 @@ document.onreadystatechange = () => {
 		}
 
 		function createMHItem(data) {
-			var wtt = document.createElement("div");
-			wtt.textContent = data.title;
-			var wal = document.createElement("div");
-			wal.textContent = data.album;
-			var wat = document.createElement("div");
-			wat.textContent = data.artist;
-			var inf = document.createElement("div");
-
-			inf.appendChild(wtt);
-			inf.appendChild(wal);
-			inf.appendChild(wat);
-			inf.classList.add("playlist__music-info")
-
-			var ico = document.createElement("img");
-			ico.src = data.image;
-			ico.draggable = false;
-
-			var twr = document.createElement("div");
-			twr.classList.add("playlist__music");
-			twr.appendChild(ico);
-			twr.appendChild(inf);
+			var body = `
+			<div class="playlist__music">
+				<img draggable="false" src="${data.image}" />
+				<div class="playlist__music-info">
+					<div>${data.title}</div>
+					<div>${data.album}</div>
+					<div>${data.artist}</div>
+				</div>
+			</div>`;
 
 			var bg = document.createElement("div");
-			bg.style.background = `url("${ico.src}")`;
+			bg.style.background = `url("${encodeURI(data.image.replaceAll("\\", "/"))}")`;
 			bg.style.backgroundPosition = "center";
 			bg.classList.add("playlist__music-wrapper");
-			bg.appendChild(twr);
+			bg.innerHTML = body;
 			bg.onclick = () => {
 				(async () => { 
 					if(`file:///${data.path.replaceAll("\\", "/")}` == decodeURI(player.src)) return;
@@ -151,6 +125,18 @@ document.onreadystatechange = () => {
 					var w = GetMetadata(data.path);
 					addMusic(w);
 				})();
+			}
+			return bg;
+		}
+
+		function createVOChoice(mode) {
+			let bg = document.createElement("div");
+			bg.style.backgroundImage = `url("${path.join(__dirname, "assets/images/" + mode + ".png").replaceAll("\\", "/")}")`;
+			bg.classList.add("mode__option");
+			bg.onclick = (e) => {
+				e.stopPropagation();
+				vHandle.setMode(mode);
+				userdata.settings.vis_mode = mode;
 			}
 			return bg;
 		}
@@ -174,21 +160,26 @@ document.onreadystatechange = () => {
 
 		function redrawHistory() {
 			$("history__wrapper").textContent = "";
-
+			let d = [];
 			for (const [key, value] of Object.entries(history)) {
-				$("history__wrapper").appendChild(createMHItem(history[key]))
+				//$("history__wrapper").appendChild(createMHItem(history[key]))
+				d.push(value);
+			}
+			let sorted = d.sort((a, b) => b.last_played - a.last_played);
+			for(let i = 0; i < sorted.length; i++) {
+				$("history__wrapper").appendChild(createMHItem(sorted[i]));
 			}
 		}
 
 		function setThumb(value) {
-			playbackImg.src = value;
+			const iu = value.replaceAll("\\", "/");
+			playbackImg.style.backgroundImage = `url("${iu}")`;
 			// playbackBodyBg.src = playbackImg.src;
-			playbackBodyBg.style.backgroundImage = `url("${playbackImg.src}")`;
+			playbackBodyBg.style.backgroundImage = `url("${iu}")`;
 			playbackBodyBg.style.backgroundSize = "120vw";
 			playbackBodyBg.style.backgroundRepeat = "no-repeat";
-			// playbackBodyBg.style.backgroundPosition = "center";
-			playbackBodyBg.style.filter = "brightness(0.6)";
-
+			playbackBodyBg.style.backgroundPosition = "center";
+			playbackBodyBg.style.filter = "brightness(0.7) blur(16px)";
 		}
 
 		function clearPlaylist() {
@@ -284,16 +275,16 @@ document.onreadystatechange = () => {
 				}
 				player.play();
 				userdata.playing = 1;
-				vHandle.setRefreshRate(75);
+				vHandle.startRender();
+				vHandle.setRefreshRate(userdata.settings.vis_refresh_rate);
 				$("control__pause").src = path.join(__dirname, "assets/icons/audio-pause.svg")
-				//StartRPC(player.currentTime, InternalPlaylist[pPtr].length);
 				return;
 			}
 			userdata.playing = 0;
 			player.pause();
-			vHandle.setRefreshRate(20);
+			// vHandle.setRefreshRate(20);
+			vHandle.breakRender = true;
 			$("control__pause").src = path.join(__dirname, "assets/icons/audio-play.svg")
-			//PauseRPC();
 		}
 
 		function moveMusicTimestampTo(_time) {	
@@ -350,6 +341,55 @@ document.onreadystatechange = () => {
 			appendChibi(chb);
 		}
 
+		function setupSettings() {
+			(async () => { 
+				var dvcs = await navigator.mediaDevices.enumerateDevices();
+				dvcs.forEach((device) => {
+					if(device.kind === "audiooutput") {
+						if(device.deviceId != "default" && device.deviceId != "communications") {
+							$("audio-output__select").innerHTML += `<option value="${device.deviceId}" ${userdata.settings.outputId == device.deviceId ? "selected" : ""}>${device.label}</option>`;
+						}
+					}
+				});
+			})();
+			$("audio-output__select").onchange = (e) => {
+				vHandle.setAudioOutput(e.target.value);
+				userdata.settings.outputId = e.target.value;
+			}
+
+			let vms = $("visualiser__modeSelector");
+			vms.appendChild(createVOChoice("none"));
+			vms.appendChild(createVOChoice("bezier"));
+			vms.appendChild(createVOChoice("fBezier"));
+			vms.appendChild(createVOChoice("bBezier"));
+			vms.appendChild(createVOChoice("oFBezier"));
+			
+			$("bouncingBackground__input").checked = userdata.settings.bcng_bg;
+			$("bouncingBackground__input").onchange = (e) => {
+				userdata.settings.bcng_bg = e.target.checked;
+				vHandle.bouncingBackground = e.target.checked;
+			}
+
+			$("shwWaveform__input").checked = userdata.settings.wave_show;
+			$("shwWaveform__input").onchange = (e) => {
+				userdata.settings.wave_show = e.target.checked;
+				vHandle.showWaveform = e.target.checked;
+			}
+
+			let rrs = $("vis-refresh__select");
+			rrs.childNodes.forEach((node) => {
+				if(node.value == userdata.settings.vis_refresh_rate) {
+					node.selected = true;
+				}
+			});
+
+			rrs.onchange = (e) => {
+				userdata.settings.vis_refresh_rate = Number.parseInt(e.target.value);
+				vHandle.setRefreshRate(e.target.value);
+			}
+
+		}
+
 		const playlistBody = $("playlist__body");
 		const player = document.getElementById("player");
 		const progressWrapper = document.getElementsByClassName("playback__progressWrapper")[0];
@@ -397,6 +437,17 @@ document.onreadystatechange = () => {
 			pBodyLength.textContent = tMinus ? getTime(player.duration-player.currentTime) : getTime(player.duration);
 			userdata.playtime = player.currentTime;
 			userdata.volume = player.volume;
+			if(percent > 80 && !announce && pPtr + 1 < InternalPlaylist.length) {
+				$("next__title").textContent = `NEXT UP: ${InternalPlaylist[pPtr + 1].tags.title}`;
+				$("announcement__test").style.backgroundImage = `url("${encodeURI(InternalPlaylist[pPtr + 1].tags.image.replaceAll("\\", "/"))}")`;
+				$("announcement__test").style.backgroundSize = "100%";
+				$("announcement__test").style.backgroundPosition = "center";
+				$("announcement__test").classList.remove("hide");
+				setTimeout(() => { $("announcement__test").classList.add("hide"); }, 4000);
+				announce = 1;
+			} else if(announce && percent < 80) {
+				announce = 0;
+			}
 		});
 	
 		player.addEventListener("ended", () => {
@@ -412,14 +463,16 @@ document.onreadystatechange = () => {
 		vHandle = setupVisualizer(visCanvas, player);
 		vHandle.setSmoothing(0.35);
 		vHandle.setFftSize(4096);
-		vHandle.setMode(userdata.vis_mode, visCanvas);
+		vHandle.setMode(userdata.settings.vis_mode, visCanvas);
 		vHandle.setRefreshRate(20);
-		vHandle.activeBackground = true;
 		setBackground(playbackBodyBg);
-		if(userdata.showchibi) {
-			vHandle.showChibis();
-		}
-		vHandle.showWaveform = true;
+		vHandle.showChibi = userdata.settings.showchibi;
+		vHandle.showWaveform = userdata.settings.wave_show;
+		vHandle.bouncingBackground = userdata.settings.bcng_bg;
+		vHandle.setAudioOutput(userdata.settings.outputId);
+		vHandle.startRender();
+
+		setupSettings();
 
 		addChibi("jolteon");
 		addChibi("eevee");
@@ -492,11 +545,13 @@ document.onreadystatechange = () => {
 			e.stopPropagation();
 			playlistBody.classList.toggle("hide");
 			$("playlist__header").classList.toggle("hide");
+			//playbackWin.classList.toggle("mPlace");
 		});
 		$("history__header").addEventListener("click", (e) => {
 			e.stopPropagation();
 			$("history__body").classList.toggle("hide");
 			$("history__header").classList.toggle("hide");
+			//playbackWin.classList.toggle("mPlace");
 		});
 
 		window.addEventListener("resize", () => {
@@ -504,7 +559,7 @@ document.onreadystatechange = () => {
 		});
 
 		ipcRenderer.on("cpu", (e, data) => {
-			$("cpu").textContent = `${Math.round(data*10)/10}%`
+			$("cpu").textContent = `${Math.round(data)}%`
 		})
 		ipcRenderer.on("ram", (e, data) => {
 			$("ram").textContent = `${Math.round(data/1000)}MB`

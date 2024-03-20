@@ -6,10 +6,13 @@ const {
 function setupVisualizer(canvas, audio) {
 	var v = new Visualiser(audio);
 	var ctx = canvas.getContext("2d")
-	v.setMode("oFBezier", canvas)
-	v.showWaveform = true;
 	v.setRefreshRate(20);
-	renderFrame(v, canvas, ctx)
+	v.startRender = () => { 
+		if(v.breakRender){
+			v.breakRender = false;
+			renderFrame(v, canvas, ctx); 
+		}
+	};
 	return v;
 }
 
@@ -21,10 +24,13 @@ class Visualiser {
 	buffer;
 	UIntBuffer;
 	mode;
+	bouncingBackground;
 	showWaveform;
 	showChibi;
 	refreshTime;
 	refreshRate;
+	breakRender = true;
+	startRender;
 
 	constructor(audio) {
 		this.audioCtx = new AudioContext();
@@ -35,11 +41,17 @@ class Visualiser {
 		this.setFftSize(128);
 		this.buffer = new Float32Array(this.analyser.frequencyBinCount);
 		this.UIntBuffer = new Uint8Array(this.analyser.frequencyBinCount);
+		this.showChibi = false;
+		this.showWaveform = false;
+		
 	}
 
-	showChibis() {
-		this.showChibi = true;
-		this.showWaveform = false;
+	getAudioOutput() {
+		return this.audioCtx.sinkId;
+	}
+
+	setAudioOutput(token) {
+		this.audioCtx.setSinkId(token);
 	}
 
 	setRefreshRate(value) {
@@ -47,9 +59,8 @@ class Visualiser {
 		this.refreshTime = 1/value*1000
 	}
 
-	setMode(value, canvas) {
+	setMode(value) {
 		this.mode = value;
-		setTimeout(() => changeVisSize(canvas), this.refreshTime+1);
 	}
 
 	setFftSize(value) {

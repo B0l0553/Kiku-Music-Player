@@ -61,8 +61,8 @@ class UsrData {
 	volume;
 	playtime;
 	totalTime;
-	vis_mode;
-	wave_show;
+	playing;
+	settings = {};
 }
 
 function GetJSONFromFile(_path, callback) {
@@ -117,13 +117,19 @@ function GetUserData() {
 	})
 	
 	var tu = new UsrData();
-	tu.volume 			= json.volume || .2;
-	tu.playtime 		= json.playtime || 0;
-	tu.totalTime		= json.totalTime || 0;
-	tu.playing			= json.playing || 0;
-	tu.vis_mode			= json.vis_mode || "bBezier";
-	tu.wave_show		= json.wave_show || false;
-	tu.showchibi 		= json.showchibi || false;
+	tu.volume 						= json.volume 					|| .2;
+	tu.playtime 					= json.playtime 				|| 0;
+	tu.totalTime					= json.totalTime 				|| 0;
+	tu.playing						= json.playing 					|| 0;
+	if(!json.settings) json.settings = {};
+	tu.settings.vis_mode			= json["settings"].vis_mode 	|| "none";
+	// tu.settings.vis_range			= json["settings"].vis_range	|| [[0, 32], [1, 12]];
+	tu.settings.vis_refresh_rate	= json["settings"].vis_refresh_rate	|| 75;
+	tu.settings.bcng_bg				= json["settings"].bcng_bg 		|| false;
+	tu.settings.wave_show			= json["settings"].wave_show 	|| false;
+	tu.settings.showchibi 			= json["settings"].showchibi 	|| false;
+	tu.settings.outputId			= json["settings"].outputId  	|| "default";
+	tu.settings.language			= json["settings"].language 	|| "english";
 	return tu;
 }
 
