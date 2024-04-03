@@ -73,73 +73,75 @@
 						</div>
 						<canvas id="visualiz" style="margin-right: 1rem;margin-left: 2vw;"></canvas>
 					</div>
-				</div>
-
-				<div id="playlist__body" class="menu__body hide">
-					<div id="playlist__wrapper" class="menu__wrapper scrollbar-app"></div>
-					<div id="playlist__header" class="menu__header hide">
+					<div id="history__header" class="menu__header">
+						<img src="assets/icons/window-history.svg" draggable="false" />
+					</div>
+					<div id="playlist__header" class="menu__header">
 						<img src="assets/icons/list-music.svg" draggable="false" />
 					</div>
 				</div>
 
-				<div id="history__body" class="menu__body hide">
-					<div id="history__wrapper" class="menu__wrapper scrollbar-app"></div>
-					<div id="history__header" class="menu__header hide">
-						<img src="assets/icons/window-history.svg" draggable="false" />
+				<div id="playlist__body" class="menu__body hide">
+					<div class="menu__exit" id="playlist__exit">
+						<img src="assets/icons/window-close-outline.svg" draggable="false" />
 					</div>
+					<div id="playlist__wrapper" class="menu__wrapper scrollbar-app"></div>
+					
+				</div>
+				
+				<div id="history__body" class="menu__body hide">
+					<div class="menu__toolbar">
+						<!-- <img src="assets/icons/window-search.svg" draggable="false" style="filter: invert(1);margin-left: 2vw;height:2vh; pointer-events: none;" /> -->
+						<div class="menu__btn menu__top hide" id="history__top">
+							<img src="assets/icons/menu-angleup.svg" draggable="false" />
+						</div>
+						<input type="text" id="history__input" placeholder="Search your music here..." />
+						<div class="menu__btn menu__exit" id="history__exit">
+							<img src="assets/icons/window-close-outline.svg" draggable="false" />
+						</div>
+					</div>
+					<div id="history__wrapper" class="menu__wrapper scrollbar-app"></div>
 				</div>
 				
 				<div id="settings__body" class="hidden">
-					<div id="settings__wrapper">
-						<div id="settings__nav">
-							<div class="settings__tab">General</div>
-							<div class="settings__tab">Visualiser</div>
-							<div class="settings__tab">About</div>
-						</div>
-						<div id="settings__content">
+					<div id="settings__wrapper" class="scrollbar-app">
 							<div class="tab__content" id="content__general">
 								<h1>General</h1>
-								<div>
-									<div>Output Device</div>
+								<div class="setting__block">
+									<p>Output Device</p>
 									<select id="audio-output__select"></select>
 								</div>
-								<div>SHW_DEBUG_INF</div>
-								<div>LANGUAGE</div>
 								<div>CACHE</div>
 								<div>HISTORY</div>
 							</div>
 							<div class="tab__content" id="content__visualiser">
 								<h1>Visualiser</h1>
 								<div id="visualiser__modeSelector"></div>
-								<div>
-									<div>Background bounce</div>
-									<input type="checkbox" id="bouncingBackground__input" />
+								<div class="setting__block">
+									<label>Background bounce
+										<input type="checkbox" id="bouncingBackground__input" />
+									</label>
+									<label>Waveform
+										<input type="checkbox" id="shwWaveform__input" />
+									</label>
 								</div>
-								<div>
-									<div>Refresh rate</div>
+								<div class="setting__block">
+									<p>Refresh rate</p>
 									<select id="vis-refresh__select">
-										<option value="170">165Hz</option>
-										<option value="144">144Hz</option>
-										<option value="75">60Hz</option>
-										<option value="35">30Hz</option>
+										<option value="170">165 fps</option>
+										<option value="144">144 fps</option>
+										<option value="75">60 fps</option>
+										<option value="35">30 fps</option>
+										<!-- <option value="5">5Hz</option>
+										<option value="1">1Hz</option> -->
 									</select>
 								</div>
-								<div>
-									<div>Render waveform</div>
-									<input type="checkbox" id="shwWaveform__input" />
+								<div class="setting__block">
+									
 								</div>
-								<div>SHW_CHIBI</div>
-								<div>SHW_BGSTICKER</div>
 							</div>
-
-							<div id="content__about">
-								<div>ABOUT</div>
-							</div>
-						</div>
 					</div>
 				</div>
-
-				
 			</div>
 			<div id="volume-toast" class="hidden">
 				<img draggable="false" src="assets/icons/audio-volume-up.svg" />
