@@ -4,3 +4,6 @@ data/*.json
 kmp-*/
 old/
 .vscode/
+chibi.js
+assets/sprites/
+assets/audio/
