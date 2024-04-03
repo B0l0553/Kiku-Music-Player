@@ -2,238 +2,7 @@ const path = require("path");
 const { GetJSONFromFile } = require("./mapi");
 let barWidth = barWidthB = bpLength = bpbLength = dWaveform = dVisualizer = backa = timerStart = timerEnd = 0;
 let title = album = artist = mode = "";
-let chibis = [];
-let sceneObject = [];
 let desp = background = undefined;
-class Chibi {
-	name;
-	image;
-	x;
-	y;
-	dx;
-	dy;
-	width;
-	height;
-	mood = "happy";
-	moodCooldown = 0;
-	state = Chibi.states[0];
-	stateComplete = true;
-	stateCooldown = 0;
-	objective = 0;
-	selected = false;
-	animationList = {};
-	lastAnimation = 0;
-	currentAnimation = 0;
-	frame = 0;
-	frameTick;
-	frameTickUp = 0;
-	right = false;
-	attachedObject = [];
-	energy = 100;
-	target = null;
-
-	constructor(name, img, json) {
-		this.name = name;
-		this.x  = 0;
-		this.y  = 0;
-		this.dx = 0;
-		this.dy = 0;
-		this.height 		= json.height;
-		this.width  		= json.width;
-		this.animationList 	= json.animations;
-		this.frameTick 		= json.frameTick;
-
-		var t = document.createElement("img");
-		t.src = img;
-		this.image = t;
-	}
-
-	attachObject(cObj) {
-		var r = this.attachedObject.push(cObj);
-		this.attachedObject[r-1].parent = this;
-	}
-
-	show(value) {
-		for(let i = 0; i < this.attachedObject.length; i++) {
-			if(this.attachedObject[i].name == value) {
-				this.attachedObject[i].visible = true;
-				break;
-			}
-		}
-	}
-
-	hide(value) {
-		for(let i = 0; i < this.dependencies.length; i++) {
-			if(this.attachedObject[i].name == value) {
-				this.attachedObject[i].visible = false;
-				break;
-			}
-		}
-	}
-
-	getObject(value) {
-		for(let i = 0; i < this.attachedObject.length; i++) {
-			if(this.attachedObject[i].name == value) {
-				return this.attachedObject[i];
-				break;
-			}
-		}
-	}
-
-	static animations = [
-		"idle",
-		"running",
-		"barking"
-	];
-
-	static states = [
-		"idle",
-		"normal",
-		"excited",
-		"asking",
-		"gEat",
-		"gSleep",
-		"sleeping",
-		"asked",
-		"talking"
-	];
-
-	static moods = [
-		"happy",
-		"angry",
-		"sleepy",
-		"hungry"
-	]
-}
-
-class cObject {
-	name;
-	image;
-	relx;
-	rely;
-	x;
-	y;
-	height;
-	width;
-	frameCount;
-	frame = 0;
-	frameTick;
-	frameTickUp = 0;
-	visible = false;
-	dependencies = [];
-
-	constructor(name, img, json) {
-		this.name = name;
-		this.frameTickUp 	= 0;
-		this.frameCount 	= json.frameCount;
-		this.frameTick 		= json.frameTick;
-		this.height 		= json.height || 0;
-		this.width 			= json.width || 0;
-		this.relx 			= json.x || 0;
-		this.rely 			= json.y || 0;
-		var dep 			= json.dependencies || [];
-
-		if(dep.length > 1) {
-			for(let i = 0; i < dep.length; i++) {
-				var dObj = new cObject(dep[i], 
-					path.join(__dirname, `assets/sprites/dependencies/${name}/${dep[i]}.png`),
-					GetJSONFromFile(path.join(__dirname, `assets/sprites/dependencies/${name}/${dep[i]}.json`)));
-				dObj.name = dep[i];
-				dObj.parent = this;
-				this.dependencies.push(dObj);
-			}
-		}
-
-		var ig = document.createElement("img");
-		ig.src = img;
-		this.image = ig;
-	}
-
-	show(value = "") {
-		if(value == "") {
-			this.visible = true;
-		} else {
-			for(let i = 0; i < this.dependencies.length; i++) {
-				if(this.dependencies[i].name == value) {
-					this.visible = true;
-					this.dependencies[i].visible = true;
-					break;
-				}
-			}
-		}
-	}
-
-	hide(value = "") {
-		if(value == "") {
-			this.visible = false;
-		} else {
-			for(let i = 0; i < this.dependencies.length; i++) {
-				if(this.dependencies[i].name == value) {
-					this.dependencies[i].visible = false;
-					break;
-				}
-			}
-		}
-	}
-
-	allVisible() {
-		this.visible = true
-		for(let i = 0; i < this.dependencies.length; i++) {
-			this.dependencies[i].allVisible();
-		}
-	}
-
-	hideAll() {
-		this.visible = false
-		for(let i = 0; i < this.dependencies.length; i++) {
-			this.dependencies[i].hideAll();
-		}
-	}
-
-	update(unit) {
-		this.frameTickUp += unit;
-		if(this.frameTickUp >= this.frameTick) {
-			this.frameTickUp = 0;
-			this.frame++;
-		}
-
-		if(this.frame >= this.frameCount) {
-			this.frame = 0;
-		}
-		
-		for(let i = 0; i < this.dependencies.length; i++) {
-			this.dependencies[i].update(unit);
-		}
-	}
-
-	draw(ctx) {
-		var sx = this.width*this.frame;
-		this.x = this.relx + this.parent.x;
-		this.y = this.rely + this.parent.y;
-		if(this.visible) {
-			ctx.drawImage(
-				this.image,
-				sx,
-				0,
-				this.width,
-				this.height,
-				Math.round(this.x), 
-				Math.round(this.y),
-				this.width,
-				this.height
-			);
-
-			for(let i = 0; i < this.dependencies.length; i++) {
-				this.dependencies[i].draw(ctx);
-			}
-		}
-	}
-}
-
-function appendChibi(chibi) {
-	chibi.y = 1000;
-	chibis.push(chibi);
-}
 
 function setBackground(value) {
 	background = value;
@@ -288,21 +57,13 @@ function fatOne(arr) {
 	return [max, mxv];
 } 
 
-function getAverage(array, start, end) {
+function getAverage(array, start=0, end=array.length) {
 	var S=0;
 	for(let i = 0; i < end; i++) {
 		S+=array[i];
 	}
 
 	return S/(end - start);
-}
-
-function getAverageColor() {
-	var fhx = 0;
-	for(let i = 0; i < 8; i++) {
-		var w = ctx.getImageData(Math.trunc(Math.random()*canvas.width), Math.trunc(Math.random()*canvas.height), 0, 0);
-		console.log(w);
-	}
 }
 
 function groupPerN(data, grpSize) {
@@ -323,22 +84,11 @@ function groupPerN(data, grpSize) {
 }
 
 function vwTOpx(value) {
-	var w = window,
-	  d = document,
-	  e = d.documentElement,
-	  g = d.getElementsByTagName('body')[0],
-	  x = w.innerWidth || e.clientWidth || g.clientWidth;
-   
-	var result = (x*value)/100;
-	return(result);
+	return window.innerWidth*value/100;
 }
 
 function vhTOpx(value) {
-	var w = window;
-	var y = w.innerHeight
-   
-	var result = (y*value)/100;
-	return(result);
+	return window.innerHeight*value/100;
 }
 
 function changeVisSize(canvas, vw = 55, vh = 65) {
@@ -477,15 +227,15 @@ function renderFrame(visualiser, canvas, ctx) {
 		ctx.closePath();
 	}
 	
-	function drawWave(x, y, sx, ox, data, dataGroups = 8) {
+	function drawWave(x, y, sx, ox, data, dataGroups = 8, amp = 1) {
 		let dx = x;
 		var e = groupPerN(data, dataGroups);
 		const sliceWidth = Math.round(sx / e.length);
 		const ceiling = chToPx(25)
-
+		
 		for (let i = 0; i < e.length; i++) {
-			let mx = ((max(e[i]) - 128) + 4)/128 * ceiling;
-			let mn = ((min(e[i]) - 128) - 4)/128 * ceiling;
+			let mx = ((max(e[i]) - 128) + chToPx(.75))/128 * ceiling * amp;
+			let mn = ((min(e[i]) - 128) - chToPx(.75))/128 * ceiling * amp;
 			
 			if(mx - mn < 4) mn -= mn - mx;
 
@@ -496,6 +246,19 @@ function renderFrame(visualiser, canvas, ctx) {
 			dx += sliceWidth + 2;
 		}
 		ctx.fillStyle = "#FFF";
+	}
+
+	function drawWaveBezier(x, y, sx, data) {
+		const ceiling = chToPx(25);
+		var e = groupPerN(data, 16);
+		const sliceWidth = Math.round(sx / e.length);
+		let g = [];
+		for (let i = 0; i < e.length; i++) {
+			let pHeight = (getAverage(e[i])-128)/128 * ceiling;
+			g.push({x: sliceWidth*i+2, y: pHeight})
+		}
+
+		drawBezier(g, false, y, x+barWidth/2, "rgb(126, 249, 255)", 2);
 	}
 
 	function getRange(data, start, end, threshold, amplification = 1, spacing = 1) {
@@ -573,22 +336,19 @@ function renderFrame(visualiser, canvas, ctx) {
 	}
 
 	function writeFPS() {
-		document.getElementById("fps").textContent = `${Math.round((timerStart - timerEnd)*10)/10}ms > ${Math.round(1/((timerStart - timerEnd)/1000))}fps `;
+		document.getElementById("fps").textContent = `${Math.round((timerStart - timerEnd))}ms > ${Math.round(1/((timerStart - timerEnd)/1000))}fps `;
 	}
 
 	timerStart = window.performance.now();
-
 	if(visualiser.mode == "none") {
 		canvas.style.display = "none";
-		setTimeout(() => renderFrame(visualiser, canvas, ctx), 1000)
 		background.style.backgroundSize = `150vw`;
 		background.style.filter = `brightness(.7) blur(16px)`;
 		background.style.backgroundPosition = `center`;
-		writeFPS();
-		timerEnd = window.performance.now();
+		visualiser.breakRender = true;
 		return;
 	}
-
+	canvas.style.display = "block";
 	var waveOffset = 0;
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	if(visualiser.showChibi) {
@@ -596,22 +356,12 @@ function renderFrame(visualiser, canvas, ctx) {
 	}
 	ctx.setLineDash([]);
 
-	drawText(cwToPx(2), chToPx(5), "作曲者", "MPLUS1Code", cwToPx(2.6), "white", 4);
+	drawText(cwToPx(2), chToPx(5), "ARTIST", "MPLUS1Code", cwToPx(2.6), "white", 4);
 	drawTrapeze(cwToPx(12), chToPx(3.4), cwToPx(22), chToPx(.6), 5, "white");
 	drawText(cwToPx(2), chToPx(14), artist, "MPLUS1Code", cwToPx(6), "#A0E9FF", 4);
 
-	// drawText(cwToPx(100) - 77, chToPx(23), "曲集名", "MPLUS1Code", cwToPx(2.6), "white", 4);
-	// drawTrapeze(cwToPx(89), chToPx(21.4), cwToPx(-22), chToPx(.6), 5, "white");
-	// var alen = canvas.width/title.length;
-	// var aw = getTextWidth(album, "MPLUS1Code", alen)
-	// if(aw > canvas.width/2) {
-	// 	alen*=(canvas.width/2/aw);
-	// 	aw = getTextWidth(album, "MPLUS1Code", alen)
-	// }
-	// drawText(cwToPx(100) - aw, chToPx(23) + alen*0.95, album, "MPLUS1Code", alen, "#A0E9FF", 4);
-
-	drawText(cwToPx(2), chToPx(25), "曲名", "MPLUS1Code", cwToPx(2.6), "white", 4);
-	drawTrapeze(cwToPx(9.5), chToPx(23.5), cwToPx(24.5), chToPx(.6), 5, "white");
+	drawText(cwToPx(2), chToPx(25), "TITLE", "MPLUS1Code", cwToPx(2.6), "white", 4);
+	drawTrapeze(cwToPx(10.5), chToPx(23.5), cwToPx(23.5), chToPx(.6), 5, "white");
 	var ttlen = canvas.width/title.length*1.8;
 	var tw = getTextWidth(title, "MPLUS1Code", ttlen) 
 	if(tw > canvas.width) {
@@ -619,9 +369,7 @@ function renderFrame(visualiser, canvas, ctx) {
 		tw = getTextWidth(title, "MPLUS1Code", ttlen)
 	}
 	drawText(cwToPx(2), chToPx(25) + ttlen*0.85, title, "MPLUS1Code", ttlen, /*"#4361EE"*/ "#06dba0", 4);
-
 	if(visualiser.breakRender) return;
-	
 	switch(visualiser.mode) {
 		case "bar":
 		case "bezier":
@@ -641,7 +389,7 @@ function renderFrame(visualiser, canvas, ctx) {
 			// bp.push(... getAllPointNormalized(dataArray, 225));
 			// bpb.push(... getAllPointNormalized(dataArray, 225));
 			bp.push(... getPointsUInt8(dataArray, 1, 12, chToPx(30), barWidth));
-			bpb.push(... getPointsUInt8([0, 0, 0, 0], 0, 3, 0, barWidthB));
+			bpb.push(... getPointsUInt8(dataArray, 0, 1, 0, barWidthB));
 			bpb.push(... getPointsUInt8(dataArray, 0, 32, chToPx(43), barWidthB));
 			bpLength = bp.length;
 			bpbLength = bpb.length;
@@ -676,6 +424,7 @@ function renderFrame(visualiser, canvas, ctx) {
 			if(visualiser.showWaveform) {
 				var wData = visualiser.getWaveformData();
 				drawWave(0, canvas.height - chToPx(21.5), canvas.width+50, -canvas.width*0.2-51, wData, visualiser.analyser.fftSize/256);
+				// drawWaveBezier(0, chToPx(21.5), canvas.width+barWidth/2, wData)
 			}
 		case "fBezier":
 			drawBezier(bpb, true, waveOffset, bpb[0].x+barWidth, /*"#7FC7D9"*/ "#FFF", 4);
@@ -702,259 +451,6 @@ function renderFrame(visualiser, canvas, ctx) {
 		background.style.backgroundPosition = `-${(25 + 25*value) - (Math.cos(backa) * 16)/2}vw -${(50 + 25*value) - (Math.sin(backa) * 24)/2}vw`
 	}
 
-	if(visualiser.showChibi) {
-		var unit = 60 / visualiser.refreshRate;
-		for(let i = 0; i < sceneObject.length; i++) {
-			sceneObject[i].update(unit);
-			sceneObject[i].draw(ctx);
-		}
-		
-		for(let i = 0; i < chibis.length; i++) {
-			chibis[i].dy += .1;
-			chibis[i].dx = 0;
-			chibis[i].stateCooldown -= unit;
-			chibis[i].moodCooldown -= unit;
-			chibis[i].frameTickUp += unit;
-			chibis[i].energy = 100;
-			
-			if(chibis[i].stateCooldown < 0 && chibis[i].stateComplete) {
-				chibis[i].stateCooldown = 600;
-				var ns = 0;
-				if(chibis[i].energy <= 0) {
-					ns = 6
-				} else if(chibis[i].energy <= 15) {
-					if(r < 0.25) {
-						ns = Math.round(Math.random() * 3);
-					} else {
-						ns = Math.round(Math.random() * (5 - 4) + 4);
-					}
-				} else if (chibis[i].energy <= 50) {
-					var r = Math.random();
-					if(r < 0.25) {
-						ns = Math.round(Math.random() * (5 - 4) + 4);
-					} else {
-						ns = Math.round(Math.random() * 3);
-					}
-				} else {
-					if(Math.random() > 0.10) {
-						ns = Math.round(Math.random());
-					} else {
-						ns = Math.round(Math.random() * (3 - 2) + 2)
-					}
-				}
-
-				
-				chibis[i].state = Chibi.states[ns];
-				chibis[i].stateComplete = false;
-
-				switch(chibis[i].state) {
-					case "normal":
-						chibis[i].objective = Math.round(Math.random()*(canvas.width-1-chibis[i].width) + chibis[i].width);
-						break;
-					case "excited":
-						if(chibis[i].animationList["barking"] == 0) {
-							chibis[i].stateComplete = 1;
-							chibis[i].stateCooldown = 0;
-						}
-						chibis[i].stateCooldown = 240;
-						break;
-					case "gEat":
-
-						break;
-					case "asking":
-						chibis[i].stateCooldown = 100;
-						break;
-
-					case "idle":
-					default:
-						chibis[i].stateCooldown = 180;
-						break;
-				}
-			}
-
-			switch(chibis[i].state) {
-				case "normal":
-					if(!(chibis[i].x < chibis[i].objective && chibis[i].x + chibis[i].width > chibis[i].objective)) {
-						if(chibis[i].objective >= chibis[i].x) {
-							chibis[i].energy -= unit/100;
-							chibis[i].dx = unit;
-						} 
-						if(chibis[i].objective <= chibis[i].x) {
-							chibis[i].energy -= unit/100;
-							chibis[i].dx = -unit;
-						}
-					} else {
-						chibis[i].stateComplete = true;
-					}
-					break;
-				case "excited":
-					if(chibis[i].animationList["barking"] == 0) {
-						chibis[i].stateComplete = 1;
-						chibis[i].stateCooldown = 0;
-					}
-					break;
-				case "asking":
-					var sbb = chibis[i].getObject("speechBubble");
-					if(chibis[i].stateCooldown > 0) {
-						if(!sbb.visible) {
-							chibis[i].moodTimer = 10000;
-							sbb.hideAll();
-							sbb.show("asking")
-						}
-
-						if(chibis[i].target == null) {
-							for(let j = 0; j < chibis.length; j++) {
-								if(chibis[j].state == "talking" || chibis[j].state == "asking" ) continue;
-	
-								if(Math.abs(chibis[j].x - chibis[i].x) < 200) {
-									
-									chibis[j].state = "asked";
-									chibis[j].stateComplete = false;
-									chibis[j].stateCooldown = 60
-									chibis[j].target = chibis[i];
-									chibis[i].target = chibis[j];
-									break;
-								}
-							}
-						}
-					} else {
-						sbb.hideAll();
-						chibis[i].stateComplete = true;
-					}
-					break;
-				case "asked":
-					var sbb = chibis[i].getObject("speechBubble");
-					if(chibis[i].stateCooldown > 0) {
-						chibis[i].moodTimer = 10000;
-						sbb.hideAll();
-						sbb.show("asked");
-
-					} else {
-						sbb.hideAll();
-						chibis[i].state = "talking";
-						chibis[i].stateCooldown = 900;
-						chibis[i].stateComplete = true;
-						chibis[i].target.state = "talking";
-						chibis[i].target.stateCooldown = 900;
-						chibis[i].target.stateComplete = true;
-					}
-					break;
-				case "talking":
-					if(chibis[i].x - chibis[i].target.x > 0) {
-						chibis[i].right = 0;
-					} else if (chibis[i].x - chibis[i].target.x < 0) {
-						chibis[i].right = 1;
-					}
-
-					if(Math.abs(chibis[i].x - chibis[i].target.x) > 80) {
-						if(chibis[i].right) {
-							chibis[i].dx = unit;
-						} else {
-							chibis[i].dx = -unit;
-						}
-					} else if(Math.abs(chibis[i].x - chibis[i].target.x) < 80) {
-						if(chibis[i].right) {
-							chibis[i].dx = -unit;
-						} else {
-							chibis[i].dx = unit;
-						}
-					} else {
-						if(chibis[i].moodCooldown < 0) {
-							var sbb = chibis[i].getObject("speechBubble");
-							chibis[i].moodTimer = 120;
-							chibis[i].moodCooldown = Math.round(Math.random() * (240 - 120) + 120);
-							sbb.hideAll();
-							var conv = ["happy", "angry", "question", "love", "hungry", "sleepy"];
-							sbb.show(conv[Math.round(Math.random() * (conv.length-1))]);
-						}
-					}
-
-					if(chibis[i].stateCooldown == 0) {
-						chibis[i].target = null;
-					}
-					break;
-				case "idle":
-				default:
-					chibis[i].stateComplete = true;
-					break;
-			}
-
-			if(chibis[i].dx != 0) {
-				if(chibis[i].dx > 0.01) {
-					chibis[i].right = 1;
-				} else if (chibis[i].dx < -0.01) {
-					chibis[i].right = 0;
-				}
-				chibis[i].currentAnimation = 1;
-			} else {
-				if(chibis[i].state === "excited" && !chibis[i].stateComplete) {
-					chibis[i].currentAnimation = 2;
-				} else {
-					chibis[i].currentAnimation = 0;
-				}
-			}
-
-			if(chibis[i].moodTimer < 0) {
-				chibis[i].getObject("speechBubble").hideAll();
-			} else {
-				chibis[i].moodTimer -= unit;
-			}
-
-			if(chibis[i].lastAnimation != chibis[i].currentAnimation) {
-				chibis[i].lastAnimation = chibis[i].currentAnimation;
-				chibis[i].frameTickUp = 0;
-				chibis[i].frame = 0;
-			}
-			if(chibis[i].frameTickUp >= chibis[i].frameTick) {
-				chibis[i].frameTickUp = 0;
-				chibis[i].frame++;
-			} 
-			if(chibis[i].frame > chibis[i].animationList[Chibi.animations[chibis[i].currentAnimation]]-1) {
-				chibis[i].frame = 0;
-				if(chibis[i].state == "excited") {
-					chibis[i].stateComplete = 1;
-				}
-			} 
-
-			var sy = chibis[i].height*chibis[i].frame;
-			var sx = chibis[i].width*chibis[i].currentAnimation;
-			if(chibis[i].right) {
-				sx += (chibis[i].width) * 3;
-			}
-
-			chibis[i].x += chibis[i].dx;
-			chibis[i].y += chibis[i].dy;
-			if(chibis[i].x < 0) chibis[i].x = 0;
-			if(chibis[i].y < 0) chibis[i].y = 0;
-			if(chibis[i].x + chibis[i].width > canvas.width) chibis[i].x = canvas.width-chibis[i].width;
-			if(chibis[i].y + chibis[i].height > canvas.height) chibis[i].y = canvas.height-chibis[i].height;
-
-			ctx.drawImage(
-				chibis[i].image,
-				sx,
-				sy,
-				chibis[i].width,
-				chibis[i].height,
-				Math.round(chibis[i].x), 
-				Math.round(chibis[i].y),
-				chibis[i].width,
-				chibis[i].height
-			);
-
-			for(let j = 0; j < chibis[i].attachedObject.length; j++) {
-				let cObj = chibis[i].attachedObject[j];
-				cObj.update(unit);
-				cObj.draw(ctx);
-			}
-
-			// drawText(0+i*200, 340, `[NAME]	  (${chibis[i].name})`, "Fira Code", "12")
-			// drawText(0+i*200, 354, `[ENERG] 	(${Math.round(chibis[i].energy)}%)`, "Fira Code", "12")
-			// drawText(0+i*200, 368, `[STATE] 	(${chibis[i].state} ; ${Math.round(chibis[i].stateCooldown)})`, "Fira Code", "12")
-			// drawText(0+i*200, 382, `[CA;TF]		(${chibis[i].currentAnimation} ; ${Math.round(chibis[i].frameTickUp)}/${chibis[i].frameTick} -> ${chibis[i].frame}/${chibis[i].animationList[Chibi.animations[chibis[i].currentAnimation]]-1})`, "Fira Code", "12")
-			// drawText(0+i*200, 396, `[MOOD]		 (${chibis[i].mood} ; ${Math.round(chibis[i].moodCooldown)})`, "Fira Code", "12")
-			// drawText(0+i*200, 410, `[ATTCH]		(${chibis[i].attachedObject.length})`, "Fira Code", "12")
-		}
-	}
 	writeFPS();
 	setTimeout(() => renderFrame(visualiser, canvas, ctx), visualiser.refreshTime);
 	timerEnd = window.performance.now();
@@ -967,9 +463,5 @@ module.exports = {
 	setNextTitle,
 	renderFrame,
 	changeVisSize,
-	Chibi,
-	cObject,
-	appendChibi,
-	chibis,
-	setBackground,
+	setBackground
 }

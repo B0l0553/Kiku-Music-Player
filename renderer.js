@@ -3,7 +3,7 @@ const VERSION = "0.4.75"
 const { ipcRenderer, dialog, app, BrowserWindow } = require("electron");
 const fs = require("fs");
 const path = require("path")
-let InternalPlaylist=[],pPtr=toPlay=loop=optionOpn=tMinus=announce=0,contextData=null,vHandle,visCanvas,keys={};
+let InternalPlaylist=[],pPtr=toPlay=loop=optionOpn=tMinus=announce=0,contextData=null,vHandle,visCanvas,keys={},search="",menu="";
 
 
 const {
@@ -71,21 +71,25 @@ document.onreadystatechange = () => {
 			return document.getElementById(value);
 		}
 
+		function vwTOpx(value) {
+			return (window.innerWidth*value)/100;
+		}
+
 		function createMPWrapper(data) {
 
 			var body = `
 			<div class="playlist__music">
-				<img draggable="false" src="${data.tags.image}" />
+				<img draggable="false" src="${data.tags.image}" loading="lazy" />
 				<div class="playlist__music-info">
 					<div>${data.tags.title}</div>
-					<div>${data.tags.album}</div>
+					<!--<div>${data.tags.album}</div>-->
 					<div>${data.tags.artist}</div>
 				</div>
 			</div>`;
 
 			var bg = document.createElement("div");
-			bg.style.background = `url("${encodeURI(data.tags.image.replaceAll("\\", "/"))}")`;
-			bg.style.backgroundPosition = "center";
+			//bg.style.background = `url("${encodeURI(data.tags.image.replaceAll("\\", "/"))}")`;
+			//bg.style.backgroundPosition = "center";
 			bg.classList.add("playlist__music-wrapper");
 			bg.innerHTML = body;
 			bg.onclick = () => {
@@ -99,15 +103,15 @@ document.onreadystatechange = () => {
 			<div class="playlist__music">
 				<img draggable="false" src="${data.image}" />
 				<div class="playlist__music-info">
-					<div>${data.title}</div>
-					<div>${data.album}</div>
-					<div>${data.artist}</div>
+					<p>${data.title}</p>
+					<!--<div>${data.album}</div>-->
+					<p>${data.artist}</p>
 				</div>
 			</div>`;
 
 			var bg = document.createElement("div");
-			bg.style.background = `url("${encodeURI(data.image.replaceAll("\\", "/"))}")`;
-			bg.style.backgroundPosition = "center";
+			//bg.style.background = `url("${encodeURI(data.image.replaceAll("\\", "/"))}")`;
+			//bg.style.backgroundPosition = "center";
 			bg.classList.add("playlist__music-wrapper");
 			bg.innerHTML = body;
 			bg.onclick = () => {
@@ -137,8 +141,20 @@ document.onreadystatechange = () => {
 				e.stopPropagation();
 				vHandle.setMode(mode);
 				userdata.settings.vis_mode = mode;
+				vHandle.startRender();
 			}
 			return bg;
+		}
+
+		function searchHistory(value) {
+			const childs = document.getElementById("history__wrapper").childNodes;
+			childs.forEach((el) => {
+				if(!el.textContent.toLowerCase().includes(value.toLowerCase())) {
+					el.style.display = "none";
+				} else {
+					el.style.display = "flex";
+				}
+			});
 		}
 
 		function updateHistory(data) {
@@ -169,6 +185,7 @@ document.onreadystatechange = () => {
 			for(let i = 0; i < sorted.length; i++) {
 				$("history__wrapper").appendChild(createMHItem(sorted[i]));
 			}
+			searchHistory(search);
 		}
 
 		function setThumb(value) {
@@ -327,19 +344,19 @@ document.onreadystatechange = () => {
 			return pad(hours, 2) + ':' + pad(minutes, 2) + ':' + pad(seconds, 2) + ',' + pad(milliseconds, 3);
 		}
 
-		function addChibi(folder) {
-			var sprite = path.join(__dirname, `assets/sprites/${folder}/sprite.png`);
-			var json = path.join(__dirname, `assets/sprites/${folder}/spriteInfo.json`);
-			var chb = new Chibi(folder, sprite, GetJSONFromFile(json));
-			chb.x = Math.round(Math.random() * (visCanvas.width - 1) + 1);
+		// function addChibi(folder) {
+		// 	var sprite = path.join(__dirname, `assets/sprites/${folder}/sprite.png`);
+		// 	var json = path.join(__dirname, `assets/sprites/${folder}/spriteInfo.json`);
+		// 	var chb = new Chibi(folder, sprite, GetJSONFromFile(json));
+		// 	chb.x = Math.round(Math.random() * (visCanvas.width - 1) + 1);
 			
-			var spriteB = path.join(__dirname, `assets/sprites/misc/speechBubble.png`);
-			var jsonB = path.join(__dirname, `assets/sprites/misc/speechBubble.json`);
+		// 	var spriteB = path.join(__dirname, `assets/sprites/misc/speechBubble.png`);
+		// 	var jsonB = path.join(__dirname, `assets/sprites/misc/speechBubble.json`);
 
-			var sbb = new cObject("speechBubble", spriteB, GetJSONFromFile(jsonB));
-			chb.attachObject(sbb);
-			appendChibi(chb);
-		}
+		// 	var sbb = new cObject("speechBubble", spriteB, GetJSONFromFile(jsonB));
+		// 	chb.attachObject(sbb);
+		// 	appendChibi(chb);
+		// }
 
 		function setupSettings() {
 			(async () => { 
@@ -390,6 +407,18 @@ document.onreadystatechange = () => {
 
 		}
 
+		function openMenu(value) {
+			$(`${value}__body`).classList.remove("hide");
+			menu = value;
+			vHandle.setRefreshRate(10);
+		}
+
+		function closeMenu(value) {
+			$(`${value}__body`).classList.add("hide");
+			menu = "";
+			vHandle.setRefreshRate(userdata.settings.vis_refresh_rate);
+		}
+
 		const playlistBody = $("playlist__body");
 		const player = document.getElementById("player");
 		const progressWrapper = document.getElementsByClassName("playback__progressWrapper")[0];
@@ -432,11 +461,13 @@ document.onreadystatechange = () => {
 			var percent = (player.currentTime / player.duration) * 100;
 			var r = progressWrapper.getBoundingClientRect();
 			progressBody.style.width = `${percent}%`;
-			progressHandle.style.left = `${r.width*(percent/100)-3}px`;
+			// progressHandle.style.left = `${r.width*(percent/100)-3}px`;
+			progressHandle.style.left = `${(r.width*(percent/100)-3)/window.innerWidth*100}vw`;
 			pBodyTime.textContent = getTime(player.currentTime);
 			pBodyLength.textContent = tMinus ? getTime(player.duration-player.currentTime) : getTime(player.duration);
 			userdata.playtime = player.currentTime;
 			userdata.volume = player.volume;
+
 			if(percent > 80 && !announce && pPtr + 1 < InternalPlaylist.length) {
 				$("next__title").textContent = `NEXT UP: ${InternalPlaylist[pPtr + 1].tags.title}`;
 				$("announcement__test").style.backgroundImage = `url("${encodeURI(InternalPlaylist[pPtr + 1].tags.image.replaceAll("\\", "/"))}")`;
@@ -461,24 +492,18 @@ document.onreadystatechange = () => {
 		});
 		
 		vHandle = setupVisualizer(visCanvas, player);
-		vHandle.setSmoothing(0.35);
-		vHandle.setFftSize(4096);
+		vHandle.setSmoothing(0.4);
 		vHandle.setMode(userdata.settings.vis_mode, visCanvas);
 		vHandle.setRefreshRate(20);
 		setBackground(playbackBodyBg);
-		vHandle.showChibi = userdata.settings.showchibi;
 		vHandle.showWaveform = userdata.settings.wave_show;
 		vHandle.bouncingBackground = userdata.settings.bcng_bg;
 		vHandle.setAudioOutput(userdata.settings.outputId);
+		vHandle.setFftSize(vHandle.audioCtx.sampleRate/11.71875); // 11.71875 -> Idk honestly ; magic number to find correct power of 2 :P
 		vHandle.startRender();
+		vHandle.setMode(userdata.settings.vis_mode, visCanvas);
 
 		setupSettings();
-
-		addChibi("jolteon");
-		addChibi("eevee");
-		addChibi("vaporeon");
-		addChibi("meowth");
-
 		setTimeout(() => changeVisSize(visCanvas), 250);
 		setInterval(() => {
 			WriteUserData(userdata);
@@ -488,8 +513,8 @@ document.onreadystatechange = () => {
 			if(userdata.playing) {
 				userdata.totalTime += 1
 			}
-			$("sampleRate").textContent = vHandle.audioCtx.sampleRate;
-			$("fftSize").textContent = vHandle.analyser.fftSize;
+			$("sampleRate").textContent = vHandle.audioCtx.sampleRate + " Hz";
+			$("fftSize").textContent = vHandle.analyser.fftSize/2 + " Bytes";
 		}, 1000);
 		setMusicVolume(userdata.volume*100 || 50, false);
 		clearPlaylist();
@@ -541,18 +566,23 @@ document.onreadystatechange = () => {
 			playNext();
 		});
 
-		$("playlist__header").addEventListener("click", (e) => {
-			e.stopPropagation();
-			playlistBody.classList.toggle("hide");
-			$("playlist__header").classList.toggle("hide");
-			//playbackWin.classList.toggle("mPlace");
-		});
-		$("history__header").addEventListener("click", (e) => {
-			e.stopPropagation();
-			$("history__body").classList.toggle("hide");
-			$("history__header").classList.toggle("hide");
-			//playbackWin.classList.toggle("mPlace");
-		});
+		$("playlist__exit").onclick = () => { closeMenu("playlist"); }
+		$("playlist__header").onclick = () => { openMenu("playlist"); }
+		$("history__exit").onclick = () => { closeMenu("history"); }
+		$("history__top").onclick = () => { $("history__wrapper").scrollTo(0, 0); }
+		$("history__header").onclick = () => { openMenu("history"); }
+		$("history__wrapper").onscroll = (e) => { 
+			if($("history__wrapper").scrollTop > 100) {
+				$("history__top").classList.remove("hide")
+			} else {
+				$("history__top").classList.add("hide")
+			}
+		}
+
+		$("history__input").onkeyup = (e) => {
+			search = e.target.value;
+			searchHistory(search);
+		}
 
 		window.addEventListener("resize", () => {
 			changeVisSize(visCanvas);
@@ -634,7 +664,14 @@ document.onreadystatechange = () => {
 		}
 
 		document.addEventListener("keydown", (e) => {
-			
+			if(menu != "" && e.key == "Escape") {
+				closeMenu(menu);
+				return;
+			} else if(menu == "history") {
+				$("history__input").focus();
+				return;
+			}
+
 			switch(e.key) {
 				case " ":
 					e.preventDefault();
@@ -681,3 +718,4 @@ document.onreadystatechange = () => {
 		}
 	}
 }
+

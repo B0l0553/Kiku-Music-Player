@@ -11,6 +11,8 @@ function setupVisualizer(canvas, audio) {
 		if(v.breakRender){
 			v.breakRender = false;
 			renderFrame(v, canvas, ctx); 
+		} else {
+			console.warn("Refused to launch new render thread because one is already running!")
 		}
 	};
 	return v;
@@ -26,7 +28,7 @@ class Visualiser {
 	mode;
 	bouncingBackground;
 	showWaveform;
-	showChibi;
+	// showChibi;
 	refreshTime;
 	refreshRate;
 	breakRender = true;
@@ -41,9 +43,7 @@ class Visualiser {
 		this.setFftSize(128);
 		this.buffer = new Float32Array(this.analyser.frequencyBinCount);
 		this.UIntBuffer = new Uint8Array(this.analyser.frequencyBinCount);
-		this.showChibi = false;
 		this.showWaveform = false;
-		
 	}
 
 	getAudioOutput() {
@@ -64,7 +64,8 @@ class Visualiser {
 	}
 
 	setFftSize(value) {
-		this.analyser.fftSize = value;
+		var lValue = Math.round(Math.log2(value));
+		this.analyser.fftSize = Math.pow(2, lValue);
 		this.buffer = new Float32Array(this.analyser.frequencyBinCount);
 		this.UIntBuffer = new Uint8Array(this.analyser.frequencyBinCount);
 	}
