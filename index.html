@@ -2,14 +2,32 @@
 <html>
   	<head>
 		<meta charset="UTF-8">
-		<meta http-equiv="Content-Security-Policy" content="default-src * self blob: data: gap:; style-src * self 'unsafe-inline' blob: data: gap:; script-src * 'self' 'unsafe-eval' 'unsafe-inline' blob: data: gap:; object-src * 'self' blob: data: gap:; img-src * self 'unsafe-inline' blob: data: gap:; connect-src self * 'unsafe-inline' blob: data: gap:; frame-src * self blob: data: gap:;">
+		<!-- <meta http-equiv="Content-Security-Policy" content="default-src * self blob: data: gap:; style-src * self 'unsafe-inline' blob: data: gap:; script-src * 'self' 'unsafe-eval' 'unsafe-inline' blob: data: gap:; object-src * 'self' blob: data: gap:; img-src * self 'unsafe-inline' blob: data: gap:; connect-src self * 'unsafe-inline' blob: data: gap:; frame-src * self blob: data: gap:;"> -->
+		<meta http-equiv="Content-Security-Policy" content="script-src 'self'">
 		<link rel="stylesheet" href="index.css" />
 		<audio id="player" preload="auto"></audio>
 		<img id="thumb" style="display: none;" />
 		<title>Akio Music Player</title>
   	</head>
   	<body>
-		
+		<svg width="0" height="0">
+			<filter id="rgb-split">
+			  <feOffset in="SourceGraphic" dx="3" dy="3" result="layer-one" />
+			  <feComponentTransfer in="layer-one" result="red">
+				  <feFuncR type="identity" />
+				  <feFuncG type="discrete" tableValues="0" />
+				  <feFuncB type="discrete" tableValues="0" />
+			  </feComponentTransfer>
+		  
+			  <feOffset in="SourceGraphic" dx="-3" dy="-3" result="layer-two" />
+			  <feComponentTransfer in="layer-two" result="cyan">
+				  <feFuncR type="discrete" tableValues="0" />
+				  <feFuncG type="identity" />
+				  <feFuncB type="identity" />
+			  </feComponentTransfer>
+			  <feBlend in="red" in2="cyan" mode="screen" result="color-split" />
+			</filter>
+		</svg>
 		<div id="bg-img" style="position: absolute; height: 100vh; width: 100vw; z-index: -2;"></div>
 		<div id="bg-matrix"></div>
 		
@@ -17,7 +35,7 @@
 			<div id="drag-region">
 				<div id="window-controls">
 					<div class="button" id="option-btn">
-						<i class="gg-options"></i>
+						<img src="assets/icons/window-settings.svg" draggable="false" />
 					</div>
 					<div class="button" id="min-button">
 						<img src="assets/icons/window-minimize.svg" draggable="false"/>
@@ -36,15 +54,12 @@
 				<div id="playback__body" style="overflow: hidden; display: flex; flex-direction: column;">
 					<div id="playback__window" class="wrapper flex-row">
 						<div class="wrapper" style="display: flex;justify-content: center;align-items: center; flex-direction: column;">
-							<div id="playback__thumb">
-								<div id="announcement__test" class="hide">
-									<div id="title__wrapper">
-										<div id="next__title"></div>
-									</div>
-								</div>
-							</div>
+							<div id="playback__thumb"></div>
 							<div class="under__thumb">
 								<div class="control__wrapper">
+									<div class="control__button">
+										<img id="control__loop" src="assets/icons/audio-loop.svg" draggable="false"/>
+									</div>
 									<div class="control__button">
 										<img id="control__prev" src="assets/icons/audio-previous.svg" draggable="false"/>
 									</div>
@@ -53,6 +68,9 @@
 									</div>
 									<div class="control__button">
 										<img id="control__next" src="assets/icons/audio-next.svg" draggable="false"/>
+									</div>
+									<div class="control__button">
+										<img id="control__shuffle" src="assets/icons/audio-shuffle.svg" draggable="false"/>
 									</div>
 								</div>
 								<div style="width: 100%; position:relative; margin-top: .5rem;">
@@ -73,18 +91,20 @@
 						</div>
 						<canvas id="visualiz" style="margin-right: 1rem;margin-left: 2vw;"></canvas>
 					</div>
+					
 					<div id="history__header" class="menu__header">
 						<img src="assets/icons/window-history.svg" draggable="false" />
 					</div>
 					<div id="playlist__header" class="menu__header">
 						<img src="assets/icons/list-music.svg" draggable="false" />
 					</div>
+					
 				</div>
 
 				<div id="playlist__body" class="menu__body hide">
-					<div class="menu__exit" id="playlist__exit">
+					<!-- <div class="menu__btn menu__exit" id="playlist__exit">
 						<img src="assets/icons/window-close-outline.svg" draggable="false" />
-					</div>
+					</div> -->
 					<div id="playlist__wrapper" class="menu__wrapper scrollbar-app"></div>
 					
 				</div>
@@ -105,41 +125,41 @@
 				
 				<div id="settings__body" class="hidden">
 					<div id="settings__wrapper" class="scrollbar-app">
-							<div class="tab__content" id="content__general">
-								<h1>General</h1>
-								<div class="setting__block">
-									<p>Output Device</p>
-									<select id="audio-output__select"></select>
-								</div>
-								<div>CACHE</div>
-								<div>HISTORY</div>
+						<div class="tab__content" id="content__general">
+							<h1>General</h1>
+							<div class="setting__block">
+								<p>Output Device</p>
+								<select id="audio-output__select"></select>
 							</div>
-							<div class="tab__content" id="content__visualiser">
-								<h1>Visualiser</h1>
-								<div id="visualiser__modeSelector"></div>
-								<div class="setting__block">
-									<label>Background bounce
-										<input type="checkbox" id="bouncingBackground__input" />
-									</label>
-									<label>Waveform
-										<input type="checkbox" id="shwWaveform__input" />
-									</label>
-								</div>
-								<div class="setting__block">
-									<p>Refresh rate</p>
-									<select id="vis-refresh__select">
-										<option value="170">165 fps</option>
-										<option value="144">144 fps</option>
-										<option value="75">60 fps</option>
-										<option value="35">30 fps</option>
-										<!-- <option value="5">5Hz</option>
-										<option value="1">1Hz</option> -->
-									</select>
-								</div>
-								<div class="setting__block">
-									
-								</div>
+							<div>CACHE</div>
+							<div>HISTORY</div>
+						</div>
+						<div class="tab__content" id="content__visualiser">
+							<h1>Visualiser</h1>
+							<div id="visualiser__modeSelector"></div>
+							<div class="setting__block">
+								<label>Background bounce
+									<input type="checkbox" id="bouncingBackground__input" />
+								</label>
+								<label>Waveform
+									<input type="checkbox" id="shwWaveform__input" />
+								</label>
 							</div>
+							<div class="setting__block">
+								<p>Refresh rate</p>
+								<select id="vis-refresh__select">
+									<option value="170">165 fps</option>
+									<option value="144">144 fps</option>
+									<option value="75">60 fps</option>
+									<option value="35">30 fps</option>
+									<option value="5">5Hz</option>
+									<option value="1">1Hz</option>
+								</select>
+							</div>
+							<div class="setting__block">
+								
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -161,9 +181,9 @@
 					<div class="fIcon" id="twitter__red">
 						<img src="assets/icons/logo-x.svg" draggable="false"/>
 					</div>
-					<div class="fIcon">
+					<!-- <div class="fIcon">
 						<img src="assets/icons/logo-discord.svg" draggable="false"/>
-					</div>
+					</div> -->
 				</div>
 				<div style="flex-wrap: nowrap;display: flex;">
 					<p id="fps"></p>
