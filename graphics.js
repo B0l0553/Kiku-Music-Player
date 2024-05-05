@@ -1,8 +1,11 @@
 const path = require("path");
 const { GetJSONFromFile } = require("./mapi");
-let barWidth = barWidthB = bpLength = bpbLength = dWaveform = dVisualizer = backa = timerStart = timerEnd = 0;
+let barWidth = barWidthB = bpLength = bpbLength = backa = timerStart = timerEnd = 0;
 let title = album = artist = mode = "";
 let desp = background = undefined;
+let wData = [];
+let dataArray = [];
+let wfTest = [];
 
 function setBackground(value) {
 	background = value;
@@ -24,37 +27,30 @@ function setNextTitle(value) {
 	next = value;
 }
 
-function min(arr) {
+function maxIndex(arr) {
 	var max = arr[0];
-	for (let i = 1; i < arr.length; i++) {
-		if (arr[i] < max) {
-			max = arr[i];
-		} 
-	}
-	return max;
-}
-function max(arr) {
-	var max = arr[0];
+	var ind = 0;
 	for (let i = 1; i < arr.length; i++) {
 		if (arr[i] > max) {
 			max = arr[i];
+			ind = i;
 		} 
 	}
-	return max;
+	return ind;
 }
 
 function fatOne(arr) { 
 	var max = arr[0].y;
-	var mxv = 0;
+	var index = 0;
 
 	for (let i = 1; i < arr.length; i++) {
 		if (arr[i].y < max) {
 			max = arr[i].y;
-			mxv = arr[i].x;
+			index = i;
 		} 
 	} 
 	 
-	return [max, mxv];
+	return index;
 } 
 
 function getAverage(array, start=0, end=array.length) {
@@ -83,17 +79,9 @@ function groupPerN(data, grpSize) {
 	return grpContainer;
 }
 
-function vwTOpx(value) {
-	return window.innerWidth*value/100;
-}
-
-function vhTOpx(value) {
-	return window.innerHeight*value/100;
-}
-
 function changeVisSize(canvas, vw = 55, vh = 65) {
-	var w = vwTOpx(vw);
-	var h = vhTOpx(vh);
+	var w = window.innerWidth*vw/100;
+	var h = window.innerHeight*vh/100;
 
 	//if(w > 1024) w = 1024;
 	//if(h > 450) h = 450;
@@ -108,7 +96,6 @@ function changeVisSize(canvas, vw = 55, vh = 65) {
 }
 
 function renderFrame(visualiser, canvas, ctx) {
-	//requestAnimationFrame(() => renderFrame(visualiser, canvas, ctx))
 	
 	let x = 0;
 	let bp = [];
@@ -163,9 +150,9 @@ function renderFrame(visualiser, canvas, ctx) {
 		ctx.fillStyle = "white"
 		for(var i = 0; i < p.length; i++) {
 			var dy = p[i].y-pointOffset;
-			if(dy > -barWidth/1.5) dy=-barWidth/1.5;
+			if(dy > -barWidth/4) dy=-barWidth/4;
 			ctx.beginPath();
-			ctx.roundRect(p[i].x + i - offsetRight, canvas.height - offsetBottom, barWidth / 2, dy, [40]);
+			ctx.roundRect(p[i].x - offsetRight, canvas.height - offsetBottom, barWidth/4, dy, [40]);
 			// var h = 300 + p[i].y;
 			// var s = 100 + "%";
 			// var l = -p[i].y < 64 ? -p[i].y * 50 / 64 + "%" : "50%";
@@ -174,7 +161,34 @@ function renderFrame(visualiser, canvas, ctx) {
 		}
 		ctx.shadowBlur=0;
 	}
-	
+
+	function drawDebug(p, offsetRight, offsetBottom, skip, vis) {
+		// ctx.fillStyle = "red"
+		// for(var i = 0; i < p.length; i++) {
+		// 	var dy = p[i].y;
+		// 	if(dy > 0) dy=0;
+		// 	ctx.beginPath();
+		// 	ctx.roundRect(p[i].x+barWidth/2 - offsetRight, canvas.height - offsetBottom, 2, dy, [40]);
+		// 	ctx.fill();
+		// }
+		
+		var fData = vis.getVisualiserData();
+		var data = vis.getVisualiserUIntData();
+		var mx = maxIndex(data);
+		var mfx = maxIndex(fData);
+		//var dbfs = Math.round(((data[mx]/255)*(vis.analyser.maxDecibels - vis.analyser.minDecibels) + vis.analyser.minDecibels+13.89)*100)/100;
+		var dbfs = Math.round((fData[mfx]+13.9)*100)/100;
+		if(dbfs < -96) dbfs = -96;
+		var hz = Math.round(mx*vHandle.audioCtx.sampleRate/vis.analyser.fftSize*100)/100;
+		var intensity = -(dbfs * 8);
+		var color = `hsl(${0-10*(dbfs/3) + 5} 100% 50%)`;
+		drawText(canvas.width-cwToPx(38.5), chToPx(5), `${hz}Hz`, "MPLUS1Code", chToPx(5), color, 2);
+		drawText(canvas.width-cwToPx(40), chToPx(10), `${dbfs.toLocaleString('en-US', { minimumFractionDigits: 2 } )}dBFS`, "MPLUS1Code", chToPx(5), color, 2);
+		drawText(canvas.width-cwToPx(40), chToPx(15), `${-Math.log2(player.volume)+0.5}`, "MPLUS1Code", chToPx(5), color, 2);
+		// drawText(canvas.width-cwToPx(40), chToPx(15), `minDb: ${vis.analyser.minDecibels}`, "MPLUS1Code", chToPx(5), "white", 2);
+		// drawText(canvas.width-cwToPx(40), chToPx(20), `maxDb: ${vis.analyser.maxDecibels}`, "MPLUS1Code", chToPx(5), "white", 2);
+	}
+
 	function drawLine(bp) {
 		ctx.beginPath();
 		ctx.strokeStyle = "white";
@@ -234,10 +248,13 @@ function renderFrame(visualiser, canvas, ctx) {
 		const ceiling = chToPx(25)
 		
 		for (let i = 0; i < e.length; i++) {
-			let mx = ((max(e[i]) - 128) + chToPx(.75))/128 * ceiling * amp;
-			let mn = ((min(e[i]) - 128) - chToPx(.75))/128 * ceiling * amp;
+			let mx = (Math.max(... e[i]) - 128)/128 * ceiling * amp;
+			let mn = (Math.min(... e[i]) - 128)/128 * ceiling * amp;
 			
-			if(mx - mn < 4) mn -= mn - mx;
+			if(Math.abs(mn - mx) < chToPx(2)) {
+				mx = mx+chToPx(1);
+				mn = mn-chToPx(1);
+			}
 
 			ctx.beginPath();
 			ctx.fillStyle = "rgba(126, 249, 255, .8)";
@@ -246,6 +263,39 @@ function renderFrame(visualiser, canvas, ctx) {
 			dx += sliceWidth + 2;
 		}
 		ctx.fillStyle = "#FFF";
+	}
+
+	function drawWaveC(x, y, sx, ox, data, dataGroups = 8, amp = 1) {
+		let dx = x;
+		var e = groupPerN(data, dataGroups);
+		const sliceWidth = Math.round(sx / wfTest.length);
+		const ceiling = chToPx(25)
+		
+		for (let i = 0; i < e.length; i++) {
+			let mx = (Math.max(... e[i]) - 128)/128 * ceiling * amp;
+			let mn = (Math.min(... e[i]) - 128)/128 * ceiling * amp;
+			
+			if(Math.abs(mn - mx) < chToPx(2)) {
+				mx = mx+chToPx(1);
+				mn = mn-chToPx(1);
+			}
+
+			wfTest.push({x: dx, y: y-mn, h: mn-mx});
+			if(wfTest.length > 96) {
+				wfTest = wfTest.slice(1);
+			}
+
+			dx += sliceWidth + 2;
+		}
+
+		for(let i = 0; i < wfTest.length; i++) {
+			ctx.beginPath();
+			ctx.fillStyle = "rgba(126, 249, 255, .8)";
+			ctx.roundRect(i*canvas.width/wfTest.length, wfTest[i].y, sliceWidth, wfTest[i].h, [40]);
+			ctx.fill();
+		}
+		ctx.fillStyle = "#FFF";
+		drawText(0, 255, `wf buffer ln: ${wfTest.length} values`);
 	}
 
 	function drawWaveBezier(x, y, sx, data) {
@@ -272,20 +322,7 @@ function renderFrame(visualiser, canvas, ctx) {
 				barHeight -= threshold;
 			}
 	
-			p.push({x: x, y: (canvas.height - barHeight)-4});
-			x += spacing;
-		}
-	
-		return p;
-	}
-
-	function getRangeNormalized(data, start, end, threshold, norme = -20, spacing = 1) {
-		var p = [];
-		
-		for (var i = start; i < end; i++) {
-			//var barHeight = canvas.height - ((2-((data[i]/norme)-2))*threshold-threshold+4) //(threshold*(data[i]/norme)) + threshold + 4;
-			if(barHeight > canvas.height - 4) barHeight = canvas.height - 4;
-			p.push({x: x, y: barHeight});
+			p.push({x: x, y: -barHeight});
 			x += spacing;
 		}
 	
@@ -302,30 +339,16 @@ function renderFrame(visualiser, canvas, ctx) {
 		return p;
 	}
 
-	function getPointsUInt8P(data, start, end, ceiling = 100, spacing = 1) {
-		var p = [];
-		for(let i = start; i < end-1; i++) {
-			var barHeight = (data[i]/255)*ceiling;
-			var barHeightN = (data[i+1]/255)*ceiling;
-			var barHeightM = 0;
-			p.push({x: x, y: -barHeight});
-			x += spacing;
-			barHeightM = ( barHeight + barHeightN ) / 2 + (barHeight - barHeightN) * .05;
-			p.push({x: x, y: -barHeightM, m: true});
-			x += spacing;
+	function halveData(data, coef) {
+		let nData = [];
+		for(let i = coef; i < data.length; i+=coef+1) {
+			dataSum = 0;
+			for(let j = 0; j < coef; j++) {
+				dataSum += data[i-j];
+			}
+			nData.push(dataSum/(coef+1));
 		}
-		return p;
-	}
-
-	function getAllPointNormalized(data, ceiling) {
-		var scale = Math.log(visualiser.analyser.fftSize/2 - 1) / canvas.width;
-		var p = [];
-		for(let i = 0; i < data.length; i++) {
-			let x = Math.floor(Math.log(i)/scale);
-			barHeight = (data[i]/255)*ceiling;
-			p.push({x: x, y:-barHeight});
-		}
-		return p;
+		return nData;
 	}
 
 	function chToPx(value) {
@@ -355,6 +378,12 @@ function renderFrame(visualiser, canvas, ctx) {
 		waveOffset = 90;
 	}
 	ctx.setLineDash([]);
+	// for(let j = 1; j <= 4; j++) {
+	// 	ctx.fillStyle = `rgb(${128 + 126*j/4} ${255*j/4} 255)`
+	// 	for(let i = 1; i <= 10; i++) {
+	// 		ctx.fillRect(i*Math.log10(i)*-(canvas.width/40)+(canvas.width/40)*10*j, 0, 2, canvas.height);
+	// 	}
+	// }
 
 	drawText(cwToPx(2), chToPx(5), "ARTIST", "MPLUS1Code", cwToPx(2.6), "white", 4);
 	drawTrapeze(cwToPx(12), chToPx(3.4), cwToPx(22), chToPx(.6), 5, "white");
@@ -369,6 +398,7 @@ function renderFrame(visualiser, canvas, ctx) {
 		tw = getTextWidth(title, "MPLUS1Code", ttlen)
 	}
 	drawText(cwToPx(2), chToPx(25) + ttlen*0.85, title, "MPLUS1Code", ttlen, /*"#4361EE"*/ "#06dba0", 4);
+
 	if(visualiser.breakRender) return;
 	switch(visualiser.mode) {
 		case "bar":
@@ -377,7 +407,8 @@ function renderFrame(visualiser, canvas, ctx) {
 		case "fSBezier":
 		case "line":
 			dataArray = visualiser.getVisualiserUIntData()
-			bp.push(... getPointsUInt8(dataArray, 0, 58, 300, barWidth));
+			bp.push(... getPointsUInt8(halveData(dataArray, 2), 0, 32, chToPx(100), barWidth));
+			bp.push(... getPointsUInt8(halveData(dataArray, 3), 32, 64, chToPx(100), barWidth));
 			bpLength = bp.length;
 			//bp.push(... getRange(dataArray, 0, 58, 1100 + diffVolume, 11.5, barWidth));
 			//bp.push(... getRangeNormalized(dataArray, 0, 58, 125, -30, barWidth));
@@ -386,12 +417,10 @@ function renderFrame(visualiser, canvas, ctx) {
 		case "oFBezier":
 		case "fBezier":
 			dataArray = visualiser.getVisualiserUIntData()
-			// bp.push(... getAllPointNormalized(dataArray, 225));
-			// bpb.push(... getAllPointNormalized(dataArray, 225));
-			bp.push(... getPointsUInt8(dataArray, 1, 12, chToPx(30), barWidth));
-			bpb.push(... getPointsUInt8(dataArray, 0, 1, 0, barWidthB));
-			bpb.push(... getPointsUInt8(dataArray, 0, 32, chToPx(43), barWidthB));
-			bpLength = bp.length;
+			bp.push(...  getPointsUInt8(dataArray, 1, 12, chToPx(40),  barWidth));
+			bpb.push(... getPointsUInt8(dataArray, 0, 1,  0,  		   barWidthB));
+			bpb.push(... getPointsUInt8(dataArray, 0, 32,  chToPx(50),  barWidthB));
+			bpLength  = bp.length;
 			bpbLength = bpb.length;
 			break;
 
@@ -407,11 +436,12 @@ function renderFrame(visualiser, canvas, ctx) {
 
 	switch(visualiser.mode) {
 		case "bar":
-			drawBar(bp, -barWidth/2, waveOffset, 0);
+			drawBar(bp, -barWidth, waveOffset, 0);
 			break;
 		case "bBezier":
 			drawBar(bp, -barWidth/2, waveOffset, -75, 4);
 			drawBezier(bp, false, waveOffset, -barWidth/4, "white", 4);
+			// drawDebug(bp, bp[0].x+barWidth/2, waveOffset, 1, visualiser);
 			break;
 		case "bezier":
 			drawBezier(bp, false, waveOffset, -barWidth/4, "white");
@@ -422,12 +452,14 @@ function renderFrame(visualiser, canvas, ctx) {
 			drawBezier(bp, true, waveOffset, barWidth, /*"#365486"*/ "#4B6AC4", 4);
 			
 			if(visualiser.showWaveform) {
-				var wData = visualiser.getWaveformData();
-				drawWave(0, canvas.height - chToPx(21.5), canvas.width+50, -canvas.width*0.2-51, wData, visualiser.analyser.fftSize/256);
-				// drawWaveBezier(0, chToPx(21.5), canvas.width+barWidth/2, wData)
+				wData = visualiser.getWaveformData();
+				// drawWave(0, canvas.height - chToPx(21.5), canvas.width+50, 0, wData, visualiser.analyser.fftSize/256, 1);
+				drawWaveC(0, canvas.height - chToPx(21.5), canvas.width-50, 0, wData, visualiser.analyser.fftSize/256, 1);
+				// drawWaveBezier(0, chToPx(21.5), canvas.width+50, wData)
 			}
 		case "fBezier":
-			drawBezier(bpb, true, waveOffset, bpb[0].x+barWidth, /*"#7FC7D9"*/ "#FFF", 4);
+			drawBezier(bpb, true, waveOffset, bpb[0].x+barWidth/2, /*"#7FC7D9"*/ "#FFF", 4);
+			// drawDebug(bpb, bpb[0].x+barWidth/2, waveOffset, 1, visualiser);
 			break;
 		case "fSBezier":
 			drawBezier(bp, true);
@@ -440,14 +472,15 @@ function renderFrame(visualiser, canvas, ctx) {
 		default:
 			break;
 	}
+	
 
 	if(visualiser.bouncingBackground) {
 		dataArray = visualiser.getVisualiserUIntData()
-		var value = getAverage(dataArray, 0, 24)/255;
+		var value = getAverage(dataArray, 0, Math.round(visualiser.analyser.fftSize/170.7))/255;
 		backa += (60/visualiser.refreshRate) / 1000;
 		if(backa >= Math.PI*2) backa = 0;
 		background.style.backgroundSize = `${150 + 50*value}vw`
-		background.style.filter = `brightness(${.7 + .3*value}) blur(16px)`;
+		background.style.filter = `url(#rgb-split) brightness(${.5 + .8*value})  blur(4px)`;
 		background.style.backgroundPosition = `-${(25 + 25*value) - (Math.cos(backa) * 16)/2}vw -${(50 + 25*value) - (Math.sin(backa) * 24)/2}vw`
 	}
 
