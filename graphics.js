@@ -295,7 +295,7 @@ function renderFrame(visualiser, canvas, ctx) {
 			ctx.fill();
 		}
 		ctx.fillStyle = "#FFF";
-		drawText(0, 255, `wf buffer ln: ${wfTest.length} values`);
+		// drawText(0, 255, `wf buffer ln: ${wfTest.length} values`);
 	}
 
 	function drawWaveBezier(x, y, sx, data) {

@@ -1,6 +1,6 @@
 {
   "name": "kmp",
-  "version": "0.5.87",
+  "version": "0.5.88",
   "description": "A local music player made with w/ electron and vanillajs",
   "main": "main.js",
   "scripts": {
