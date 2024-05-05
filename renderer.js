@@ -3,7 +3,7 @@ const VERSION = "0.5.81"
 const { ipcRenderer, dialog, app, BrowserWindow } = require("electron");
 const fs = require("fs");
 const path = require("path")
-let InternalPlaylist=[],pPtr=toPlay=loop=optionOpn=tMinus=announce=0,contextData=null,vHandle,visCanvas,keys={},search="",menu="";
+let InternalPlaylist=[],pPtr=toPlay=loop=shuffle=optionOpn=tMinus=announce=0,contextData=null,vHandle,visCanvas,keys={},search="",menu="";
 
 
 const {
@@ -24,19 +24,11 @@ const {
 } = require("./visualizer.js");
 
 const { 
-	changeBarWidth,
-	changeDiff,
 	setArtist,
 	setTitle,
 	changeVisSize,
 	setAlbum,
-	Chibi,
-	appendChibi,
 	setNextTitle,
-	chibis,
-	cObject,
-	desp,
-	setSVGFilter,
 	setBackground,
 } = require("./graphics.js");
 
@@ -65,7 +57,6 @@ document.onreadystatechange = () => {
 		const userdata = GetUserData();
 		const cache = GetCache();
 		const history = gHistory();
-		redrawHistory();
 
 		function $(value) {
 			return document.getElementById(value);
@@ -88,11 +79,10 @@ document.onreadystatechange = () => {
 			</div>`;
 
 			var bg = document.createElement("div");
-			//bg.style.background = `url("${encodeURI(data.tags.image.replaceAll("\\", "/"))}")`;
-			//bg.style.backgroundPosition = "center";
 			bg.classList.add("playlist__music-wrapper");
 			bg.innerHTML = body;
-			bg.onclick = () => {
+			bg.onclick = (e) => {
+				e.stopPropagation();
 				setMusic(data.i);
 			}
 			return bg;
@@ -122,6 +112,7 @@ document.onreadystatechange = () => {
 					addMusic(w);
 					toPlay=1;
 					playCurrent();
+					redrawHistory();
 				})();
 			}
 			bg.onauxclick = () => {
@@ -171,7 +162,7 @@ document.onreadystatechange = () => {
 			history[mthn]["timesPlayed"]++;
 			history[mthn]["last_played"] = (new Date().getTime());
 			wHistory(history);
-			redrawHistory();
+			
 		}
 
 		function redrawHistory() {
@@ -196,7 +187,7 @@ document.onreadystatechange = () => {
 			playbackBodyBg.style.backgroundSize = "120vw";
 			playbackBodyBg.style.backgroundRepeat = "no-repeat";
 			playbackBodyBg.style.backgroundPosition = "center";
-			playbackBodyBg.style.filter = "brightness(0.7) blur(16px)";
+			playbackBodyBg.style.filter = "url(#rgb-split) brightness(0.7) blur(16px)";
 		}
 
 		function clearPlaylist() {
@@ -257,8 +248,23 @@ document.onreadystatechange = () => {
 		}
 
 		function playNext() {
+			if(shuffle) {
+				pPtr = Math.trunc(Math.random() * (InternalPlaylist.length-1));
+				playCurrent();
+				return true;
+			}
+			if(loop == 2) {
+				playCurrent();
+				return true;
+			}
 			if(pPtr < InternalPlaylist.length-1) {
-				playMusic(InternalPlaylist[++pPtr]);
+				pPtr++;
+				playCurrent();
+				return true;
+			}
+			if(loop == 1) {
+				resetPointer();
+				playCurrent();
 				return true;
 			}
 			return false;
@@ -284,6 +290,43 @@ document.onreadystatechange = () => {
 			return `${m.toLocaleString(undefined, { minimumIntegerDigits: 2 })}:${s.toLocaleString(undefined, { minimumIntegerDigits: 2 })}`;
 		}
 
+		function toggleLoop() {
+			if(!loop) {
+				loop=1;
+				$("control__loop").classList.add("on");
+				if(shuffle) {
+					toggleShuffle();
+				}
+			} else if(loop==1) {
+				loop=2;
+				$("control__loop").src = path.join(__dirname, "assets/icons/audio-loop-s.svg");
+				if(shuffle) {
+					toggleShuffle();
+				}
+			} else {
+				noLoop();
+			}
+		}
+
+		function noLoop() {
+			loop=0;
+			$("control__loop").src = path.join(__dirname, "assets/icons/audio-loop.svg");
+			$("control__loop").classList.remove("on");
+		}
+
+		function toggleShuffle() {
+			if(!shuffle) {
+				shuffle=1;
+				$("control__shuffle").classList.add("on");
+				if(loop) {
+					noLoop();
+				}
+			} else {
+				shuffle=0;
+				$("control__shuffle").classList.remove("on");
+			}
+		}
+
 		function togglePause() {
 			if(player.paused) {
 				if(player.currentSrc == null) {
@@ -292,15 +335,15 @@ document.onreadystatechange = () => {
 				}
 				player.play();
 				userdata.playing = 1;
-				vHandle.startRender();
+				//vHandle.startRender();
 				vHandle.setRefreshRate(userdata.settings.vis_refresh_rate);
 				$("control__pause").src = path.join(__dirname, "assets/icons/audio-pause.svg")
 				return;
 			}
 			userdata.playing = 0;
 			player.pause();
-			// vHandle.setRefreshRate(20);
-			vHandle.breakRender = true;
+			vHandle.setRefreshRate(20);
+			//vHandle.breakRender = true;
 			$("control__pause").src = path.join(__dirname, "assets/icons/audio-play.svg")
 		}
 
@@ -316,14 +359,12 @@ document.onreadystatechange = () => {
 
 		function setMusicVolume(_volume, _show = true) {
 			if(_volume < 0) _volume = 0;
-			if(_volume > 100) _volume = 100;
-		
-			_volume = Math.trunc(_volume);
+			if(_volume > 1) _volume = 1;
 			if(_show) showVToaster();
-			volumeSlider.style.width = `${_volume}%`
-			volumeText.textContent = `${_volume}%`
-			player.volume = _volume/100;
-			vHandle.setDecibels((player.volume) * (-35 + 66.3) - 66.3, (player.volume) * (-15 + 30) - 32);
+			volumeSlider.style.width = `${_volume*100}%`
+			volumeText.textContent = `${Math.round(_volume*100)}%`
+			player.volume = Math.round(_volume*100)/100;
+			vHandle.setDecibels(-48+6*Math.log2(player.volume), -12+6*Math.log2(player.volume));
 		}
 
 		function showVToaster() {
@@ -334,7 +375,7 @@ document.onreadystatechange = () => {
 		}
 
 		function sec2time(timeInSeconds) {
-			var pad = function(num, size) { return ('000' + num).slice(size * -1); },
+			var pad = function(num, size) { return ('000' + num).slice(-size); },
 			time = parseFloat(timeInSeconds).toFixed(3),
 			hours = Math.floor(time / 60 / 60),
 			minutes = Math.floor(time / 60) % 60,
@@ -344,19 +385,6 @@ document.onreadystatechange = () => {
 			return pad(hours, 2) + ':' + pad(minutes, 2) + ':' + pad(seconds, 2) + ',' + pad(milliseconds, 3);
 		}
 
-		// function addChibi(folder) {
-		// 	var sprite = path.join(__dirname, `assets/sprites/${folder}/sprite.png`);
-		// 	var json = path.join(__dirname, `assets/sprites/${folder}/spriteInfo.json`);
-		// 	var chb = new Chibi(folder, sprite, GetJSONFromFile(json));
-		// 	chb.x = Math.round(Math.random() * (visCanvas.width - 1) + 1);
-			
-		// 	var spriteB = path.join(__dirname, `assets/sprites/misc/speechBubble.png`);
-		// 	var jsonB = path.join(__dirname, `assets/sprites/misc/speechBubble.json`);
-
-		// 	var sbb = new cObject("speechBubble", spriteB, GetJSONFromFile(jsonB));
-		// 	chb.attachObject(sbb);
-		// 	appendChibi(chb);
-		// }
 
 		function setupSettings() {
 			(async () => { 
@@ -379,6 +407,7 @@ document.onreadystatechange = () => {
 			vms.appendChild(createVOChoice("bezier"));
 			vms.appendChild(createVOChoice("fBezier"));
 			vms.appendChild(createVOChoice("bBezier"));
+			vms.appendChild(createVOChoice("bar"));
 			vms.appendChild(createVOChoice("oFBezier"));
 			
 			$("bouncingBackground__input").checked = userdata.settings.bcng_bg;
@@ -404,7 +433,6 @@ document.onreadystatechange = () => {
 				userdata.settings.vis_refresh_rate = Number.parseInt(e.target.value);
 				vHandle.setRefreshRate(e.target.value);
 			}
-
 		}
 
 		function openMenu(value) {
@@ -461,24 +489,11 @@ document.onreadystatechange = () => {
 			var percent = (player.currentTime / player.duration) * 100;
 			var r = progressWrapper.getBoundingClientRect();
 			progressBody.style.width = `${percent}%`;
-			// progressHandle.style.left = `${r.width*(percent/100)-3}px`;
 			progressHandle.style.left = `${(r.width*(percent/100)-3)/window.innerWidth*100}vw`;
 			pBodyTime.textContent = getTime(player.currentTime);
-			pBodyLength.textContent = tMinus ? getTime(player.duration-player.currentTime) : getTime(player.duration);
+			pBodyLength.textContent = userdata.settings.tMinus ? getTime(player.duration-player.currentTime) : getTime(player.duration);
 			userdata.playtime = player.currentTime;
 			userdata.volume = player.volume;
-
-			if(percent > 80 && !announce && pPtr + 1 < InternalPlaylist.length) {
-				$("next__title").textContent = `NEXT UP: ${InternalPlaylist[pPtr + 1].tags.title}`;
-				$("announcement__test").style.backgroundImage = `url("${encodeURI(InternalPlaylist[pPtr + 1].tags.image.replaceAll("\\", "/"))}")`;
-				$("announcement__test").style.backgroundSize = "100%";
-				$("announcement__test").style.backgroundPosition = "center";
-				$("announcement__test").classList.remove("hide");
-				setTimeout(() => { $("announcement__test").classList.add("hide"); }, 4000);
-				announce = 1;
-			} else if(announce && percent < 80) {
-				announce = 0;
-			}
 		});
 	
 		player.addEventListener("ended", () => {
@@ -516,7 +531,7 @@ document.onreadystatechange = () => {
 			$("sampleRate").textContent = vHandle.audioCtx.sampleRate + " Hz";
 			$("fftSize").textContent = vHandle.analyser.fftSize/2 + " Bytes";
 		}, 1000);
-		setMusicVolume(userdata.volume*100 || 50, false);
+		setMusicVolume(userdata.volume || .5, false);
 		clearPlaylist();
 		
 		if(cache.pLen != 0) {
@@ -531,46 +546,29 @@ document.onreadystatechange = () => {
 		player.currentTime = userdata.playtime+1e-3 || 0;
 
 		pBodyLength.onclick = () => {
-			tMinus = !tMinus;
+			userdata.settings.tMinus = !userdata.settings.tMinus;
 		}
 
 		volumeToaster.addEventListener("animationend", () => {
 			volumeToaster.classList.add("hidden");
 		});
 
-		$("option-btn").addEventListener("click", () => {
-			$("settings__body").classList.toggle("hidden");
-		});
+		$("option-btn").onclick = () => { $("settings__body").classList.toggle("hidden"); }
+		$("settings__body").onclick = (e) => { e.target.classList.toggle("hidden"); }
+		$("settings__wrapper").onclick = (e) => { e.stopPropagation(); }
 
-		$("settings__body").addEventListener("click", (e) => {
-			e.target.classList.toggle("hidden");
-		});
+		$("control__pause").onclick = 	() => { togglePause(); }
+		$("control__prev").onclick = 	() => { playPrevious();	}
+		$("control__next").onclick = 	() => { playNext(); }
+		$("control__loop").onclick = 	() => { toggleLoop(); }
+		$("control__shuffle").onclick = () => { toggleShuffle();}
 
-		$("settings__wrapper").addEventListener("click", (e) => {
-			//e.preventDefault();
-			e.stopPropagation();
-		});
-
-		$("control__pause").addEventListener("click", (e) => {
-			e.stopPropagation();
-			togglePause();
-		});
-
-		$("control__prev").addEventListener("click", (e) => {
-			e.stopPropagation();
-			playPrevious();
-		});
-
-		$("control__next").addEventListener("click", (e) => {
-			e.stopPropagation();
-			playNext();
-		});
-
-		$("playlist__exit").onclick = () => { closeMenu("playlist"); }
+		// $("playlist__exit").onclick = 	() => { closeMenu("playlist"); }
+		$("playlist__body").onclick = 	() => { closeMenu("playlist"); }
 		$("playlist__header").onclick = () => { openMenu("playlist"); }
-		$("history__exit").onclick = () => { closeMenu("history"); }
-		$("history__top").onclick = () => { $("history__wrapper").scrollTo(0, 0); }
-		$("history__header").onclick = () => { openMenu("history"); }
+		$("history__exit").onclick = 	() => { closeMenu("history"); }
+		$("history__top").onclick = 	() => { $("history__wrapper").scrollTo(0, 0); }
+		$("history__header").onclick = 	() => { openMenu("history"); redrawHistory(); }
 		$("history__wrapper").onscroll = (e) => { 
 			if($("history__wrapper").scrollTop > 100) {
 				$("history__top").classList.remove("hide")
@@ -645,6 +643,16 @@ document.onreadystatechange = () => {
 			}
 		});
 
+		$("playback__window").onwheel = (e) => {
+			if(e.ctrlKey) {
+				if(e.shiftKey)  {
+					setMusicVolume(player.volume - e.deltaY/1e3);
+					return;
+				}
+				setMusicVolume(player.volume - e.deltaY/1e4);
+			}
+		}
+
 		$("github__red").onclick = () => {
 			openLink('https://github.com/B0l0553/Kiku-Music-Player');
 		}
@@ -678,17 +686,14 @@ document.onreadystatechange = () => {
 					if(keys["space"]) return;
 					togglePause();
 					keys['space'] = true;
-					chibis.forEach((c) => {
-						if(c.y + c.height + c.dy >= visCanvas.height) c.dy = -(Math.random() * (2.5 - 1) + 1 );
-					});
 					break;
 				case "ArrowUp":
 					e.preventDefault();
-					setMusicVolume(player.volume*100 + 2);
+					setMusicVolume(player.volume + .01);
 					break;
 				case "ArrowDown":
 					e.preventDefault();
-					setMusicVolume(player.volume*100 - 2);
+					setMusicVolume(player.volume - .01);
 					break;
 				case "ArrowLeft":
 					e.preventDefault();
@@ -718,4 +723,3 @@ document.onreadystatechange = () => {
 		}
 	}
 }
-

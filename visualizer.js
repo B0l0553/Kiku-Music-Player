@@ -43,6 +43,7 @@ class Visualiser {
 		this.setFftSize(128);
 		this.buffer = new Float32Array(this.analyser.frequencyBinCount);
 		this.UIntBuffer = new Uint8Array(this.analyser.frequencyBinCount);
+		this.UIntBufferWave = new Uint8Array(this.analyser.frequencyBinCount);
 		this.showWaveform = false;
 	}
 
@@ -68,6 +69,7 @@ class Visualiser {
 		this.analyser.fftSize = Math.pow(2, lValue);
 		this.buffer = new Float32Array(this.analyser.frequencyBinCount);
 		this.UIntBuffer = new Uint8Array(this.analyser.frequencyBinCount);
+		this.UIntBufferWave = new Uint8Array(this.analyser.frequencyBinCount);
 	}
 
 	setDecibels(min, max) {
@@ -90,8 +92,8 @@ class Visualiser {
 	}
 
 	getWaveformData() {
-		this.analyser.getByteTimeDomainData(this.UIntBuffer);
-		return this.UIntBuffer;
+		this.analyser.getByteTimeDomainData(this.UIntBufferWave);
+		return this.UIntBufferWave;
 	}
 }
 
