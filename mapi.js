@@ -131,6 +131,7 @@ function GetUserData() {
 	tu.settings.outputId			= json["settings"].outputId  		|| "default";
 	tu.settings.language			= json["settings"].language 		|| "english";
 	tu.settings.tMinus				= json["settings"].tMinus 			|| false;
+	tu.settings.debug				= json["settings"].debug			|| false;
 	return tu;
 }
 
