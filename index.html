@@ -7,7 +7,7 @@
 		<link rel="stylesheet" href="index.css" />
 		<audio id="player" preload="auto"></audio>
 		<img id="thumb" style="display: none;" />
-		<title>Akio Music Player</title>
+		<title>Kiku Music Player</title>
   	</head>
   	<body>
 		<svg width="0" height="0">
@@ -73,7 +73,7 @@
 										<img id="control__shuffle" src="assets/icons/audio-shuffle.svg" draggable="false"/>
 									</div>
 								</div>
-								<div style="width: 100%; position:relative; margin-top: .5rem;">
+								<div style="width: 100%; position:relative; margin-top: .5vh;">
 									<div id="pbProgress__wrapper" class="playback__progressWrapper">
 										<div id="pBody__progress" class="playback__progressBar"></div>
 										<div id="playbackHandle" class="playback__progressHandle"></div>
@@ -89,7 +89,7 @@
 								</div>
 							</div>
 						</div>
-						<canvas id="visualiz" style="margin-right: 1rem;margin-left: 2vw;"></canvas>
+						<canvas id="visualiz" style="margin-right: 1rem;margin-left: 2vw;cursor: none;"></canvas>
 					</div>
 					
 					<div id="history__header" class="menu__header">
@@ -144,16 +144,19 @@
 								<label>Waveform
 									<input type="checkbox" id="shwWaveform__input" />
 								</label>
+								<label>Debug
+									<input type="checkbox" id="shwDebug__input" />
+								</label>
 							</div>
 							<div class="setting__block">
 								<p>Refresh rate</p>
 								<select id="vis-refresh__select">
+									<option value="240">240 fps</option>
 									<option value="170">165 fps</option>
 									<option value="144">144 fps</option>
 									<option value="75">60 fps</option>
-									<option value="35">30 fps</option>
-									<option value="5">5Hz</option>
-									<option value="1">1Hz</option>
+									<option value="32">30 fps</option>
+									<option value="10">10 fps</option>
 								</select>
 							</div>
 							<div class="setting__block">
@@ -186,11 +189,10 @@
 					</div> -->
 				</div>
 				<div style="flex-wrap: nowrap;display: flex;">
-					<p id="fps"></p>
-					<p id="cpu">0%</p>
-					<p id="ram">0MB</p>
-					<p id="fftSize">????</p>
-					<p id="sampleRate">????</p>
+					<p id="fps">__fps</p>
+					<p id="fftSize">____</p>
+					<p id="sampleRate">____ Hz</p>
+					<p id="time">__:__:__</p>
 					<p id="version"></p>
 				</div>
 			</div>

@@ -1,6 +1,6 @@
 {
-  "name": "kmp",
-  "version": "0.5.88",
+  "name": "kiku_music_player",
+  "version": "0.5.94",
   "description": "A local music player made with w/ electron and vanillajs",
   "main": "main.js",
   "scripts": {
@@ -17,7 +17,10 @@
     "vanillajs",
     "electron-vanillajs"
   ],
-  "author": "b0l0553",
+  "author": "B0l0553 (https://github.com/B0l0553)",
+  "bugs": {
+    "url": "https://github.com/B0l0553/Kiku-Music-Player/issues"
+  },
   "license": "ISC",
   "devDependencies": {
     "electron": "^27.1.0"
