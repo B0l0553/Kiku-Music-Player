@@ -33,6 +33,9 @@ class Visualiser {
 	refreshRate;
 	breakRender = true;
 	startRender;
+	debug = false;
+	mouse = {x:-1, y:-1, c:0, h:0, hx:0, hy:0}
+	imports = {}
 
 	constructor(audio) {
 		this.audioCtx = new AudioContext();
@@ -45,6 +48,13 @@ class Visualiser {
 		this.UIntBuffer = new Uint8Array(this.analyser.frequencyBinCount);
 		this.UIntBufferWave = new Uint8Array(this.analyser.frequencyBinCount);
 		this.showWaveform = false;
+	}
+
+	/**
+		DEPRECATED
+	*/
+	showDebug() {
+		this.debug = !this.debug;
 	}
 
 	getAudioOutput() {

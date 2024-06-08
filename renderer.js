@@ -29,7 +29,7 @@ const {
 	changeVisSize,
 	setAlbum,
 	setNextTitle,
-	setBackground,
+	setBackground
 } = require("./graphics.js");
 
 const {
@@ -44,6 +44,7 @@ document.onreadystatechange = () => {
 	if(document.readyState === 'complete') {
 		document.getElementById('min-button').addEventListener("click", () => {
 			ipcRenderer.send("minimize");
+
 		});
 		
 		document.getElementById('close-button').addEventListener("click", () => {
@@ -335,15 +336,13 @@ document.onreadystatechange = () => {
 				}
 				player.play();
 				userdata.playing = 1;
-				//vHandle.startRender();
-				vHandle.setRefreshRate(userdata.settings.vis_refresh_rate);
+				if(menu == "") vHandle.setRefreshRate(userdata.settings.vis_refresh_rate);
 				$("control__pause").src = path.join(__dirname, "assets/icons/audio-pause.svg")
 				return;
 			}
 			userdata.playing = 0;
 			player.pause();
-			vHandle.setRefreshRate(20);
-			//vHandle.breakRender = true;
+			vHandle.setRefreshRate(15);
 			$("control__pause").src = path.join(__dirname, "assets/icons/audio-play.svg")
 		}
 
@@ -361,10 +360,19 @@ document.onreadystatechange = () => {
 			if(_volume < 0) _volume = 0;
 			if(_volume > 1) _volume = 1;
 			if(_show) showVToaster();
+			volumeSlider.parentElement.style.display = "";
 			volumeSlider.style.width = `${_volume*100}%`
 			volumeText.textContent = `${Math.round(_volume*100)}%`
 			player.volume = Math.round(_volume*100)/100;
 			vHandle.setDecibels(-48+6*Math.log2(player.volume), -12+6*Math.log2(player.volume));
+		}
+
+		function setMusicPlayrate(_rate, _show = true) {
+			if(_rate < 0.1) _rate = 0.1;
+			if(_show) showVToaster();
+			volumeSlider.parentElement.style.display = "none";
+			volumeText.textContent = `Playrate: ${Math.round(_rate*1e3)/1e3}`
+			player.playbackRate = _rate;
 		}
 
 		function showVToaster() {
@@ -422,6 +430,12 @@ document.onreadystatechange = () => {
 				vHandle.showWaveform = e.target.checked;
 			}
 
+			$("shwDebug__input").checked = userdata.settings.debug;
+			$("shwDebug__input").onchange = (e) => {
+				userdata.settings.debug = e.target.checked;
+				vHandle.debug = e.target.checked;
+			}
+
 			let rrs = $("vis-refresh__select");
 			rrs.childNodes.forEach((node) => {
 				if(node.value == userdata.settings.vis_refresh_rate) {
@@ -438,13 +452,13 @@ document.onreadystatechange = () => {
 		function openMenu(value) {
 			$(`${value}__body`).classList.remove("hide");
 			menu = value;
-			vHandle.setRefreshRate(10);
+			vHandle.setRefreshRate(20);
 		}
 
 		function closeMenu(value) {
 			$(`${value}__body`).classList.add("hide");
 			menu = "";
-			vHandle.setRefreshRate(userdata.settings.vis_refresh_rate);
+			if(userdata.playing) vHandle.setRefreshRate(userdata.settings.vis_refresh_rate);
 		}
 
 		const playlistBody = $("playlist__body");
@@ -507,7 +521,7 @@ document.onreadystatechange = () => {
 		});
 		
 		vHandle = setupVisualizer(visCanvas, player);
-		vHandle.setSmoothing(0.4);
+		vHandle.setSmoothing(0.35);
 		vHandle.setMode(userdata.settings.vis_mode, visCanvas);
 		vHandle.setRefreshRate(20);
 		setBackground(playbackBodyBg);
@@ -517,6 +531,8 @@ document.onreadystatechange = () => {
 		vHandle.setFftSize(vHandle.audioCtx.sampleRate/11.71875); // 11.71875 -> Idk honestly ; magic number to find correct power of 2 :P
 		vHandle.startRender();
 		vHandle.setMode(userdata.settings.vis_mode, visCanvas);
+		vHandle.debug = userdata.settings.debug;
+		vHandle.imports = {"searchExt": (k) => { $("history__header").click(); $("history__input").value = k; searchHistory($("history__input").value); } };
 
 		setupSettings();
 		setTimeout(() => changeVisSize(visCanvas), 250);
@@ -528,8 +544,10 @@ document.onreadystatechange = () => {
 			if(userdata.playing) {
 				userdata.totalTime += 1
 			}
+			var td = new Date();
 			$("sampleRate").textContent = vHandle.audioCtx.sampleRate + " Hz";
 			$("fftSize").textContent = vHandle.analyser.fftSize/2 + " Bytes";
+			$("time").textContent = `${td.getHours().toLocaleString("en-US", { minimumIntegerDigits: 2 })}:${td.getMinutes().toLocaleString("en-US", { minimumIntegerDigits: 2 })}:${td.getSeconds().toLocaleString("en-US", { minimumIntegerDigits: 2 })}`;
 		}, 1000);
 		setMusicVolume(userdata.volume || .5, false);
 		clearPlaylist();
@@ -552,6 +570,33 @@ document.onreadystatechange = () => {
 		volumeToaster.addEventListener("animationend", () => {
 			volumeToaster.classList.add("hidden");
 		});
+
+		visCanvas.onmousemove = (e) => {
+			var d = e.target.getBoundingClientRect()
+			vHandle.mouse.x = Math.round(e.clientX - d.x);
+			vHandle.mouse.y = Math.round(e.clientY - d.y);
+		}
+
+		visCanvas.onmouseleave = () => {
+			vHandle.mouse.x = -0xFF;
+			vHandle.mouse.y = -0xFF;
+		}
+
+		visCanvas.onclick = (e) => {
+			vHandle.mouse.c = true;
+		}
+
+		visCanvas.onmousedown = (e) => {
+			var d = e.target.getBoundingClientRect()
+			vHandle.mouse.h = true;
+			vHandle.mouse.hx = Math.round(e.clientX - d.x);
+			vHandle.mouse.hy = Math.round(e.clientY - d.y);
+
+			visCanvas.onmouseup = () => {
+				vHandle.mouse.h = false;
+			}
+		}
+		
 
 		$("option-btn").onclick = () => { $("settings__body").classList.toggle("hidden"); }
 		$("settings__body").onclick = (e) => { e.target.classList.toggle("hidden"); }
@@ -585,13 +630,7 @@ document.onreadystatechange = () => {
 		window.addEventListener("resize", () => {
 			changeVisSize(visCanvas);
 		});
-
-		ipcRenderer.on("cpu", (e, data) => {
-			$("cpu").textContent = `${Math.round(data)}%`
-		})
-		ipcRenderer.on("ram", (e, data) => {
-			$("ram").textContent = `${Math.round(data/1000)}MB`
-		})
+		
 		ipcRenderer.on("fullscreen", (e, data) => {
 			if(data === true) {
 				$("titlebar").classList.add("hidden");
@@ -644,12 +683,27 @@ document.onreadystatechange = () => {
 		});
 
 		$("playback__window").onwheel = (e) => {
-			if(e.ctrlKey) {
+
+			if(e.altKey) {
 				if(e.shiftKey)  {
-					setMusicVolume(player.volume - e.deltaY/1e3);
+					setMusicPlayrate(player.playbackRate - Math.sign(e.deltaY)*.1);
 					return;
 				}
-				setMusicVolume(player.volume - e.deltaY/1e4);
+
+				if(e.ctrlKey) {
+					setMusicPlayrate(player.playbackRate - Math.sign(e.deltaY)*.001);
+					return;
+				}
+
+				setMusicPlayrate(player.playbackRate - Math.sign(e.deltaY)*.01);
+			}
+
+			if(e.ctrlKey) {
+				if(e.shiftKey)  {
+					setMusicVolume(player.volume - Math.sign(e.deltaY)*.1);
+					return;
+				}
+				setMusicVolume(player.volume - Math.sign(e.deltaY)*.01);
 			}
 		}
 
@@ -713,6 +767,10 @@ document.onreadystatechange = () => {
 				case "F5":
 					e.preventDefault();
 					ipcRenderer.send('refresh', [userdata, cache, history]);
+					break;
+				case "p":
+					e.preventDefault();
+					if(e.altKey) player.preservesPitch = !player.preservesPitch
 				default:
 					break;
 			}
