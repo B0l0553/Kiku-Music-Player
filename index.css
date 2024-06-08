@@ -32,6 +32,15 @@ body {
     src: url('./assets/fonts/MPLUS1Code-VariableFont_wght.ttf');
 }
 
+@font-face {
+    font-family: 'MIGUM1R';
+    src: url('./assets/fonts/migu-1m-regular.ttf');
+}
+@font-face {
+    font-family: 'MIGUM1B';
+    src: url('./assets/fonts/migu-1m-bold.ttf');
+}
+
 #titlebar {
 	top: 0;
 	display: block;
@@ -167,17 +176,6 @@ body {
 	background-size: cover;
 }
 
-.under__thumb {
-	display: flex;
-	justify-content: space-evenly;
-	flex-wrap: nowrap;
-	flex-direction: column; 
-	width: 100%;
-	background: #081033;
-	padding: 1vh;
-	height: 13vh;
-	z-index: 2;
-}
 
 #bg-matrix {
 	position: absolute; 
@@ -190,7 +188,7 @@ body {
 }
 
 #playback__window {
-	max-width: 95vw; 
+	max-width: 100vw; 
 	max-height: 80vh;
 	justify-content: center; 
 	background-color: rgba(16, 63, 107, 0.521);
@@ -199,7 +197,6 @@ body {
 	background-position: 50vw center;
 	background-size: 80vh;
 	backdrop-filter: contrast(2) brightness(.6) saturate(.3);
-	border-radius: 0.4rem;
 	align-items: center;
 	/* transition: all .6s; */
 }
@@ -627,6 +624,18 @@ body {
 
 .superscript { position: relative; top: -0.5em; font-size: 80%; }
 
+.under__thumb {
+	display: flex;
+	justify-content: space-evenly;
+	flex-wrap: nowrap;
+	flex-direction: column; 
+	width: 100%;
+	background: #081033;
+	padding: 1vh;
+	max-height: 16vh;
+	z-index: 2;
+}
+
 .control__wrapper {
 	display: flex;
 	justify-content: center;
@@ -651,6 +660,8 @@ body {
 .control__button img {
 	width: 4vw;
 	height: 6vh;
+	min-width: 2rem;
+	min-height: 2rem;
 	transition: all .1s;
 	filter: invert(1);
 }
