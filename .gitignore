@@ -1,7 +1,8 @@
 node_modules/
 Cache/
-data/*.json
-kmp-*/
+data/
 old/
 .vscode/
-chibi.js
+unused/
+dist/
+start.bat
