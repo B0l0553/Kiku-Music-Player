@@ -6,3 +6,4 @@ old/
 unused/
 dist/
 start.bat
+package-lock.json

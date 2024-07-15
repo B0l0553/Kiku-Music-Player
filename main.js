@@ -11,7 +11,7 @@ function createWindow () {
     minHeight: 500,
     minWidth: 900,
     backgroundColor: '#fff',
-    icon: "./assets/icons/icon.jpg",
+    icon: "./assets/icons/yu_music.ico",
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: true,

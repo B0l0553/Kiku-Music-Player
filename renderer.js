@@ -1,4 +1,4 @@
-const VERSION = "0.6.95"
+const VERSION = "0.6.97"
 
 const { ipcRenderer, dialog, app, BrowserWindow } = require("electron");
 const fs = require("fs");
@@ -76,9 +76,9 @@ document.onreadystatechange = () => {
 			<div class="playlist__music">
 				<img draggable="false" src="${data.tags.image}" loading="lazy" />
 				<div class="playlist__music-info">
-					<div>${data.tags.title}</div>
-					<!--<div>${data.tags.album}</div>-->
-					<div>${data.tags.artist}</div>
+					<p>${data.tags.title}</p>
+					<!--<p>${data.tags.album}</p>-->
+					<p>${data.tags.artist}</p>
 				</div>
 			</div>`;
 
@@ -98,7 +98,7 @@ document.onreadystatechange = () => {
 				<img draggable="false" src="${data.image}" />
 				<div class="playlist__music-info">
 					<p>${data.title}</p>
-					<!--<div>${data.album}</div>-->
+					<!--<p>${data.album}</p>-->
 					<p>${data.artist}</p>
 				</div>
 			</div>`;
