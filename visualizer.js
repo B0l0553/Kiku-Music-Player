@@ -10,7 +10,7 @@ function setupVisualizer(canvas, audio) {
 	v.startRender = () => { 
 		if(v.breakRender){
 			v.breakRender = false;
-			renderFrame(v, canvas, ctx); 
+			renderFrame(v, canvas, ctx);
 		} else {
 			console.warn("Refused to launch new render thread because one is already running!")
 		}

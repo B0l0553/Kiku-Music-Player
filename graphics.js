@@ -1,5 +1,3 @@
-const path = require("path");
-const { GetJSONFromFile } = require("./mapi");
 let barWidth = barWidthB = bpLength = bpbLength = backa = timerStart = timerEnd = debugT = 0;
 let title = album = artist = mode = "";
 let desp = background = undefined;
@@ -103,11 +101,11 @@ function renderFrame(visualiser, canvas, ctx) {
 	let bp = [];
 	let bpb = [];
 
-	function drawText(x,y,value="Sample Text",font="consolas",size=12,color="white",shadow=0,shadowColor="#000") {
+	function drawText(x,y,value="Sample Text",font="consolas",size=12,color="white",shadow=0,shadowColor="#000",fontEffect="") {
 		ctx.shadowColor=shadowColor;
 		ctx.shadowBlur=shadow;
 		ctx.fillStyle = color;
-		ctx.font = `${size*1}px ${font}`;
+		ctx.font = `${fontEffect} ${size*1}px ${font}`;
 		ctx.fillText(value, x, y)
 		ctx.shadowBlur=0;
 	}
@@ -160,34 +158,49 @@ function renderFrame(visualiser, canvas, ctx) {
 	function drawDebug(ceiling, vis) {
 		
 		var fData = vis.getVisualiserData();
+		var mfx = maxIndex(fData);
+		var dbfs = fData[mfx] + 11.89;
 		var data = vis.getVisualiserUIntData();
 		var mx = maxIndex(data);
-		var mfx = maxIndex(fData);
-		var dbfs = fData[mfx];
+		
 		if(dbfs < -96) dbfs = -96;
 		var hz = Math.round(mx*vHandle.audioCtx.sampleRate/vis.analyser.fftSize*100)/100;
 		var intensity = -(dbfs * 8);
 		var color = `hsl(${0-6*(dbfs/3) + 5} 100% 50%)`;
+		var value = getAverage(data, 0, Math.round(visualiser.analyser.fftSize/170.7))/255;
+
+		ctx.fillStyle = "#000000c7";
+		ctx.fillRect(canvas.width-cwToPx(55), chToPx(0), cwToPx(55), chToPx(40));
 
 		drawText(canvas.width-cwToPx(24), chToPx(5), `${hz}Hz`, "fira code", chToPx(5), color, 2);
-		drawText(canvas.width-cwToPx(24), chToPx(10), `${(Math.round((dbfs+13.9)*100)/100).toLocaleString('en-US', { minimumFractionDigits: 2 } )}dBFS`, "fira code", chToPx(5), color, 2);
+		drawText(canvas.width-cwToPx(24), chToPx(10), `${(Math.round((dbfs)*100)/100).toLocaleString('en-US', { minimumFractionDigits: 2 } )}dBFS`, "fira code", chToPx(5), color, 2);
 		drawText(canvas.width-cwToPx(24), chToPx(15), `${Math.round((-Math.log2(player.volume) < 0.5 ? 0.5 : -Math.log2(player.volume))*100)/100}`, "fira code", chToPx(5), color, 2);
-
+		drawText(canvas.width-cwToPx(24), chToPx(25), `B:  ${Math.round((12-24*value)*100)/100}px`, "fira code", chToPx(5), color, 2);
+		drawText(canvas.width-cwToPx(24), chToPx(30), `L:  ${Math.round((.4 + .8*value)*100)/100}`, "fira code", chToPx(5), color, 2);
+		drawText(canvas.width-cwToPx(24), chToPx(35), `BK: ${Math.round(backa*100)/100}`, "fira code", chToPx(5), color, 2);
+		
 		var coefx = Math.trunc(256/pTme.length);
-		drawText(cwToPx(50), chToPx(5)+80, "FPS CHART", "fira code", 16, "white");
-		ctx.fillRect(cwToPx(50), chToPx(5), 1, 64);
-		ctx.fillRect(cwToPx(50), chToPx(5)+64, coefx*pTme.length+1, 1);
+		var graphY = chToPx(5);
+		var graphX = canvas.width - cwToPx(50);
+		drawText(graphX, graphY+80, "FPS", "fira code", 16, "white");
+		ctx.fillRect(graphX, graphY, 1, 64);
+		ctx.fillRect(graphX, graphY+64, coefx*pTme.length+1, 1);
 
 		ctx.fillStyle = "grey";
 		for(let i = 0; i < pTme.length; i++) {
 			var h = pTme[i]/30*32;
-			ctx.fillRect(cwToPx(50)+1+coefx*i, chToPx(5)+64, coefx, -h);
+			ctx.fillStyle = "#dbdbdb";
+			if(h > 8) ctx.fillStyle = "#25b125";
+			if(h > 16) ctx.fillStyle = "#c4c408";
+			if(h > 32) ctx.fillStyle = "orange";
+			if(h > 48) ctx.fillStyle = "#b61b1b";
+			ctx.fillRect(graphX+1+coefx*i, graphY+64, coefx, -h);
 		}
 
-		drawText(cwToPx(50)-20, chToPx(5)+37, "30", "fira code", 16, "yellow");
-		ctx.fillRect(cwToPx(50), chToPx(5)+32, coefx*pTme.length+1, 1);
-		drawText(cwToPx(50)-20, chToPx(5)+53, "60", "fira code", 16, "lightgreen");
-		ctx.fillRect(cwToPx(50), chToPx(5)+48, coefx*pTme.length+1, 1);
+		drawText(graphX-20, graphY+37, "30", "fira code", 16, "yellow");
+		ctx.fillRect(graphX, graphY+32, coefx*pTme.length+1, 1);
+		drawText(graphX-20, graphY+53, "60", "fira code", 16, "lightgreen");
+		ctx.fillRect(graphX, graphY+48, coefx*pTme.length+1, 1);
 
 		drawText(16, canvas.height - data[mx]/255*ceiling - 4, `HEIGHT - ${Math.trunc(data[mx]/255*ceiling)}px (${Math.round(Math.trunc(data[mx]/255*ceiling)/canvas.height*1000)/10} ch)`, "fira code", 12, `rgba(255, 128, 0, ${data[mx]/64})`, 0);
 		ctx.fillRect(16, canvas.height - data[mx]/255*ceiling - 1, canvas.width - 32, 2);
@@ -247,7 +260,7 @@ function renderFrame(visualiser, canvas, ctx) {
 		ctx.closePath();
 	}
 	
-	function drawWave(x, y, sx, ox, data, dataGroups = 8, amp = 1) {
+	function drawWave(x, y, sx, ox, data, dataGroups = 8, amp = 1, swm=1) {
 		let dx = x;
 		var e = groupPerN(data, dataGroups);
 		const sliceWidth = Math.round(sx / e.length);
@@ -257,14 +270,14 @@ function renderFrame(visualiser, canvas, ctx) {
 			let mx = (Math.max(... e[i]) - 128)/128 * ceiling * amp;
 			let mn = (Math.min(... e[i]) - 128)/128 * ceiling * amp;
 			
-			if(Math.abs(mn - mx) < chToPx(2)) {
-				mx = mx+chToPx(1);
-				mn = mn-chToPx(1);
+			if(Math.abs(mn - mx) < chToPx(1)) {
+				mx = mx+chToPx(.75);
+				mn = mn-chToPx(.75);
 			}
 
 			ctx.beginPath();
 			ctx.fillStyle = "rgba(126, 249, 255, .8)";
-			ctx.roundRect(dx + ox, y-mn, sliceWidth, mn-mx, [40]);
+			ctx.roundRect(dx + ox, y-mn, sliceWidth/swm, mn-mx, [40]);
 			ctx.fill();
 			dx += sliceWidth + 2;
 		}
@@ -293,7 +306,7 @@ function renderFrame(visualiser, canvas, ctx) {
 			// dx += sliceWidth + 2;
 		}
 		const sliceWidth = sx / wfTest.length;
-		ctx.shadowBlur = 1;
+		ctx.shadowBlur = 3;
 		ctx.shadowColor = "#000";
 		for(let i = 0; i < wfTest.length; i++) {
 			
@@ -308,7 +321,7 @@ function renderFrame(visualiser, canvas, ctx) {
 	}
 
 	function drawWaveBezier(x, y, sx, data) {
-		const ceiling = chToPx(25);
+		const ceiling = chToPx(40);
 		var e = groupPerN(data, 8);
 		const sliceWidth = Math.round(sx / e.length);
 		let g = [];
@@ -369,30 +382,41 @@ function renderFrame(visualiser, canvas, ctx) {
 
 	function writeFPS() {
 		document.getElementById("fps").textContent = `${Math.round((timerStart - timerEnd))}ms > ${Math.round(1/(getAverage(pTme)/1000))}fps (${pTme.length})`;
-		if(pTme.length > 127) pTme = pTme.slice(1);
 		pTme.push(timerStart - timerEnd);
+		if(pTme.length > 63) pTme = pTme.slice(1);
 	}
 
 	timerStart = window.performance.now();
+
+	if(visualiser.bouncingBackground) {
+		dataArray = visualiser.getVisualiserUIntData()
+		var value = getAverage(dataArray, 0, Math.round(visualiser.analyser.fftSize/170.7))/255;
+		backa += (60/visualiser.refreshRate) / 750;
+		if(backa >= Math.PI*2) backa = 0;
+		background.style.backgroundSize = `${150 + 60*value}vw`
+		background.style.filter = `url(#rgb-split) brightness(${.4 + .8*value})  blur(${12 - 32*value}px)`;
+		background.style.backgroundPosition = `-${(25 + 30*value) - (Math.cos(backa) * 24)/2}vw -${(50 + 30*value) - (Math.sin(backa) * 24)/2}vw`
+	}
+
 	if(visualiser.mode == "none") {
 		canvas.style.display = "none";
-		background.style.backgroundSize = `150vw`;
-		background.style.filter = `brightness(.7) blur(16px)`;
-		background.style.backgroundPosition = `center`;
-		visualiser.breakRender = true;
+		// background.style.backgroundSize = `150vw`;
+		// background.style.filter = `brightness(.7) blur(16px)`;
+		// background.style.backgroundPosition = `center`;
+		// visualiser.breakRender = true;
+		writeFPS();
+		setTimeout(() => renderFrame(visualiser, canvas, ctx), visualiser.refreshTime);
+		timerEnd = window.performance.now();
 		return;
 	}
+	
 	canvas.style.display = "block";
-	var waveOffset = 0;
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	if(visualiser.showChibi) {
-		waveOffset = 90;
-	}
 	ctx.setLineDash([]);
 
 	drawText(0, chToPx(5), "Artist", "MIGUM1R", cwToPx(3), "white", 4);
 	drawTrapeze(cwToPx(12), chToPx(3.2), cwToPx(22), chToPx(.6), 5, "white");
-	drawText(0, chToPx(16), artist, "MIGUM1R", cwToPx(8), "#A0E9FF", 4, `hsl(165, 100%, ${63*animVar.aGlow/(visualiser.refreshRate/3)}%)`);
+	drawText(0, chToPx(16), artist, "MIGUM1R", cwToPx(8), "#A0E9FF", 4, `hsl(165, 100%, ${63*animVar.aGlow/(visualiser.refreshRate/3)}%)`, "bold");
 	var artistSize = getTextWidth(artist, "MIGUM1R", cwToPx(8));
 
 	drawText(0, chToPx(25), "Title", "MIGUM1R", cwToPx(3), "white", 6);
@@ -409,7 +433,7 @@ function renderFrame(visualiser, canvas, ctx) {
 		letterSize = titleSize/title.length;
 	}
 	
-	drawText(0, chToPx(26) + letterSize*0.8, title, "MIGUM1R", Math.round(letterSize-1), /*"#4361EE"*/ "#06dba0", 4, `hsl(165, 100%, ${63*animVar.tGlow/(visualiser.refreshRate/3)}%)`);
+	drawText(0, chToPx(26) + letterSize*0.8, title, "MIGUM1R", Math.round(letterSize-1), /*"#4361EE"*/ "#06dba0", 4, `hsl(165, 100%, ${63*animVar.tGlow/(visualiser.refreshRate/3)}%)`, "bold");
 	var ceiling = 0;
 	if(visualiser.breakRender) return;
 	switch(visualiser.mode) {
@@ -431,7 +455,8 @@ function renderFrame(visualiser, canvas, ctx) {
 		case "fBezier":
 			dataArray = visualiser.getVisualiserUIntData()
 			bp.push(...  getPointsUInt8(dataArray, 1, 10,  chToPx(40),  barWidth));
-			bpb.push(... getPointsUInt8(dataArray, 0,  1,  0,  	    	barWidthB));
+			bpb.push(... getPointsUInt8(dataArray, 0,  0,  0,  			barWidthB));
+			bpb.push(... getPointsUInt8(dataArray, 0,  1,  chToPx(25),  barWidthB));
 			bpb.push(... getPointsUInt8(dataArray, 0,  30, chToPx(50),  barWidthB));
 			bpb.push(... getPointsUInt8(dataArray, 30, 31, chToPx(25),  barWidthB));
 			bpb.push(... getPointsUInt8(dataArray, 31, 32, chToPx(10),  barWidthB));
@@ -463,26 +488,24 @@ function renderFrame(visualiser, canvas, ctx) {
 			if(visualiser.showWaveform) {
 				wData = visualiser.getWaveformData();
 				drawWaveC(0, canvas.height - chToPx(40), canvas.width, wData, visualiser.analyser.fftSize/256, (-Math.log2(player.volume) < 0.5 ? 0.5 : -Math.log2(player.volume))/1.5, 64, 2);
+				// drawWave(0, canvas.height - chToPx(40), canvas.width, wData, visualiser.analyser.fftSize/256, (-Math.log2(player.volume) < 0.5 ? 0.5 : -Math.log2(player.volume))/1.5);
 			}
 			drawBezier(bp, false, 0, barWidth/2, "white", 4, 4);
 			break;
 		case "bezier":
 			drawBezier(bp, false, 0, -barWidth/4, "white");
 			break;
-		case "tOFBezier":
-			drawTangent(bp, bpb);
 		case "oFBezier":
 			drawBezier(bp, true, 0, barWidth, /*"#365486"*/ "#4B6AC4", 4);
 			
 			if(visualiser.showWaveform) {
 				wData = visualiser.getWaveformData();
-				// drawWave(0, canvas.height - chToPx(21.5), canvas.width+50, 0, wData, visualiser.analyser.fftSize/256, 1);
-				// drawWaveBezier(0, chToPx(21.5), canvas.width+50, wData)
-				drawWaveC(0, canvas.height - chToPx(25), canvas.width+6, wData, visualiser.analyser.fftSize/256, -Math.log2(player.volume) < 0.5 ? 0.5 : -Math.log2(player.volume), 96, 1.5);
+				// drawWaveBezier(0, chToPx(22.5), canvas.width, wData);
+				drawWave(0, canvas.height - chToPx(22.5), canvas.width, 0, wData, visualiser.analyser.fftSize/256, (-Math.log2(player.volume) < .5 ? .5 : -Math.log2(player.volume)), 1.5);
+				// drawWaveC(0, canvas.height - chToPx(25), canvas.width+6, wData, visualiser.analyser.fftSize/128, -Math.log2(player.volume) < 0.5 ? 0.5 : -Math.log2(player.volume), 96, 2);
 			}
 		case "fBezier":
-			drawBezier(bpb, true, waveOffset, bpb[0].x+barWidth/2, /*"#7FC7D9"*/ "#FFF", 4);
-			
+			drawBezier(bpb, true, 0, bpb[0].x+barWidth/2, /*"#7FC7D9"*/ "#ececec", 4);
 			break;
 		case "fSBezier":
 			drawBezier(bp, true);
@@ -499,16 +522,6 @@ function renderFrame(visualiser, canvas, ctx) {
 	if(visualiser.debug) {
 		drawDebug(ceiling, visualiser);
 		drawText(0, chToPx(20), `letterSize: ${Math.round(letterSize)} px/l, titleSize: ${Math.round(titleSize)} px`, "fira code", cwToPx(1.5));
-	}
-
-	if(visualiser.bouncingBackground) {
-		dataArray = visualiser.getVisualiserUIntData()
-		var value = getAverage(dataArray, 0, Math.round(visualiser.analyser.fftSize/170.7))/255;
-		backa += (60/visualiser.refreshRate) / 750;
-		if(backa >= Math.PI*2) backa = 0;
-		background.style.backgroundSize = `${150 + 60*value}vw`
-		background.style.filter = `url(#rgb-split) brightness(${.4 + .8*value})  blur(${16 - 32*value}px)`;
-		background.style.backgroundPosition = `-${(25 + 30*value) - (Math.cos(backa) * 24)/2}vw -${(50 + 30*value) - (Math.sin(backa) * 24)/2}vw`
 	}
 
 	if(visualiser.mouse.x > 0 && visualiser.mouse.x < titleSize && visualiser.mouse.y > chToPx(26) && visualiser.mouse.y < chToPx(26) + letterSize*0.8) {
@@ -547,7 +560,7 @@ function renderFrame(visualiser, canvas, ctx) {
 	}
 
 	if(visualiser.mouse.x >= 0 && visualiser.mouse.y >= 0) {
-		ctx.strokeStyle = 'white';
+		ctx.strokeStyle = `hsl(${180-360*value} 100% 50%)`;
 		ctx.lineWidth = 2;
 		var crossLength = 5;
 		ctx.beginPath();

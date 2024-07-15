@@ -20,12 +20,12 @@
 			  </feComponentTransfer>
 		  
 			  <feOffset in="SourceGraphic" dx="-3" dy="-3" result="layer-two" />
-			  <feComponentTransfer in="layer-two" result="cyan">
+			  <feComponentTransfer in="layer-two" result="blue">
 				  <feFuncR type="discrete" tableValues="0" />
 				  <feFuncG type="identity" />
 				  <feFuncB type="identity" />
 			  </feComponentTransfer>
-			  <feBlend in="red" in2="cyan" mode="screen" result="color-split" />
+			  <feBlend in="red" in2="blue" mode="screen" result="color-split" />
 			</filter>
 		</svg>
 		<div id="bg-img" style="position: absolute; height: 100vh; width: 100vw; z-index: -2;"></div>
@@ -51,10 +51,10 @@
 		</header>
 		<div id="app" class="scrollbar-app">
 			<div id="playback__wrapper">
-				<div id="playback__body" style="overflow: hidden; display: flex; flex-direction: column;">
+				<div id="playback__body" style="overflow: hidden; display: flex;">
 					<div id="playback__window" class="wrapper flex-row">
 						<div class="wrapper" style="display: flex;justify-content: center;align-items: center; flex-direction: column;">
-							<div id="playback__thumb"></div>
+							<div data-ctx="music-thumbnail" id="playback__thumb"></div>
 							<div class="under__thumb">
 								<div class="control__wrapper">
 									<div class="control__button">
@@ -89,7 +89,7 @@
 								</div>
 							</div>
 						</div>
-						<canvas id="visualiz" style="margin-right: 1rem;margin-left: 2vw;cursor: none;"></canvas>
+						<canvas data-ctx="visualiser" id="visualiz" style="margin-right: 1rem;margin-left: 2vw;cursor: none;"></canvas>
 					</div>
 					
 					<div id="history__header" class="menu__header">
@@ -98,7 +98,6 @@
 					<div id="playlist__header" class="menu__header">
 						<img src="assets/icons/list-music.svg" draggable="false" />
 					</div>
-					
 				</div>
 
 				<div id="playlist__body" class="menu__body hide">
@@ -196,6 +195,7 @@
 					<p id="version"></p>
 				</div>
 			</div>
+			<div id="contextMenu"></div>
 		</div>
 	</body>
 	
