@@ -1,0 +1,73 @@
+#playback__time {
+	font-size: 0.85rem;
+	margin-left: 2.5rem;
+}
+
+#playback__length {
+	font-size: 0.85rem;
+	margin-right: 2.5rem;
+}
+
+#playback__thumb {
+	width: 36vw;
+	height: 36vw;
+	margin: 1rem;
+	background-position: center;
+	background-size: cover;
+	border: 4px solid rgba(6, 23, 39, 0.301);
+	background-repeat: no-repeat;
+}
+
+#playback__window {
+	max-width: 100vw; 
+	max-height: 80vh;
+	justify-content: center; 
+	background-color: rgba(16, 63, 107, 0.521);
+	background-repeat: no-repeat;
+	background-position: 50vw center;
+	background-size: 80vh;
+	backdrop-filter: contrast(2) brightness(.6) saturate(.3);
+	align-items: center;
+}
+
+#playback__wrapper {
+	display: flex;
+	flex-direction: column;
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	margin-top: 32px;
+	height: calc(100vh - 32px);
+	/* transition: 500ms transform cubic-bezier(0.22, 0.61, 0.36, 1); */
+	z-index: 1;
+}
+
+#playback__body {
+	/*background-color: #1A2933;*/
+	height: 100%;
+	width: 100%;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	justify-content: center;
+	align-items: center;
+}
+
+#bg-matrix {
+	position: absolute; 
+	height: 100vh; 
+	width: 100vw; 
+	z-index: -1; 
+	background: url('../images/border.png'), url('../images/dot_matrix2.png');
+	background-size: 320px, 100px; 
+	background-position: 0vw -6vh, -12.5vw -14.5vw;
+}
+
+#bg-matrix.notitle {
+	top: 0;
+}
+
+#bg-img.notitle {
+	top: 0;
+}

@@ -1,0 +1,127 @@
+#contextMenu {
+	left: 0;
+	top: 0;
+	position: absolute;
+	display: flex;
+	flex-direction: column;
+	min-width: 16rem;
+	min-height: 4rem;
+	background-color: #090f2bf1;
+	z-index: 2;
+	/* transition: all 200ms cubic-bezier(0.42, 0, 0.25, 1.32); */
+	border: #1a234b 2px solid;
+	border-radius: 0 6px 6px 6px;
+	transition: opacity 150ms ease;
+	/* padding: .5rem; */
+	font-family: "Fira Code";
+	font-weight: 500;
+}
+
+#contextMenu .title {
+	font-size: 1rem;
+	margin: .5rem;
+}
+
+#contextMenu .optSel {
+	position: absolute;
+	filter: invert(1);
+	transform: rotateZ(90deg);
+	width: 1rem;
+	height: 1rem;
+	transition: top 150ms cubic-bezier(0.25, 0.1, 0.21, 1.6);
+	/* animation: loopSlide 1s infinite alternate ease-in; */
+}
+
+@keyframes loopSlide {
+	0% { transform: translateX(3px) rotateZ(90deg); }
+	100% { transform: translateX(6px) rotateZ(90deg); }
+}
+
+#contextMenu .submenu {
+	display: flex;
+	flex-direction: column;
+	padding-left: 1.5rem;
+	padding-right: .5rem;
+	padding-bottom: .5rem;
+	padding-top: .25rem;
+	border-top: #1a234b solid 2px;
+}
+
+#contextMenu .submenu .opt {
+	display: flex;
+	flex-direction: column;
+	cursor: pointer;
+	margin-top: .5rem;
+	border: #00000000 solid;
+	border-width: 0 0 2px 0;
+	border-radius: .25rem;
+	padding: 4px;
+	font-size: 20px;
+	filter: blur(0.25px);
+	transition: all 200ms ease;
+}
+
+#contextMenu .submenu .opt:hover {
+	border-color: #9899b6c2;
+	/* background-color: #16235fa1; */
+	background: linear-gradient(to right, #16235fa1, #00000000 75%);
+}
+
+#contextMenu .submenu .opt.hide {
+	display: none;
+	pointer-events: none;
+	opacity: 0;
+}
+
+#contextMenu .submenu .opt.tick {
+	border-color: #862f2f;
+	border-width: 0 0 0 8px;
+	border-radius: 4px 0 0 4px;
+}
+#contextMenu .submenu .opt.tick.on {
+	border-color: #357a3b;
+}
+
+#contextMenu .submenu .opt.input {
+	font-size: 14px;
+	border: 0;
+	border-left: solid 4px white;
+	border-radius: 0;
+	padding-left: 10px;
+}
+
+#contextMenu .submenu .opt.input input {
+	height: 32px;
+	font-size: 24px;
+	font-family: MIGUM1R;
+	background-color: #00000000;
+	color: white;
+	outline: none;
+}
+
+#contextMenu .submenu .opt.select {
+	font-size: 14px;
+	border: 0;
+	border-left: solid 4px white;
+	border-radius: 0;
+	padding-left: 10px;
+}
+
+#contextMenu .submenu .opt.select select {
+	height: 32px;
+	font-size: 24px;
+	font-family: MIGUM1R;
+	background-color: #00000000;
+	color: white;
+	outline: none;
+	appearance: none;
+	border: 0;
+}
+
+#contextMenu .submenu .opt.select select option{
+	background-color: #181b3d;
+}
+
+#contextMenu .submenu .opt.hide {
+	display: none;
+}
