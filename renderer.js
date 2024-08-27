@@ -1,9 +1,9 @@
-const VERSION = "0.6.97"
+const VERSION = "0.7.99"
 
 const { ipcRenderer, dialog, app, BrowserWindow } = require("electron");
 const fs = require("fs");
 const path = require("path")
-let InternalPlaylist=[],stickers=[],pPtr=toPlay=loop=shuffle=optionOpn=tMinus=0,contextData=null,vHandle,visCanvas,keys={},search="",menu="";
+let InternalPlaylist=[],stickers=[],pPtr=toPlay=loop=shuffle=optionOpn=scrollcap=menuHeaderTime=tMinus=0,contextData=null,vHandle,visCanvas,keys={},search="",menu="";
 
 const {
 	GetUserData,
@@ -73,30 +73,36 @@ document.onreadystatechange = () => {
 		function createMPWrapper(data) {
 
 			var body = `
-			<div class="playlist__music">
+			<div class="playlist__music scroll-protected">
 				<img draggable="false" src="${data.tags.image}" loading="lazy" />
-				<div class="playlist__music-info">
+				<div class="playlist__music-info scroll-protected">
 					<p>${data.tags.title}</p>
 					<!--<p>${data.tags.album}</p>-->
 					<p>${data.tags.artist}</p>
 				</div>
 			</div>`;
 
+
 			var bg = document.createElement("div");
-			bg.classList.add("playlist__music-wrapper");
+			bg.setAttribute("li-data", data.i)
+			bg.classList.add("playlist__music-wrapper", "scroll-protected");
 			bg.innerHTML = body;
 			bg.onclick = (e) => {
 				e.stopPropagation();
-				setMusic(data.i);
+				setMusic(parseInt(bg.getAttribute("li-data")));
+			}
+			bg.onauxclick = (e) => {
+				e.stopPropagation();
+				removeMusic(data.i);
 			}
 			return bg;
 		}
 
 		function createMHItem(data) {
 			var body = `
-			<div class="playlist__music">
-				<img draggable="false" src="${data.image}" />
-				<div class="playlist__music-info">
+			<div class="playblock__music">
+				<img draggable="false" class="scroll-unprotected" src="${data.image}" />
+				<div class="playblock__music-info">
 					<p>${data.title}</p>
 					<!--<p>${data.album}</p>-->
 					<p>${data.artist}</p>
@@ -106,7 +112,7 @@ document.onreadystatechange = () => {
 			var bg = document.createElement("div");
 			//bg.style.background = `url("${encodeURI(data.image.replaceAll("\\", "/"))}")`;
 			//bg.style.backgroundPosition = "center";
-			bg.classList.add("playlist__music-wrapper");
+			bg.classList.add("playblock__music-wrapper");
 			bg.innerHTML = body;
 			bg.onclick = () => {
 				(async () => { 
@@ -122,6 +128,11 @@ document.onreadystatechange = () => {
 			bg.onauxclick = () => {
 				(async () => { 
 					var w = GetMetadata(data.path);
+					
+					for(let i = 0; i < InternalPlaylist.length; i++) {
+						if(data.path == InternalPlaylist[i].path) return;
+					}
+
 					addMusic(w);
 				})();
 			}
@@ -200,6 +211,35 @@ document.onreadystatechange = () => {
 			$("playlist__wrapper").textContent = "";
 		}
 
+		function removeMusic(index) {
+			if(index < 0 || index > InternalPlaylist.length || InternalPlaylist.length <= 1) return;
+			
+			InternalPlaylist.splice(index, 1);
+			
+			let childs = $("playlist__wrapper").children;
+			let found = false;
+			for(let i = 0; i < childs.length; i++) {
+				if(found) {
+					childs[i].setAttribute("li-data", `${parseInt(childs[i].getAttribute("li-data"))-1}`)
+				}
+
+				if(parseInt(childs[i].getAttribute("li-data")) == index) {
+					childs[i].outerHTML = "";
+					found = true;
+				}
+			};
+
+			// $("playlist__wrapper").removeChild(found);
+			cache.currentPlaylist = InternalPlaylist;
+			cache.pLen = InternalPlaylist.length;
+			WriteCache(cache);
+			if(pPtr == index) {
+				if(!playNext()) {
+					playPrevious();
+				}
+			}
+		}
+
 		function addMusic(data) {
 			data.i = InternalPlaylist.length;
 			InternalPlaylist.push(data);
@@ -219,7 +259,7 @@ document.onreadystatechange = () => {
 				console.error("Tried to play, but data was null: ", data);
 				return;
 			}
-			changeMS(player, togglePause, data);
+			changeMS(player, {tp: () => togglePause(), pt: () => playPrevious(), nt: () => playNext()}, data);
 			var src = data.path;
 			var thumbSrc = data.tags.image;
 			if(player.currentSrc != src) {
@@ -452,14 +492,28 @@ document.onreadystatechange = () => {
 			}
 		}
 
+		function toggleMenu(value) {
+			$(`${value}__body`).classList.toggle("hide");
+			$(`${value}__header`).classList.toggle("hide");
+		}
+
+		function edgeMenu() {
+			$("history__body").classList.add("edge");
+			$("history__body").classList.add("hide");
+		}
+
 		function openMenu(value) {
 			$(`${value}__body`).classList.remove("hide");
+			$(`${value}__body`).classList.remove("edge");
+			$(`${value}__header`).classList.add("hide");
 			menu = value;
 			vHandle.setRefreshRate(20);
 		}
 
 		function closeMenu(value) {
 			$(`${value}__body`).classList.add("hide");
+			$(`${value}__body`).scrollTop = 0;
+			$(`${value}__header`).classList.remove("hide");
 			menu = "";
 			if(userdata.playing) vHandle.setRefreshRate(userdata.settings.vis_refresh_rate);
 		}
@@ -507,7 +561,7 @@ document.onreadystatechange = () => {
 			var percent = (player.currentTime / player.duration) * 100;
 			var r = progressWrapper.getBoundingClientRect();
 			progressBody.style.width = `${percent}%`;
-			progressHandle.style.left = `${(r.width*(percent/100)-3)/window.innerWidth*100}vw`;
+			progressHandle.style.transform = `translateX(${r.width*percent/100}px)`;
 			pBodyTime.textContent = getTime(player.currentTime);
 			pBodyLength.textContent = userdata.settings.tMinus ? getTime(player.duration-player.currentTime) : getTime(player.duration);
 			userdata.playtime = player.currentTime;
@@ -540,11 +594,6 @@ document.onreadystatechange = () => {
 		vHandle.debug = userdata.settings.debug;
 		vHandle.imports = {"searchExt": (k) => { $("history__header").click(); $("history__input").value = k; searchHistory($("history__input").value); } };
 
-		// var stickerTest = new Sticker("E:\\pokemon\\eevees\\endwl\\279476.png", 600, 200);
-		// stickerTest.resizeTo(188, 188);
-		// $("playback__body").appendChild(stickerTest.getSticker())
-		// stickers.push(stickerTest);
-		
 		setupSettings();
 		setTimeout(() => changeVisSize(visCanvas), 250);
 		setInterval(() => {
@@ -561,6 +610,11 @@ document.onreadystatechange = () => {
 			$("time").textContent = `${td.getHours().toLocaleString("en-US", { minimumIntegerDigits: 2 })}:${td.getMinutes().toLocaleString("en-US", { minimumIntegerDigits: 2 })}:${td.getSeconds().toLocaleString("en-US", { minimumIntegerDigits: 2 })}`;
 			if(contextMenu.discovered && contextMenu.lifetime >= 1000) contextMenu.lifetime-= 1000;
 			else if(contextMenu.discovered && contextMenu.lifetime < 1000) contextMenu.hideMenu();
+			scrollcap=0;
+			menuHeaderTime++;
+			if(menuHeaderTime > 5) {
+				$("history__header").classList.add("hide");
+			}
 		}, 1000);
 		setMusicVolume(userdata.volume || .5, false);
 		clearPlaylist();
@@ -620,23 +674,24 @@ document.onreadystatechange = () => {
 			}
 		}
 
-		$("option-btn").onclick = () => { $("settings__body").classList.toggle("hidden"); }
-		$("settings__body").onclick = (e) => { e.target.classList.toggle("hidden"); }
-		$("settings__wrapper").onclick = (e) => { e.stopPropagation(); }
+		$("option-btn").onclick = 			() => { $("settings__body").classList.toggle("hidden"); }
+		$("settings__body").onclick = 		(e) => { e.target.classList.toggle("hidden"); }
+		$("settings__wrapper").onclick = 	(e) => { e.stopPropagation(); }
 
-		$("control__pause").onclick = 	() => { togglePause(); }
-		$("control__prev").onclick = 	() => { playPrevious();	}
-		$("control__next").onclick = 	() => { playNext(); }
-		$("control__loop").onclick = 	() => { toggleLoop(); }
-		$("control__shuffle").onclick = () => { toggleShuffle();}
+		$("control__pause").onclick = 	 () => { togglePause(); }
+		$("control__prev").onclick = 	 () => { playPrevious();	}
+		$("control__next").onclick = 	 () => { playNext(); }
+		$("control__loop").onclick = 	 () => { toggleLoop(); }
+		$("control__shuffle").onclick =  () => { toggleShuffle(); }
+		$("control__showplay").onclick = () => {toggleMenu("playlist"); }
 
+		$("history__header").onmouseenter = () => { menuHeaderTime=0; $("history__header").classList.remove("hide"); }
 		// $("playlist__exit").onclick = 	() => { closeMenu("playlist"); }
-		$("playlist__body").onclick = 	() => { closeMenu("playlist"); }
-		$("playlist__header").onclick = () => { openMenu("playlist"); }
-		$("history__exit").onclick = 	() => { closeMenu("history"); }
-		$("history__top").onclick = 	() => { $("history__wrapper").scrollTo(0, 0); }
-		$("history__header").onclick = 	() => { openMenu("history"); redrawHistory(); }
-		$("history__wrapper").onscroll = (e) => { 
+		// $("playlist__header").onclick = 	() => { toggleMenu("playlist"); }
+		$("history__exit").onclick = 		() => { closeMenu("history"); }
+		$("history__top").onclick = 		() => { $("history__wrapper").scrollTo(0, 0); }
+		$("history__header").onclick = 		() => { openMenu("history"); redrawHistory(); }
+		$("history__wrapper").onscroll = 	(e) => { 
 			if($("history__wrapper").scrollTop > 100) {
 				$("history__top").classList.remove("hide")
 			} else {
@@ -652,6 +707,15 @@ document.onreadystatechange = () => {
 		window.addEventListener("resize", () => {
 			changeVisSize(visCanvas);
 		});
+
+		ipcRenderer.on("minimized", (e, isMinimized) => {
+			console.log("minized: ", isMinimized);
+			if(isMinimized) {
+				vHandle.breakRender = true;
+			} else {
+				vHandle.startRender();
+			}
+		})
 		
 		ipcRenderer.on("fullscreen", (e, data) => {
 			if(data === true) {
@@ -710,7 +774,7 @@ document.onreadystatechange = () => {
 			}
 		});
 
-		$("playback__window").onwheel = (e) => {
+		document.onwheel = (e) => {
 
 			if(e.altKey) {
 				if(e.shiftKey)  {
@@ -724,6 +788,7 @@ document.onreadystatechange = () => {
 				}
 
 				setMusicPlayrate(player.playbackRate - Math.sign(e.deltaY)*.01);
+				return;
 			}
 
 			if(e.ctrlKey) {
@@ -732,6 +797,26 @@ document.onreadystatechange = () => {
 					return;
 				}
 				setMusicVolume(player.volume - Math.sign(e.deltaY)*.01);
+				return;
+			}
+
+			if((e.target.classList.contains("scroll-protected") || e.target.nodeName == "IMG" || e.target.nodeName == "P") 
+				&& !e.target.classList.contains("scroll-unprotected") ) return;
+
+			scrollcap += e.deltaY;
+			// console.log(scrollcap);
+			
+			if(scrollcap >= 300 && Math.sign(e.deltaY) > 0 && menu == "") {
+				openMenu("history"); 
+				redrawHistory();
+				// console.log("open history by wheel");
+			} else if(scrollcap >= 200 && Math.sign(e.deltaY) > 0 && menu == "") {
+				edgeMenu();
+				// console.log("edge history by wheel");
+			}
+			// console.log(scrollcap);
+			if($("history__wrapper").scrollTop == 0 && scrollcap < -700 && Math.sign(e.deltaY) < 0 && menu != "") {
+				closeMenu("history");
 			}
 		}
 
@@ -745,6 +830,50 @@ document.onreadystatechange = () => {
 
 		$("version").textContent = VERSION;
 
+		function setupContext() {
+			
+			// album cover
+			contextMenu.addButtonOption("Extract Cover", () => {
+				const link = document.createElement("a");
+				link.href = InternalPlaylist[pPtr].tags.image;
+				link.download = `${InternalPlaylist[pPtr].tags.album}_cover.${InternalPlaylist[pPtr].tags.image.split(".")[1]}`;
+				link.click();
+
+				contextMenu.hideMenu();
+			});
+
+			// visualizer
+			contextMenu.addTickOption("Wave", vHandle.showWaveform, () => {
+				vHandle.showWaveform = !vHandle.showWaveform;
+				$("shwWaveform__input").checked = vHandle.showWaveform;
+				userdata.settings.wave_show = vHandle.showWaveform;
+			});
+			contextMenu.addTickOption("Background", vHandle.bouncingBackground, () => {
+				vHandle.bouncingBackground = !vHandle.bouncingBackground;
+				$("bouncingBackground__input").checked = vHandle.bouncingBackground;
+				userdata.settings.bcng_bg = vHandle.bouncingBackground;
+			});
+			contextMenu.addInputOption("Smoothing", vHandle.analyser.smoothingTimeConstant, (e) => {
+				var f = parseFloat(e.target.value);
+				if(f >= 0 && f < 1) {
+					vHandle.setSmoothing(f);
+				}
+			});
+
+			var fps = [ "240", "170", "144", "72", "32", "10" ];
+
+			contextMenu.addSelectOption("FPS", fps, `${userdata.settings.vis_refresh_rate}`, (e) => {
+				userdata.settings.vis_refresh_rate = Number.parseInt(e.target.value);
+				vHandle.setRefreshRate(e.target.value);
+			});
+
+			contextMenu.addTickOption("Debug", vHandle.debug, () => {
+				vHandle.debug = !vHandle.debug;
+				$("shwDebug__input").checked = vHandle.debug;
+				userdata.settings.debug = vHandle.debug;
+			});
+		}
+
 		function contextSearchParent(_elem) {
 			var pElem = _elem.parentElement;
 			var res = pElem.getAttribute("data-ctx");
@@ -756,6 +885,8 @@ document.onreadystatechange = () => {
 			return res
 		}
 
+		setupContext();
+		contextMenu.hideMenu();
 		document.oncontextmenu = (e) => {
 			if(contextMenu.discovered) {
 				contextMenu.hideMenu();
@@ -771,56 +902,15 @@ document.onreadystatechange = () => {
 
 				switch(ctxname) {
 					case "music-thumbnail":
-						contextMenu.addButtonOption("抽出して保存", () => {
-							const link = document.createElement("a");
-							link.href = InternalPlaylist[pPtr].tags.image;
-							link.download = `${InternalPlaylist[pPtr].tags.album}_cover.${InternalPlaylist[pPtr].tags.image.split(".")[1]}`;
-							link.click();
-
-							contextMenu.hideMenu();
-						})
+						contextMenu.showOption("Extract Cover")
 						break;
 					case "visualiser":
-						contextMenu.addTickOption("Wave", vHandle.showWaveform, () => {
-							vHandle.showWaveform = !vHandle.showWaveform;
-							$("shwWaveform__input").checked = vHandle.showWaveform;
-							userdata.settings.wave_show = vHandle.showWaveform;
-						});
-						contextMenu.addTickOption("Background", vHandle.bouncingBackground, () => {
-							vHandle.bouncingBackground = !vHandle.bouncingBackground;
-							$("bouncingBackground__input").checked = vHandle.bouncingBackground;
-							userdata.settings.bcng_bg = vHandle.bouncingBackground;
-						});
-						contextMenu.addInputOption("Smoothing", vHandle.analyser.smoothingTimeConstant, (e) => {
-							var f = parseFloat(e.target.value);
-							if(f >= 0 && f < 1) {
-								vHandle.setSmoothing(f);
-							}
-						});
-
-						var fps = [ "240", "170", "144", "75", "32", "10" ];
-
-						contextMenu.addSelectOption("FPS", fps, `${userdata.settings.vis_refresh_rate}`, (e) => {
-							userdata.settings.vis_refresh_rate = Number.parseInt(e.target.value);
-							vHandle.setRefreshRate(e.target.value);
-						});
-
-						contextMenu.addTickOption("Debug", vHandle.debug, () => {
-							vHandle.debug = !vHandle.debug;
-							$("shwDebug__input").checked = vHandle.debug;
-							userdata.settings.debug = vHandle.debug;
-						});
+						contextMenu.showOption("Wave");
+						contextMenu.showOption("Background");
+						contextMenu.showOption("Smoothing");
+						contextMenu.showOption("FPS");
+						contextMenu.showOption("Debug");
 						break;
-					case "sticker":
-						contextMenu.addButtonOption("Move", () => {
-							for(let i = 0; i < stickers.length; i++) {
-								if(stickers[i].imgElem.id == e.target.id) {
-									break;
-								}
-							}
-							contextMenu.hideMenu();
-						})
-						break
 					case "body":
 					case "":
 					default:

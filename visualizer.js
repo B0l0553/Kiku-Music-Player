@@ -20,6 +20,7 @@ function setupVisualizer(canvas, audio) {
 
 class Visualiser {
 
+	audioElem;
 	audioCtx;
 	ctxSrc;
 	analyser;
@@ -36,8 +37,11 @@ class Visualiser {
 	debug = false;
 	mouse = {x:-1, y:-1, c:0, h:0, hx:0, hy:0}
 	imports = {}
+	height;
+	width;
 
 	constructor(audio) {
+		this.audioElem = audio;
 		this.audioCtx = new AudioContext();
 		this.ctxSrc = this.audioCtx.createMediaElementSource(audio);
 		this.analyser = this.audioCtx.createAnalyser();

@@ -19,6 +19,14 @@ function createWindow () {
     }
   })
 
+  win.on("minimize", () => {
+    win.webContents.send("minimized", win.isMinimized());
+  })
+
+  win.on("restore", () => {
+    win.webContents.send("minimized", win.isMinimized());
+  })
+
   win.on("enter-full-screen", () => {
     win.webContents.send("fullscreen", true);
   })

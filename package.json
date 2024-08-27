@@ -1,6 +1,6 @@
 {
   "name": "kiku_music_player",
-  "version": "0.6.97",
+  "version": "0.7.99",
   "description": "A local music player made with w/ electron and vanillajs",
   "main": "main.js",
   "scripts": {

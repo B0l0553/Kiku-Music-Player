@@ -24,14 +24,14 @@ function changeMS(musicPlayer, tP, data) {
 			var mediaMD = new MediaMetadata(trackInfo);
 			ms.metadata = mediaMD
 	
-			ms.setActionHandler('play', tP);
-			ms.setActionHandler('pause', tP);
+			ms.setActionHandler('play', tP.tp());
+			ms.setActionHandler('pause', tP.tp());
 			ms.setActionHandler('stop', function() { /* Code excerpted. */ });
 			ms.setActionHandler('seekbackward', function() { /* Code excerpted. */ });
 			ms.setActionHandler('seekforward', function() { /* Code excerpted. */ });
 			ms.setActionHandler('seekto', function() { /* Code excerpted. */ });
-			ms.setActionHandler('previoustrack', function() { /* Code excerpted. */ });
-			ms.setActionHandler('nexttrack', function() { /* Code excerpted. */ });
+			ms.setActionHandler('previoustrack', function() {});
+			ms.setActionHandler('nexttrack', function() {});
 		};
     	fr.readAsDataURL(blob);
 	};

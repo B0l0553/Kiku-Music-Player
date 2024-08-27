@@ -79,9 +79,9 @@ function groupPerN(data, grpSize) {
 	return grpContainer;
 }
 
-function changeVisSize(canvas, vw = 60, vh = 70) {
-	var w = window.innerWidth*vw/100;
-	var h = window.innerHeight*vh/100;
+function changeVisSize(canvas, vw = 58, vh = 66) {
+	var w = Math.round(window.innerWidth*vw/100);
+	var h = Math.round(window.innerHeight*vh/100);
 
 	//if(w > 1024) w = 1024;
 	//if(h > 450) h = 450;
@@ -92,7 +92,6 @@ function changeVisSize(canvas, vw = 60, vh = 70) {
 	
 	barWidth = Math.trunc(w/(bpLength-2));
 	barWidthB= Math.trunc(w/(bpbLength-2));
-	// changeBarWidth(Math.trunc(w/(bpLength-2)), Math.trunc(w/(bpbLength-2)));
 }
 
 function renderFrame(visualiser, canvas, ctx) {
@@ -127,6 +126,7 @@ function renderFrame(visualiser, canvas, ctx) {
 		{
 			var xc = (bp[i].x + bp[i + 1].x) / 2;
 			var yc = (bp[i].y + bp[i + 1].y) / 2;
+
 			ctx.quadraticCurveTo(bp[i].x+barWidth/2-offsetRight, bp[i].y+canvas.height-offsetBottom, xc+1+barWidth/2-offsetRight, yc + canvas.height-offsetBottom);
 			
 		}
@@ -140,6 +140,21 @@ function renderFrame(visualiser, canvas, ctx) {
 		}
 		ctx.closePath();
 		ctx.shadowBlur=0;
+	}
+
+	function drawBezierDebug(bp, offsetBottom=0, offsetRight=0, size=4) {
+		ctx.shadowBlur = 0
+		ctx.lineWidth = 0;
+		for (var i = 0; i < bp.length-1; i++)
+		{
+			var xc = (bp[i].x + bp[i + 1].x) / 2;
+			var yc = (bp[i].y + bp[i + 1].y) / 2;
+			
+			ctx.fillStyle = "#00ff00";
+			ctx.fillRect(bp[i].x+barWidth/2-offsetRight-size/2, bp[i].y+canvas.height-offsetBottom-size/2, size, size);
+			ctx.fillStyle = "#ff0000";
+			ctx.fillRect(xc+1+barWidth/2-offsetRight-size/2, yc+canvas.height-offsetBottom-size/2, size, size);
+		}
 	}
 	
 	function drawBar(p, offsetRight, offsetBottom, pointOffset, shadow = 0) {
@@ -165,23 +180,57 @@ function renderFrame(visualiser, canvas, ctx) {
 		
 		if(dbfs < -96) dbfs = -96;
 		var hz = Math.round(mx*vHandle.audioCtx.sampleRate/vis.analyser.fftSize*100)/100;
-		var intensity = -(dbfs * 8);
+		var amp = data[mx]/255;
 		var color = `hsl(${0-6*(dbfs/3) + 5} 100% 50%)`;
 		var value = getAverage(data, 0, Math.round(visualiser.analyser.fftSize/170.7))/255;
 
 		ctx.fillStyle = "#000000c7";
-		ctx.fillRect(canvas.width-cwToPx(55), chToPx(0), cwToPx(55), chToPx(40));
-
+		ctx.fillRect(canvas.width-cwToPx(55), chToPx(0), cwToPx(55), chToPx(42));
+		drawText(canvas.width-cwToPx(54), chToPx(27.5), `${Math.round((vis.audioElem.duration - vis.audioElem.currentTime)*10)/10}`, "fira code", chToPx(25), "#ffffff10", 0, "#000", "italic");
+		
 		drawText(canvas.width-cwToPx(24), chToPx(5), `${hz}Hz`, "fira code", chToPx(5), color, 2);
 		drawText(canvas.width-cwToPx(24), chToPx(10), `${(Math.round((dbfs)*100)/100).toLocaleString('en-US', { minimumFractionDigits: 2 } )}dBFS`, "fira code", chToPx(5), color, 2);
 		drawText(canvas.width-cwToPx(24), chToPx(15), `${Math.round((-Math.log2(player.volume) < 0.5 ? 0.5 : -Math.log2(player.volume))*100)/100}`, "fira code", chToPx(5), color, 2);
-		drawText(canvas.width-cwToPx(24), chToPx(25), `B:  ${Math.round((12-24*value)*100)/100}px`, "fira code", chToPx(5), color, 2);
-		drawText(canvas.width-cwToPx(24), chToPx(30), `L:  ${Math.round((.4 + .8*value)*100)/100}`, "fira code", chToPx(5), color, 2);
-		drawText(canvas.width-cwToPx(24), chToPx(35), `BK: ${Math.round(backa*100)/100}`, "fira code", chToPx(5), color, 2);
+		
+		
+		var sineX = canvas.width-cwToPx(47.5);
+		var sineY = chToPx(38.5);
+		var phi = (hz/visualiser.refreshRate) * Math.PI;
+		var size = cwToPx(0.75);
+
+		ctx.fillStyle = "#ffffff";
+		ctx.fillRect(sineX + 20*size, sineY - 10, 2, 20)
+		ctx.fillRect(sineX-2, sineY - 10, 2, 20)
+		ctx.fillStyle = "#808080";
+		ctx.fillRect(sineX, sineY-1, 20*size, 2);
+
+		
+		ctx.beginPath();
+		for(let i = 0; i < 200; i++) {
+			ctx.quadraticCurveTo(sineX + i/10*size, sineY + (amp * Math.sin((hz*2*Math.PI*i/1e4+phi)))*size, 
+			sineX + (i+1)/10*size, sineY + (amp * Math.sin((hz*2*Math.PI*(i+1)/1e4+phi)))*size);
+			if(i%100 == 0 && i > 0) {
+				ctx.fillStyle = "#808080";
+				ctx.fillRect(sineX + i/10 * size - 2, sineY - 10, 2, 20);
+			}
+		}
+		ctx.strokeStyle = "#dca0ff";
+		ctx.stroke();
+
+		drawText(canvas.width-cwToPx(54), chToPx(25), `A: ${Math.round(amp*100)/100}`, "fira code", chToPx(5), "white", 2);
+		drawText(canvas.width-cwToPx(54), chToPx(30), `ω: ${Math.round(hz*2*Math.PI)}rad`, "fira code", chToPx(5), "white", 2);
+		drawText(canvas.width-cwToPx(54), chToPx(35), `φ: ${Math.round(phi*10)/10}rad`, "fira code", chToPx(5), "white", 2);
+		drawText(canvas.width-cwToPx(54), chToPx(40), `t:`, "fira code", chToPx(5), "white", 2);
+		
+		drawText(canvas.width-cwToPx(24), chToPx(25), `B:  ${Math.round((10-20*value)*100)/100}px`, "fira code", chToPx(5), "white", 2);
+		drawText(canvas.width-cwToPx(24), chToPx(30), `L:  ${Math.round((.4 + .8*value)*100)/100}`, "fira code", chToPx(5), "white", 2);
+		drawText(canvas.width-cwToPx(24), chToPx(35), `BK: ${Math.round(backa*100)/100}`, "fira code", chToPx(5), "white", 2);
+		// drawText(canvas.width-cwToPx(54), chToPx(45), `BP: ${background.style.backgroundPosition}`, "fira code", chToPx(5), "white", 2);
+		
 		
 		var coefx = Math.trunc(256/pTme.length);
 		var graphY = chToPx(5);
-		var graphX = canvas.width - cwToPx(50);
+		var graphX = canvas.width - cwToPx(52);
 		drawText(graphX, graphY+80, "FPS", "fira code", 16, "white");
 		ctx.fillRect(graphX, graphY, 1, 64);
 		ctx.fillRect(graphX, graphY+64, coefx*pTme.length+1, 1);
@@ -277,6 +326,8 @@ function renderFrame(visualiser, canvas, ctx) {
 
 			ctx.beginPath();
 			ctx.fillStyle = "rgba(126, 249, 255, .8)";
+			// ctx.shadowBlur = 6;
+			// ctx.shadowColor = "#000"
 			ctx.roundRect(dx + ox, y-mn, sliceWidth/swm, mn-mx, [40]);
 			ctx.fill();
 			dx += sliceWidth + 2;
@@ -393,17 +444,17 @@ function renderFrame(visualiser, canvas, ctx) {
 		var value = getAverage(dataArray, 0, Math.round(visualiser.analyser.fftSize/170.7))/255;
 		backa += (60/visualiser.refreshRate) / 750;
 		if(backa >= Math.PI*2) backa = 0;
-		background.style.backgroundSize = `${150 + 60*value}vw`
-		background.style.filter = `url(#rgb-split) brightness(${.4 + .8*value})  blur(${12 - 32*value}px)`;
-		background.style.backgroundPosition = `-${(25 + 30*value) - (Math.cos(backa) * 24)/2}vw -${(50 + 30*value) - (Math.sin(backa) * 24)/2}vw`
+		background.style.backgroundSize = `${130 + 30*value}vw`
+		background.style.filter = `url(#rgb-split) brightness(${.4 + .8*value})  blur(${10 - 20*value}px)`;
+		background.style.backgroundPosition = `${-((15 + 15*value) - (Math.cos(backa) * 14))}vw ${-((60 + 30*value) - (Math.sin(backa) * 28))}vh`;
+	} else {
+		background.style.backgroundSize = `130vw`;
+		background.style.filter = `brightness(.7) blur(10px)`;
+		background.style.backgroundPosition = `center`;
 	}
 
 	if(visualiser.mode == "none") {
 		canvas.style.display = "none";
-		// background.style.backgroundSize = `150vw`;
-		// background.style.filter = `brightness(.7) blur(16px)`;
-		// background.style.backgroundPosition = `center`;
-		// visualiser.breakRender = true;
 		writeFPS();
 		setTimeout(() => renderFrame(visualiser, canvas, ctx), visualiser.refreshTime);
 		timerEnd = window.performance.now();
@@ -414,15 +465,17 @@ function renderFrame(visualiser, canvas, ctx) {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	ctx.setLineDash([]);
 
-	drawText(0, chToPx(5), "Artist", "MIGUM1R", cwToPx(3), "white", 4);
-	drawTrapeze(cwToPx(12), chToPx(3.2), cwToPx(22), chToPx(.6), 5, "white");
-	drawText(0, chToPx(16), artist, "MIGUM1R", cwToPx(8), "#A0E9FF", 4, `hsl(165, 100%, ${63*animVar.aGlow/(visualiser.refreshRate/3)}%)`, "bold");
-	var artistSize = getTextWidth(artist, "MIGUM1R", cwToPx(8));
+	var fontg = "BATMANTHICC"
 
-	drawText(0, chToPx(25), "Title", "MIGUM1R", cwToPx(3), "white", 6);
+	drawText(0, chToPx(4), "Artist", fontg, cwToPx(2), "white", 8);
+	drawTrapeze(cwToPx(10), chToPx(2.5), cwToPx(24), chToPx(.6), 5, "white");
+	drawText(0, chToPx(11), artist, fontg, cwToPx(4), "#A0E9FF", 8, `hsl(165, 100%, ${63*animVar.aGlow/(visualiser.refreshRate/3)}%)`, "bold");
+	var artistSize = getTextWidth(artist, fontg, cwToPx(8));
+
+	drawText(0, chToPx(25), "Title", fontg, cwToPx(3), "white", 6);
 	drawTrapeze(cwToPx(10.5), chToPx(23.3), cwToPx(23.5), chToPx(.6), 5, "white");
-	var letterSize = canvas.width/title.length*2;
-	var titleSize = getTextWidth(title, "MIGUM1R", letterSize) ;
+	var letterSize = canvas.width/title.length*1.5;
+	var titleSize = getTextWidth(title, fontg, letterSize) ;
 
 	if(letterSize > chToPx(40)) {
 		letterSize = chToPx(40);
@@ -433,9 +486,14 @@ function renderFrame(visualiser, canvas, ctx) {
 		letterSize = titleSize/title.length;
 	}
 	
-	drawText(0, chToPx(26) + letterSize*0.8, title, "MIGUM1R", Math.round(letterSize-1), /*"#4361EE"*/ "#06dba0", 4, `hsl(165, 100%, ${63*animVar.tGlow/(visualiser.refreshRate/3)}%)`, "bold");
+	drawText(0, chToPx(26) + letterSize*0.8, title, fontg, Math.round(letterSize-1), /*"#4361EE"*/ "#06dba0", 4, `hsl(165, 100%, ${63*animVar.tGlow/(visualiser.refreshRate/3)}%)`, "bold");
 	var ceiling = 0;
-	if(visualiser.breakRender) return;
+	if(visualiser.breakRender) {
+		background.style.backgroundSize = `150vw`;
+		background.style.filter = `brightness(.7) blur(16px)`;
+		background.style.backgroundPosition = `center`;
+		return;
+	}
 	switch(visualiser.mode) {
 		case "bar":
 		case "bezier":
@@ -443,26 +501,26 @@ function renderFrame(visualiser, canvas, ctx) {
 		case "fSBezier":
 		case "line":
 			dataArray = visualiser.getVisualiserUIntData()
-			bp.push(... getPointsUInt8(dataArray, 0, 40, chToPx(30), barWidth));
+			bp.push(... getPointsUInt8(dataArray, 0, 40, chToPx(40), barWidth));
 			bpLength = bp.length;
 			//bp.push(... getRange(dataArray, 0, 58, 1100 + diffVolume, 11.5, barWidth));
 			//bp.push(... getRangeNormalized(dataArray, 0, 58, 125, -30, barWidth));
-			ceiling = chToPx(35);
+			ceiling = chToPx(40);
 			break;
 		
 		case "tOFBezier":
 		case "oFBezier":
 		case "fBezier":
 			dataArray = visualiser.getVisualiserUIntData()
-			bp.push(...  getPointsUInt8(dataArray, 1, 10,  chToPx(40),  barWidth));
+			bp.push(...  getPointsUInt8(dataArray, 1, 10,  chToPx(35),  barWidth));
 			bpb.push(... getPointsUInt8(dataArray, 0,  0,  0,  			barWidthB));
 			bpb.push(... getPointsUInt8(dataArray, 0,  1,  chToPx(25),  barWidthB));
-			bpb.push(... getPointsUInt8(dataArray, 0,  30, chToPx(50),  barWidthB));
+			bpb.push(... getPointsUInt8(dataArray, 0,  30, chToPx(45),  barWidthB));
 			bpb.push(... getPointsUInt8(dataArray, 30, 31, chToPx(25),  barWidthB));
 			bpb.push(... getPointsUInt8(dataArray, 31, 32, chToPx(10),  barWidthB));
 			bpLength  = bp.length;
 			bpbLength = bpb.length;
-			ceiling = chToPx(50);
+			ceiling = chToPx(45);
 			break;
 
 		default:
@@ -505,7 +563,7 @@ function renderFrame(visualiser, canvas, ctx) {
 				// drawWaveC(0, canvas.height - chToPx(25), canvas.width+6, wData, visualiser.analyser.fftSize/128, -Math.log2(player.volume) < 0.5 ? 0.5 : -Math.log2(player.volume), 96, 2);
 			}
 		case "fBezier":
-			drawBezier(bpb, true, 0, bpb[0].x+barWidth/2, /*"#7FC7D9"*/ "#ececec", 4);
+			drawBezier(bpb, true, 0, bpb[0].x+barWidth/2, /*"#7FC7D9"*/ "#ececec", 4, 2);
 			break;
 		case "fSBezier":
 			drawBezier(bp, true);
@@ -570,6 +628,10 @@ function renderFrame(visualiser, canvas, ctx) {
 		ctx.lineTo(visualiser.mouse.x-crossLength, visualiser.mouse.y+crossLength)
 		ctx.lineTo(visualiser.mouse.x+crossLength, visualiser.mouse.y-crossLength)
 		ctx.stroke();
+	}
+
+	if(visualiser.imports["spritePhys"]) {
+		
 	}
 
 	writeFPS();

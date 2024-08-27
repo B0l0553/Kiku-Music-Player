@@ -48,12 +48,25 @@ class FloatingMenu {
 		}
 	}
 
-	hideMenu() {
+	showOption(_id) {
+		document.getElementById(_id).classList.remove("hide");
+	}
+
+	hideMenu(hideOpts = true) {
 		this.discovered = 0;
 		this.assignedElement.style.opacity = "0";
 		this.assignedElement.style.pointerEvents = "none";
-		setTimeout(() => this.clearOptions(), 100);
-		this.changeHoverCoords(48)
+		this.changeHoverCoords(50)
+		
+		if(hideOpts) {
+			this.subMenu.childNodes.forEach((el) => {
+				el.classList.add("hide")
+			});
+		}
+	}
+
+	hideOption(_id) {
+		document.getElementById(_id).classList.add("hide");
 	}
 
 	changeTitle(value) {
@@ -64,6 +77,7 @@ class FloatingMenu {
 		var tOpt = document.createElement("div");
 		tOpt.classList.value = `opt ctx-protect`;
 		tOpt.innerText = text;
+		tOpt.id = text;
 		tOpt.onclick = func;
 		this.subMenu.appendChild(tOpt);
 		var rect = tOpt.getBoundingClientRect();
@@ -77,6 +91,7 @@ class FloatingMenu {
 		var tOpt = document.createElement("div");
 		tOpt.classList.value = `opt tick ${value ? "on" : ""} ctx-protect`;
 		tOpt.innerText = text;
+		tOpt.id = text;
 		tOpt.onclick = () => {
 			tOpt.classList.toggle("on");
 			func();
@@ -92,6 +107,7 @@ class FloatingMenu {
 		var tOpt = document.createElement("div");
 		tOpt.classList.value = `opt input ctx-protect`;
 		tOpt.innerText = text;
+		tOpt.id = text;
 		var ip = document.createElement('input');
 		ip.classList.add("ctx-protect")
 		ip.value = value;
@@ -113,6 +129,7 @@ class FloatingMenu {
 		var tOpt = document.createElement("div");
 		tOpt.classList.value = `opt select ctx-protect`;
 		tOpt.innerText = text;
+		tOpt.id = text;
 		var ip = document.createElement('select');
 		for(let i = 0; i < values.length; i++) {
 			var t = this.createElem("option", "", "ctx-protect");
