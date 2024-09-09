@@ -4,6 +4,7 @@ class FloatingMenu {
 	title;
 	subMenu;
 	optSel;
+	currentFocus;
 
 	discovered = false;
 	lifetime = 0;
@@ -92,9 +93,9 @@ class FloatingMenu {
 		tOpt.classList.value = `opt tick ${value ? "on" : ""} ctx-protect`;
 		tOpt.innerText = text;
 		tOpt.id = text;
-		tOpt.onclick = () => {
+		tOpt.onclick = (e) => {
 			tOpt.classList.toggle("on");
-			func();
+			func(e);
 		};
 		this.subMenu.appendChild(tOpt);
 		var rect = tOpt.getBoundingClientRect();

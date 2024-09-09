@@ -79,7 +79,7 @@ function groupPerN(data, grpSize) {
 	return grpContainer;
 }
 
-function changeVisSize(canvas, vw = 58, vh = 66) {
+function changeVisSize(canvas, vw = 58, vh = 68) {
 	var w = Math.round(window.innerWidth*vw/100);
 	var h = Math.round(window.innerHeight*vh/100);
 
@@ -189,9 +189,29 @@ function renderFrame(visualiser, canvas, ctx) {
 		drawText(canvas.width-cwToPx(54), chToPx(27.5), `${Math.round((vis.audioElem.duration - vis.audioElem.currentTime)*10)/10}`, "fira code", chToPx(25), "#ffffff10", 0, "#000", "italic");
 		
 		drawText(canvas.width-cwToPx(24), chToPx(5), `${hz}Hz`, "fira code", chToPx(5), color, 2);
-		drawText(canvas.width-cwToPx(24), chToPx(10), `${(Math.round((dbfs)*100)/100).toLocaleString('en-US', { minimumFractionDigits: 2 } )}dBFS`, "fira code", chToPx(5), color, 2);
+		drawText(canvas.width-cwToPx(24), chToPx(10), `${(Math.round((dbfs)*100)/100).toLocaleString('en-US', { minimumFractionDigits: 2 } )}dB`, "fira code", chToPx(5), color, 2);
 		drawText(canvas.width-cwToPx(24), chToPx(15), `${Math.round((-Math.log2(player.volume) < 0.5 ? 0.5 : -Math.log2(player.volume))*100)/100}`, "fira code", chToPx(5), color, 2);
 		
+		let auBarX = canvas.width-cwToPx(30);
+		let auBarY = chToPx(40);
+		ctx.fillStyle = "#005000ff"
+		ctx.fillRect(auBarX, auBarY, 8, -160)
+		ctx.fillRect(auBarX+10, auBarY, 8, -160)
+		ctx.fillStyle = "#503d00ff"
+		ctx.fillRect(auBarX, auBarY-100, 8, -60)
+		ctx.fillRect(auBarX+10, auBarY-100, 8, -60)
+		ctx.fillStyle = "#500000ff"
+		ctx.fillRect(auBarX, auBarY-135, 8, -25)
+		ctx.fillRect(auBarX+10, auBarY-135, 8, -25)
+
+		let auHeightBar = 160*((fData[mfx]+21)/-96);
+		if(auHeightBar > 160 ) auHeightBar = 160;
+		if(auHeightBar < 0 ) auHeightBar = 0;
+		if(auHeightBar > 60) ctx.fillStyle = "#00c500"
+		else if(auHeightBar <= 60 && auHeightBar > 25) ctx.fillStyle = "#c5c500";
+		else ctx.fillStyle = "#c50000";
+		ctx.fillRect(auBarX, auBarY, 8, -160+auHeightBar);
+		ctx.fillRect(auBarX+10, auBarY, 8, -160+auHeightBar);
 		
 		var sineX = canvas.width-cwToPx(47.5);
 		var sineY = chToPx(38.5);
@@ -412,6 +432,22 @@ function renderFrame(visualiser, canvas, ctx) {
 		return p;
 	}
 
+	function setPointUInt8(value, x, ceiling) {
+		return { x: x, y: -(value/255)*ceiling };
+	}
+
+	function getPointsUInt8Log(data, start, end, width, ceiling = 100) {
+		var p = [];
+		x = 0;
+		var scale = Math.log((end - start)-1) / width;
+		for(let i = start; i < end; i++) {
+			barHeight = (data[i]/255)*ceiling;
+			x += (Math.floor(Math.log(i-start+2) / scale) - Math.floor(Math.log(i-start+1) / scale));
+			p.push({x: x, y: -barHeight});
+		}
+		return p;
+	}
+
 	function halveData(data, coef) {
 		let nData = [];
 		for(let i = coef; i < data.length; i+=coef+1) {
@@ -503,8 +539,6 @@ function renderFrame(visualiser, canvas, ctx) {
 			dataArray = visualiser.getVisualiserUIntData()
 			bp.push(... getPointsUInt8(dataArray, 0, 40, chToPx(40), barWidth));
 			bpLength = bp.length;
-			//bp.push(... getRange(dataArray, 0, 58, 1100 + diffVolume, 11.5, barWidth));
-			//bp.push(... getRangeNormalized(dataArray, 0, 58, 125, -30, barWidth));
 			ceiling = chToPx(40);
 			break;
 		
@@ -512,7 +546,7 @@ function renderFrame(visualiser, canvas, ctx) {
 		case "oFBezier":
 		case "fBezier":
 			dataArray = visualiser.getVisualiserUIntData()
-			bp.push(...  getPointsUInt8(dataArray, 1, 10,  chToPx(35),  barWidth));
+			bp.push(...  getPointsUInt8(dataArray, 1, 10,  chToPx(35),  barWidth ));
 			bpb.push(... getPointsUInt8(dataArray, 0,  0,  0,  			barWidthB));
 			bpb.push(... getPointsUInt8(dataArray, 0,  1,  chToPx(25),  barWidthB));
 			bpb.push(... getPointsUInt8(dataArray, 0,  30, chToPx(45),  barWidthB));
@@ -559,11 +593,12 @@ function renderFrame(visualiser, canvas, ctx) {
 			if(visualiser.showWaveform) {
 				wData = visualiser.getWaveformData();
 				// drawWaveBezier(0, chToPx(22.5), canvas.width, wData);
-				drawWave(0, canvas.height - chToPx(22.5), canvas.width, 0, wData, visualiser.analyser.fftSize/256, (-Math.log2(player.volume) < .5 ? .5 : -Math.log2(player.volume)), 1.5);
+				drawWave(0, canvas.height - chToPx(22.5), canvas.width, 0, wData, visualiser.analyser.fftSize/256, (-Math.log2(player.volume) < .6 ? .6 : -Math.log2(player.volume)), 1.5);
 				// drawWaveC(0, canvas.height - chToPx(25), canvas.width+6, wData, visualiser.analyser.fftSize/128, -Math.log2(player.volume) < 0.5 ? 0.5 : -Math.log2(player.volume), 96, 2);
 			}
 		case "fBezier":
 			drawBezier(bpb, true, 0, bpb[0].x+barWidth/2, /*"#7FC7D9"*/ "#ececec", 4, 2);
+			// drawBezier(bpb, true, 0, barWidth, /*"#7FC7D9"*/ "#ececec", 4, 2);
 			break;
 		case "fSBezier":
 			drawBezier(bp, true);
@@ -580,6 +615,8 @@ function renderFrame(visualiser, canvas, ctx) {
 	if(visualiser.debug) {
 		drawDebug(ceiling, visualiser);
 		drawText(0, chToPx(20), `letterSize: ${Math.round(letterSize)} px/l, titleSize: ${Math.round(titleSize)} px`, "fira code", cwToPx(1.5));
+		drawText(0, chToPx(50), `FPV: ${bp.length}  | PE: 0-> ${bp[0].x} 1-> ${bp[1].x} 2-> ${bp[2].x} ... e-> ${bp[bp.length-1].x}`, "fira code", cwToPx(1.5));
+		drawText(0, chToPx(53), `SPV: ${bpb.length} | PE: 0-> ${bpb[0].x} 1-> ${bpb[1].x} 2-> ${bpb[2].x} ... e-> ${bpb[bpb.length-1].x}`, "fira code", cwToPx(1.5));
 	}
 
 	if(visualiser.mouse.x > 0 && visualiser.mouse.x < titleSize && visualiser.mouse.y > chToPx(26) && visualiser.mouse.y < chToPx(26) + letterSize*0.8) {
@@ -628,10 +665,6 @@ function renderFrame(visualiser, canvas, ctx) {
 		ctx.lineTo(visualiser.mouse.x-crossLength, visualiser.mouse.y+crossLength)
 		ctx.lineTo(visualiser.mouse.x+crossLength, visualiser.mouse.y-crossLength)
 		ctx.stroke();
-	}
-
-	if(visualiser.imports["spritePhys"]) {
-		
 	}
 
 	writeFPS();

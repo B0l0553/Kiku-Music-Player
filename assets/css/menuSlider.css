@@ -29,7 +29,12 @@
 	transition: background-color .25s;
 }
 
+.smenu__header.hide:hover {
+	background-color: rgb(30, 135, 196);
+}
+
 .smenu__header.hide {
+	border-radius: 0;
 	background-color: rgba(0, 0, 0, 0);
 }
 

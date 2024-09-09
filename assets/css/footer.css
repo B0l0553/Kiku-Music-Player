@@ -5,7 +5,8 @@
 	display: flex;
 	width: 100vw;
 	height: 32px;
-	font-size: 14px;
+	/* font-size: 14px; */
+	font-size: .6vw;
 	justify-content: space-between;
 	align-items: center;
 	background-color: rgba(0, 0, 0, 0.5);

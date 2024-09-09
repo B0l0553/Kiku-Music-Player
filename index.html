@@ -11,6 +11,7 @@
 		<link rel="stylesheet" href="assets/css/playlist.css">
 		<link rel="stylesheet" href="assets/css/footer.css">
 		<link rel="stylesheet" href="assets/css/visualizer.css">
+		<link rel="stylesheet" href="assets/css/stickers.css">
 		<audio id="player" preload="auto"></audio>
 		<img id="thumb" style="display: none;" />
 		<title>Kiku Music Player</title>
@@ -61,62 +62,32 @@
 					<div id="playback__window" class="wrapper flex-row">
 						<div class="wrapper" style="display: flex;justify-content: center;align-items: center; flex-direction: column;">
 							<div data-ctx="music-thumbnail" id="playback__thumb"></div>
-							<!-- <div class="under__thumb">
-								<div class="control__wrapper">
-									 <div class="control__button">
-										<img id="control__loop" src="assets/icons/audio-loop.svg" draggable="false"/>
-									</div>
-									<div class="control__button">
-										<img id="control__prev" src="assets/icons/audio-previous.svg" draggable="false"/>
-									</div>
-									<div class="control__button">
-										<img id="control__pause" src="assets/icons/audio-play.svg" draggable="false"/>
-									</div>
-									<div class="control__button">
-										<img id="control__next" src="assets/icons/audio-next.svg" draggable="false"/>
-									</div>
-									<div class="control__button">
-										<img id="control__shuffle" src="assets/icons/audio-shuffle.svg" draggable="false"/>
-									</div> 
-								</div>
-								<div style="width: 100%; position:relative; margin-top: .5vh;">
-									
-									<div class="pBody__timeinfo">
-										
-										
-									</div>
-								</div>
-							</div> -->
 						</div>
-						<canvas data-ctx="visualiser" id="visualiz" style="margin-right: 1rem;cursor: none;"></canvas>
+						<canvas data-ctx="visualiser" id="visualiz" style="margin: 1rem;cursor: none;"></canvas>
 					</div>
 					
 					<div id="history__header" class="menu__header">
 						<p>MUSIC LIBRARY</p>
-						<!-- <img src="assets/icons/window-history.svg" draggable="false" /> -->
 					</div>
-					<!-- <div id="playlist__header" class="menu__header">
-						<img src="assets/icons/list-music.svg" draggable="false" />
-					</div> -->
 				</div>
 
 				<div id="playlist__body" class="smenu__body hide scroll-protected">
 					<div class="smenu__header hide scroll-protected" id="playlist__header">
 						
 						<div class="control__button scroll-protected">
-							<img id="control__prev" src="assets/icons/audio-previous.svg" draggable="false"></img>
+							<img id="control__prev" src="assets/icons/audio-previous.svg" draggable="false" />
 						</div>
 						<div class="control__button scroll-protected">
-							<img id="control__pause" src="assets/icons/audio-play.svg" draggable="false"></img>
+							<img id="control__pause" src="assets/icons/audio-play.svg" draggable="false" />
 						</div>
 						<div class="control__button scroll-protected">
-							<img id="control__next" src="assets/icons/audio-next.svg" draggable="false"></i>
+							<img id="control__next" src="assets/icons/audio-next.svg" draggable="false" />
 						</div>
 						<div class="control__button scroll-protected">
-							<img id="control__loop" src="assets/icons/audio-loop.svg" draggable="false"></img>
+							<img id="control__loop" src="assets/icons/audio-loop.svg" draggable="false"/>
 						</div>
 						<div class="control__button scroll-protected">
-							<img id="control__shuffle" src="assets/icons/audio-shuffle.svg" draggable="false"></img>
+							<img id="control__shuffle" src="assets/icons/audio-shuffle.svg" draggable="false"/>
 						</div>
 						<div id="pBody__time" class="scroll-protected">
 							<p>0:00</p>
@@ -131,17 +102,16 @@
 							<p>0:00</p>
 						</div>
 						<div id="control__showplay" class="control__button scroll-protected">
-							<img src="assets/icons/list-music.svg" draggable="false"></img>
+							<img src="assets/icons/list-music.svg" draggable="false"/>
 						</div>
 					</div>
 					<div id="playlist__wrapper" class="smenu__wrapper scrollbar-app scroll-protected"></div>
 				</div>
-
-				<!-- <div id="playlist__body" class="menu__body hide">
-					<div id="playlist__wrapper" class="menu__wrapper scrollbar-app"></div>
-					
-				</div> -->
 				
+				<div id="stickers__wrapper">
+					<!-- <img class="sticker" data-ctx="sticker" style="position: absolute; bottom: 2.50rem; width: 15vw;" draggable="false" src="assets/images/cat-jam.gif" /> -->
+				</div>
+
 				<div id="history__body" class="menu__body hide">
 					<div class="menu__toolbar">
 						<!-- <img src="assets/icons/window-search.svg" draggable="false" style="filter: invert(1);margin-left: 2vw;height:2vh; pointer-events: none;" /> -->
@@ -207,6 +177,10 @@
 				</div>
 				<p id="volume__text"></p>
 			</div>
+
+			
+
+			<div id="lprog__bar"></div>
 
 			<div id="footer">
 				<div style="flex-wrap: nowrap;display: flex;">

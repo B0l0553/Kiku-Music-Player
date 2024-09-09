@@ -63,6 +63,7 @@ class UsrData {
 	totalTime;
 	playing;
 	settings = {};
+	stickers = [];
 }
 
 function GetJSONFromFile(_path, callback) {
@@ -122,6 +123,8 @@ function GetUserData() {
 	tu.totalTime					= json.totalTime 					|| 0;
 	tu.playing						= json.playing 						|| 0;
 	tu.fullscreen					= json.fullscreen					|| false;
+	tu.stickers						= json.stickers						|| []
+
 	if(!json.settings) json.settings = {};
 	tu.settings.vis_mode			= json["settings"].vis_mode 		|| "none";
 	// tu.settings.vis_range			= json["settings"].vis_range	|| [[0, 32], [1, 12]];

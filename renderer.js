@@ -6,6 +6,19 @@ const path = require("path")
 let InternalPlaylist=[],stickers=[],pPtr=toPlay=loop=shuffle=optionOpn=scrollcap=menuHeaderTime=tMinus=0,contextData=null,vHandle,visCanvas,keys={},search="",menu="";
 
 const {
+	plNotch,
+	mnNotch,
+	getNotch
+} = require("./fun.js")
+
+const { 
+	createNewSticker,
+	getSticker,
+	importStickerJSON,
+	exportStickersToJSON
+} = require("./sticker.js")
+
+const {
 	GetUserData,
 	WriteUserData,
 	getFileB64,
@@ -174,6 +187,7 @@ document.onreadystatechange = () => {
 				history[mthn]["album"]=data.tags.album;
 				history[mthn]["image"]=data.tags.image;
 			}
+
 			history[mthn]["timesPlayed"]++;
 			history[mthn]["last_played"] = (new Date().getTime());
 			wHistory(history);
@@ -436,6 +450,14 @@ document.onreadystatechange = () => {
 			return pad(hours, 2) + ':' + pad(minutes, 2) + ':' + pad(seconds, 2) + ',' + pad(milliseconds, 3);
 		}
 
+		function setupStickers() {
+			if(userdata.stickers.length < 1) return;
+
+			for(let i = 0; i < userdata.stickers.length; i++) {
+				var t = importStickerJSON(userdata.stickers[i]);
+				$("stickers__wrapper").appendChild(t.imgElem);
+			}
+		}
 
 		function setupSettings() {
 			(async () => { 
@@ -581,7 +603,7 @@ document.onreadystatechange = () => {
 		var contextMenu = new FloatingMenu($("contextMenu"));
 
 		vHandle = setupVisualizer(visCanvas, player);
-		vHandle.setSmoothing(0.3);
+		vHandle.setSmoothing(0.45);
 		vHandle.setMode(userdata.settings.vis_mode, visCanvas);
 		vHandle.setRefreshRate(20);
 		setBackground(playbackBodyBg);
@@ -594,6 +616,7 @@ document.onreadystatechange = () => {
 		vHandle.debug = userdata.settings.debug;
 		vHandle.imports = {"searchExt": (k) => { $("history__header").click(); $("history__input").value = k; searchHistory($("history__input").value); } };
 
+		setupStickers();
 		setupSettings();
 		setTimeout(() => changeVisSize(visCanvas), 250);
 		setInterval(() => {
@@ -610,7 +633,9 @@ document.onreadystatechange = () => {
 			$("time").textContent = `${td.getHours().toLocaleString("en-US", { minimumIntegerDigits: 2 })}:${td.getMinutes().toLocaleString("en-US", { minimumIntegerDigits: 2 })}:${td.getSeconds().toLocaleString("en-US", { minimumIntegerDigits: 2 })}`;
 			if(contextMenu.discovered && contextMenu.lifetime >= 1000) contextMenu.lifetime-= 1000;
 			else if(contextMenu.discovered && contextMenu.lifetime < 1000) contextMenu.hideMenu();
-			scrollcap=0;
+			scrollcap /= 2;
+			if(scrollcap < 50) scrollcap = 0;
+			$("lprog__bar").style.width = `${scrollcap/300*100}vw`;
 			menuHeaderTime++;
 			if(menuHeaderTime > 5) {
 				$("history__header").classList.add("hide");
@@ -740,6 +765,7 @@ document.onreadystatechange = () => {
 		$("playback__window").addEventListener("dragover", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
+			
 		});
 
 		$("playback__window").addEventListener("drop", (e) => {
@@ -747,29 +773,27 @@ document.onreadystatechange = () => {
 			e.stopPropagation();
 
 			clearPlaylist();
-
 			for(let i = 0; i < e.dataTransfer.files.length; i++) {
 				var w = GetMetadata(e.dataTransfer.files[i].path);
 				addMusic(w);
 			}
 
 			toPlay = 1
-			
 			playCurrent();
 		});
 
 		$("playlist__body").addEventListener("dragover", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
+			
 		});
 
 		$("playlist__body").addEventListener("drop", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-
+			
 			for(let i = 0; i < e.dataTransfer.files.length; i++) {
 				var w = GetMetadata(e.dataTransfer.files[i].path);
-				console.log("added " + w);
 				addMusic(w);
 			}
 		});
@@ -804,19 +828,22 @@ document.onreadystatechange = () => {
 				&& !e.target.classList.contains("scroll-unprotected") ) return;
 
 			scrollcap += e.deltaY;
-			// console.log(scrollcap);
 			
-			if(scrollcap >= 300 && Math.sign(e.deltaY) > 0 && menu == "") {
-				openMenu("history"); 
-				redrawHistory();
-				// console.log("open history by wheel");
-			} else if(scrollcap >= 200 && Math.sign(e.deltaY) > 0 && menu == "") {
-				edgeMenu();
-				// console.log("edge history by wheel");
-			}
-			// console.log(scrollcap);
-			if($("history__wrapper").scrollTop == 0 && scrollcap < -700 && Math.sign(e.deltaY) < 0 && menu != "") {
-				closeMenu("history");
+			if(menu == "") {
+				$("lprog__bar").style.width = `${scrollcap/300*100}vw`;
+				if(scrollcap >= 300 && Math.sign(e.deltaY) > 0) {
+					openMenu("history");
+					redrawHistory();
+					scrollcap = 0;
+				} else if(scrollcap >= 200 && Math.sign(e.deltaY) > 0) {
+					edgeMenu();
+				}
+			} else {
+				$("lprog__bar").style.width = `${(scrollcap*-1)/500*100}vw`;
+				if($("history__wrapper").scrollTop == 0 && scrollcap < -500 && Math.sign(e.deltaY) < 0) {
+					closeMenu("history");
+					scrollcap = 0;
+				}
 			}
 		}
 
@@ -860,6 +887,67 @@ document.onreadystatechange = () => {
 				}
 			});
 
+			contextMenu.addButtonOption("Move", (e) => {
+				var ts = getSticker(contextMenu.currentFocus.id);
+				
+				function m(e) {
+					ts.moveTo(e.clientX, e.clientY);
+				}
+
+				function x(e) {
+					document.removeEventListener("mousemove", m);
+					document.removeEventListener("mousedown", x);
+					userdata.stickers = exportStickersToJSON();
+				}
+				document.addEventListener("mousemove", m);
+				document.addEventListener("mousedown", x);
+
+				contextMenu.hideMenu();
+			});
+
+			contextMenu.addButtonOption("Resize", (e) => {
+				var ts = getSticker(contextMenu.currentFocus.id);
+				
+				function m(e) {
+					ts.resizeTo(e.clientX - ts.x, e.clientY - ts.x);
+				}
+
+				function x(e) {
+					document.removeEventListener("mousemove", m);
+					document.removeEventListener("mousedown", x);
+					userdata.stickers = exportStickersToJSON();
+				}
+				document.addEventListener("mousemove", m);
+				document.addEventListener("mousedown", x);
+
+				contextMenu.hideMenu();
+			});
+
+			contextMenu.addTickOption("Lock Proportions", false, (e) => { 
+				let ts = getSticker(contextMenu.currentFocus.id);
+				ts.lockedProportions = !ts.lockedProportions;
+			})
+			contextMenu.addButtonOption("Invert", () => {
+				getSticker(contextMenu.currentFocus.id).invert();
+				userdata.stickers = exportStickersToJSON();
+				contextMenu.hideMenu();
+			})
+
+			contextMenu.addButtonOption("Add Sticker", () => {
+				let input = document.createElement("input");
+				input.type = "file";
+				
+				input.onchange = e => {
+					var file = e.target.files[0];
+
+					// console.log(file);
+					let ts = createNewSticker(file.path);
+					$("stickers__wrapper").appendChild(ts.imgElem);
+				}
+
+				input.click();
+			})
+
 			var fps = [ "240", "170", "144", "72", "32", "10" ];
 
 			contextMenu.addSelectOption("FPS", fps, `${userdata.settings.vis_refresh_rate}`, (e) => {
@@ -896,7 +984,7 @@ document.onreadystatechange = () => {
 				if(ctxname == null) {
 					ctxname = contextSearchParent(e.target);
 				}
-
+				contextMenu.currentFocus = e.target;
 				contextMenu.moveMenu(e.clientX, e.clientY);
 				contextMenu.changeTitle(ctxname);
 
@@ -911,7 +999,15 @@ document.onreadystatechange = () => {
 						contextMenu.showOption("FPS");
 						contextMenu.showOption("Debug");
 						break;
+					case "sticker":
+						contextMenu.showOption("Move");
+						contextMenu.showOption("Resize");
+						contextMenu.showOption("Lock Proportions");
+						contextMenu.showOption("Invert");
+						contextMenu.showOption("Add Sticker");
+						break;
 					case "body":
+						contextMenu.showOption("Add Sticker");
 					case "":
 					default:
 						break
@@ -983,7 +1079,8 @@ document.onreadystatechange = () => {
 					break;
 				case "p":
 					e.preventDefault();
-					if(e.altKey) player.preservesPitch = !player.preservesPitch
+					if(e.altKey) player.preservesPitch = !player.preservesPitch;
+					break;
 				default:
 					break;
 			}
