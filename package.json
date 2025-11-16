@@ -4,7 +4,7 @@
   "description": "A local music player made with w/ electron and vanillajs",
   "main": "main.js",
   "scripts": {
-    "start": "electron --no-sandbox .",
+    "start": "electron .",
     "make-win32": "electron-packager . \"kmp\" --platform=win32 --arch=x64",
     "make-linux": "electron-packager . \"kmp\" --platform=linux --arch=x64",
     "make-arm64": "electron-packager . \"kmp\" --platform=linux --arch=arm64",
