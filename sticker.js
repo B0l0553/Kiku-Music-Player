@@ -76,6 +76,17 @@ function getSticker(_id) {
 	}
 }
 
+function deleteSticker(_id) {
+	let id = null;
+	for(let i = 0; i < StickersBank.length; i++) {
+		if(StickersBank[i].id == _id) id = i; 
+	}
+	if( id != null ) {
+		document.getElementById("stickers__wrapper").removeChild(StickersBank[id].imgElem);
+		StickersBank.splice(id, 1);
+	}
+}
+
 function importStickerJSON(_val) {
 	let ts = createNewSticker(_val.src);
 	ts.moveTo(_val.x, _val.y);
@@ -109,6 +120,7 @@ function exportStickersToJSON() {
 module.exports = {
 	createNewSticker,
 	getSticker,
+	deleteSticker,
 	importStickerJSON,
 	exportStickersToJSON
 }

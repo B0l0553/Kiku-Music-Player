@@ -1,11 +1,15 @@
 const {
 	renderFrame,
-	changeVisSize
+	changeVisSize,
+	setPersona
 } = require("./graphics");
 
 function setupVisualizer(canvas, audio) {
 	var v = new Visualiser(audio);
 	var ctx = canvas.getContext("2d")
+	var img = new Image();
+	img.src = "./assets/images/Untitledx2.png";
+	setPersona(img, 32*2, 66*2)
 	v.setRefreshRate(20);
 	v.startRender = () => { 
 		if(v.breakRender){
@@ -59,6 +63,10 @@ class Visualiser {
 	*/
 	showDebug() {
 		this.debug = !this.debug;
+	}
+
+	sillyness() {
+		this.silly = true;
 	}
 
 	getAudioOutput() {

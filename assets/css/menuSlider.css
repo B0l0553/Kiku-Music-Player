@@ -4,13 +4,16 @@
 	bottom: 0;
 	align-self: center;
 	width:50vw;
-	max-height: 50vh;
+	max-height: 40vh;
 	flex-direction:  column;
 	/* background: linear-gradient(rgb(30, 135, 196) 32px, rgb(28, 26, 95)); */
 	transition: transform .3s;
 	border-radius: 1rem 1rem 0 0;
 } 
 
+.smenu__body:hover.hide {
+	transform: translateY(calc(100% - 33px));
+}
 .smenu__body.hide {
 	transform: translateY(calc(100% - 32px));
 }
@@ -26,7 +29,8 @@
 	max-height: 32px;
 	z-index: 1;
 	background-color: rgb(30, 135, 196);
-	transition: background-color .25s;
+	transition: background .25s;
+	
 }
 
 .smenu__header.hide:hover {
@@ -39,6 +43,7 @@
 }
 
 .smenu__wrapper {
+	/* border-top: solid 2px black; */
 	padding: .5rem;
 	padding-bottom: 24px;
 	overflow: auto;

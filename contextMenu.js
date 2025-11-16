@@ -33,7 +33,7 @@ class FloatingMenu {
 		this.assignedElement.style.top = `${y}px`;
 	}
 
-	showMenu(_lifetime=999999999) {
+	showMenu(_lifetime=120) {
 		this.discovered = 1;
 		this.assignedElement.style.opacity = "1";
 		this.assignedElement.style.pointerEvents = "all";
@@ -85,7 +85,6 @@ class FloatingMenu {
 		tOpt.onmouseenter = () => {
 			this.changeHoverCoords(tOpt.offsetTop);
 		}
-		
 	}
 
 	addTickOption(text, value, func) {

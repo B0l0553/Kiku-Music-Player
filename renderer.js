@@ -5,17 +5,18 @@ const fs = require("fs");
 const path = require("path")
 let InternalPlaylist=[],stickers=[],pPtr=toPlay=loop=shuffle=optionOpn=scrollcap=menuHeaderTime=tMinus=0,contextData=null,vHandle,visCanvas,keys={},search="",menu="";
 
-const {
-	plNotch,
-	mnNotch,
-	getNotch
-} = require("./fun.js")
+let soundIcons = {};
+soundIcons.volumeHigh = "assets/icons/audio-volumehigh.svg"
+soundIcons.volumeLow = "assets/icons/audio-volumelow.svg"
+soundIcons.volumeNone = "assets/icons/audio-volumenone.svg"
+soundIcons.volumeMute = "assets/icons/audio-volumemute.svg"
 
 const { 
 	createNewSticker,
 	getSticker,
 	importStickerJSON,
-	exportStickersToJSON
+	exportStickersToJSON,
+	deleteSticker
 } = require("./sticker.js")
 
 const {
@@ -41,7 +42,9 @@ const {
 	changeVisSize,
 	setAlbum,
 	setNextTitle,
-	setBackground
+	setBackground,
+	moveArrayC,
+	persona
 } = require("./graphics.js");
 
 const {
@@ -51,6 +54,11 @@ const {
 const {
 	FloatingMenu
 } = require("./contextMenu.js");
+
+const {
+	Menu,
+	MenuPointer
+} = require("./menu.js");
 
 function openLink(link) {
 	require("electron").shell.openExternal(link);
@@ -122,6 +130,10 @@ document.onreadystatechange = () => {
 				</div>
 			</div>`;
 
+			if(data.image == undefined) {
+				console.log(data);
+			}
+
 			var bg = document.createElement("div");
 			//bg.style.background = `url("${encodeURI(data.image.replaceAll("\\", "/"))}")`;
 			//bg.style.backgroundPosition = "center";
@@ -152,7 +164,7 @@ document.onreadystatechange = () => {
 			return bg;
 		}
 
-		function createVOChoice(mode) {
+		function createVOChoice(mode, _func = null) {
 			let bg = document.createElement("div");
 			bg.style.backgroundImage = `url("${path.join(__dirname, "assets/images/" + mode + ".png").replaceAll("\\", "/")}")`;
 			bg.classList.add("mode__option");
@@ -161,6 +173,7 @@ document.onreadystatechange = () => {
 				vHandle.setMode(mode);
 				userdata.settings.vis_mode = mode;
 				vHandle.startRender();
+				_func();
 			}
 			return bg;
 		}
@@ -203,9 +216,18 @@ document.onreadystatechange = () => {
 			}
 			let sorted = d.sort((a, b) => b.last_played - a.last_played);
 			for(let i = 0; i < sorted.length; i++) {
+				if(sorted[i].title == undefined) continue;
 				$("history__wrapper").appendChild(createMHItem(sorted[i]));
 			}
 			searchHistory(search);
+		}
+
+		function redrawLocalPlaylist() {
+			$("playlist__wrapper").textContent = "";
+			for(let i = 0; i < InternalPlaylist.length; i++) {
+				InternalPlaylist[i].i = i;
+				$("playlist__wrapper").appendChild(createMPWrapper(InternalPlaylist[i]));
+			}
 		}
 
 		function setThumb(value) {
@@ -229,21 +251,8 @@ document.onreadystatechange = () => {
 			if(index < 0 || index > InternalPlaylist.length || InternalPlaylist.length <= 1) return;
 			
 			InternalPlaylist.splice(index, 1);
-			
-			let childs = $("playlist__wrapper").children;
-			let found = false;
-			for(let i = 0; i < childs.length; i++) {
-				if(found) {
-					childs[i].setAttribute("li-data", `${parseInt(childs[i].getAttribute("li-data"))-1}`)
-				}
 
-				if(parseInt(childs[i].getAttribute("li-data")) == index) {
-					childs[i].outerHTML = "";
-					found = true;
-				}
-			};
-
-			// $("playlist__wrapper").removeChild(found);
+			redrawLocalPlaylist();
 			cache.currentPlaylist = InternalPlaylist;
 			cache.pLen = InternalPlaylist.length;
 			WriteCache(cache);
@@ -260,6 +269,23 @@ document.onreadystatechange = () => {
 			$("playlist__wrapper").appendChild(createMPWrapper(data));
 			cache.currentPlaylist = InternalPlaylist;
 			cache.pLen = InternalPlaylist.length;
+		}
+
+		function moveMusic(index, nIndex) {
+			if(index == nIndex || index > InternalPlaylist.length-1 || index < 0 || nIndex < 0) return;
+		
+			let indexValue = InternalPlaylist[index];
+			if(nIndex > InternalPlaylist.length-1) {
+				InternalPlaylist.splice(index, 1);
+				InternalPlaylist.push(indexValue);
+		
+			} else {
+				
+				InternalPlaylist[index] = InternalPlaylist[nIndex];
+				InternalPlaylist[nIndex] = indexValue;
+			}
+		
+			redrawLocalPlaylist();
 		}
 
 		function setMusic(i) {
@@ -335,7 +361,6 @@ document.onreadystatechange = () => {
 				resetPointer();
 				playMusic(InternalPlaylist[pPtr]);
 			}
-			
 		}
 
 		function resetPointer() {
@@ -413,14 +438,22 @@ document.onreadystatechange = () => {
 			player.currentTime = _time;
 		}
 
-		function setMusicVolume(_volume, _show = true) {
+		function setMusicVolume(_volume, _volumeIcon = null, _show = true) {
 			if(_volume < 0) _volume = 0;
 			if(_volume > 1) _volume = 1;
 			if(_show) showVToaster();
 			volumeSlider.parentElement.style.display = "";
-			volumeSlider.style.width = `${_volume*100}%`
-			volumeText.textContent = `${Math.round(_volume*100)}%`
+			volumeSlider.style.height = `${_volume*100}%`
+			//volumeText.textContent = `${Math.round(_volume*100)}%`
 			player.volume = Math.round(_volume*100)/100;
+			if(_volumeIcon) {
+				if(_volume >= .3) _volumeIcon.src = soundIcons.volumeHigh;
+				else if(_volume < .3 && _volume >= .1) _volumeIcon.src = soundIcons.volumeLow;
+				else _volumeIcon.src = soundIcons.volumeNone;
+
+				if(_volume == 0) _volumeIcon.src = soundIcons.volumeMute;
+			}
+
 			vHandle.setDecibels(-48+6*Math.log2(player.volume), -12+6*Math.log2(player.volume));
 		}
 
@@ -459,7 +492,7 @@ document.onreadystatechange = () => {
 			}
 		}
 
-		function setupSettings() {
+		function setupSettings(vms) {
 			(async () => { 
 				var dvcs = await navigator.mediaDevices.enumerateDevices();
 				dvcs.forEach((device) => {
@@ -474,14 +507,13 @@ document.onreadystatechange = () => {
 				vHandle.setAudioOutput(e.target.value);
 				userdata.settings.outputId = e.target.value;
 			}
-
-			let vms = $("visualiser__modeSelector");
 			vms.appendChild(createVOChoice("none"));
 			vms.appendChild(createVOChoice("bezier"));
 			vms.appendChild(createVOChoice("fBezier"));
 			vms.appendChild(createVOChoice("bBezier"));
 			vms.appendChild(createVOChoice("bar"));
 			vms.appendChild(createVOChoice("oFBezier"));
+			vms.appendChild(createVOChoice("freeView"));
 			
 			$("bouncingBackground__input").checked = userdata.settings.bcng_bg;
 			$("bouncingBackground__input").onchange = (e) => {
@@ -540,7 +572,10 @@ document.onreadystatechange = () => {
 			if(userdata.playing) vHandle.setRefreshRate(userdata.settings.vis_refresh_rate);
 		}
 
-		const playlistBody = $("playlist__body");
+		
+
+		const visModeSelect = $("visualiser__modeSelector");
+ 		const playlistBody = $("playlist__body");
 		const player = document.getElementById("player");
 		const progressWrapper = document.getElementsByClassName("playback__progressWrapper")[0];
 		const progressHandle = $("playbackHandle");
@@ -553,6 +588,7 @@ document.onreadystatechange = () => {
 		const playbackWin = document.getElementById("playback__window");
 		visCanvas = document.getElementById("visualiz");
 		const volumeSlider = document.getElementById("volumeSlider");
+		const volumeIcon = document.getElementById("control__volume-icon");
 		const volumeText = document.getElementById("volume__text");
 		const volumeToaster = document.getElementById("volume-toast");
 		const test = document.getElementById("time");
@@ -587,7 +623,7 @@ document.onreadystatechange = () => {
 			pBodyTime.textContent = getTime(player.currentTime);
 			pBodyLength.textContent = userdata.settings.tMinus ? getTime(player.duration-player.currentTime) : getTime(player.duration);
 			userdata.playtime = player.currentTime;
-			userdata.volume = player.volume;
+			
 		});
 	
 		player.addEventListener("ended", () => {
@@ -600,7 +636,10 @@ document.onreadystatechange = () => {
 			}
 		});
 		
-		var contextMenu = new FloatingMenu($("contextMenu"));
+		let contextMenu = new FloatingMenu($("contextMenu"));
+		let historyMenu = new Menu($("history__wrapper"));
+		//historyMenu.startCustomScroll();
+
 
 		vHandle = setupVisualizer(visCanvas, player);
 		vHandle.setSmoothing(0.45);
@@ -614,14 +653,21 @@ document.onreadystatechange = () => {
 		vHandle.startRender();
 		vHandle.setMode(userdata.settings.vis_mode, visCanvas);
 		vHandle.debug = userdata.settings.debug;
-		vHandle.imports = {"searchExt": (k) => { $("history__header").click(); $("history__input").value = k; searchHistory($("history__input").value); } };
+		vHandle.imports = {"searchExt": (k) => { $("history__header").click(); $("menu-search__input").value = k; searchHistory($("menu-search__input").value); } };
 
 		setupStickers();
-		setupSettings();
-		setTimeout(() => changeVisSize(visCanvas), 250);
+		setupSettings(visModeSelect);
+		//visModeSelect.appendChild(createVOChoice("freeView", () => {}));
+		setTimeout(() => {
+			var event = new Event("resize");
+			window.dispatchEvent(event);
+		}, 100);
 		setInterval(() => {
 			WriteUserData(userdata);
 		}, 10000);
+
+		setMusicVolume(userdata.volume || .5, volumeIcon, false);
+		clearPlaylist();
 		
 		setInterval(() => {
 			if(userdata.playing) {
@@ -631,18 +677,18 @@ document.onreadystatechange = () => {
 			$("sampleRate").textContent = vHandle.audioCtx.sampleRate + " Hz";
 			$("fftSize").textContent = vHandle.analyser.fftSize/2 + " Bytes";
 			$("time").textContent = `${td.getHours().toLocaleString("en-US", { minimumIntegerDigits: 2 })}:${td.getMinutes().toLocaleString("en-US", { minimumIntegerDigits: 2 })}:${td.getSeconds().toLocaleString("en-US", { minimumIntegerDigits: 2 })}`;
-			if(contextMenu.discovered && contextMenu.lifetime >= 1000) contextMenu.lifetime-= 1000;
-			else if(contextMenu.discovered && contextMenu.lifetime < 1000) contextMenu.hideMenu();
-			scrollcap /= 2;
-			if(scrollcap < 50) scrollcap = 0;
-			$("lprog__bar").style.width = `${scrollcap/300*100}vw`;
+			if(contextMenu.discovered && contextMenu.lifetime >= 1) contextMenu.lifetime-= 1;
+			else if(contextMenu.discovered && contextMenu.lifetime < 1) contextMenu.hideMenu();
+			// scrollcap /= 2;
+			// if(scrollcap < 50) scrollcap = 0;
+			// $("lprog__bar").style.width = `${scrollcap/300*100}vw`;
 			menuHeaderTime++;
 			if(menuHeaderTime > 5) {
 				$("history__header").classList.add("hide");
 			}
+			userdata.volume = player.volume;
 		}, 1000);
-		setMusicVolume(userdata.volume || .5, false);
-		clearPlaylist();
+		
 		
 		if(cache.pLen != 0) {
 			let tcache = new aCache(cache);
@@ -673,7 +719,7 @@ document.onreadystatechange = () => {
 		});
 
 		visCanvas.onmousemove = (e) => {
-			var d = e.target.getBoundingClientRect()
+			let d = e.target.getBoundingClientRect()
 			vHandle.mouse.x = Math.round(e.clientX - d.x);
 			vHandle.mouse.y = Math.round(e.clientY - d.y);
 		}
@@ -689,7 +735,7 @@ document.onreadystatechange = () => {
 		}
 
 		visCanvas.onmousedown = (e) => {
-			var d = e.target.getBoundingClientRect()
+			let d = e.target.getBoundingClientRect()
 			vHandle.mouse.h = true;
 			vHandle.mouse.hx = Math.round(e.clientX - d.x);
 			vHandle.mouse.hy = Math.round(e.clientY - d.y);
@@ -708,29 +754,25 @@ document.onreadystatechange = () => {
 		$("control__next").onclick = 	 () => { playNext(); }
 		$("control__loop").onclick = 	 () => { toggleLoop(); }
 		$("control__shuffle").onclick =  () => { toggleShuffle(); }
-		$("control__showplay").onclick = () => {toggleMenu("playlist"); }
+		$("control__showplay").onclick = () => { toggleMenu("playlist"); }
 
 		$("history__header").onmouseenter = () => { menuHeaderTime=0; $("history__header").classList.remove("hide"); }
-		// $("playlist__exit").onclick = 	() => { closeMenu("playlist"); }
-		// $("playlist__header").onclick = 	() => { toggleMenu("playlist"); }
 		$("history__exit").onclick = 		() => { closeMenu("history"); }
-		$("history__top").onclick = 		() => { $("history__wrapper").scrollTo(0, 0); }
 		$("history__header").onclick = 		() => { openMenu("history"); redrawHistory(); }
-		$("history__wrapper").onscroll = 	(e) => { 
-			if($("history__wrapper").scrollTop > 100) {
-				$("history__top").classList.remove("hide")
-			} else {
-				$("history__top").classList.add("hide")
-			}
+
+		$("menu-search__input").onkeydown = (e) => {
 		}
 
-		$("history__input").onkeyup = (e) => {
+		$("menu-search__input").onkeyup = (e) => {
 			search = e.target.value;
 			searchHistory(search);
 		}
 
 		window.addEventListener("resize", () => {
 			changeVisSize(visCanvas);
+			if(vHandle.mode == "freeView") {
+				changeVisSize(visCanvas, 100, 94.25);
+			}
 		});
 
 		ipcRenderer.on("minimized", (e, isMinimized) => {
@@ -817,14 +859,14 @@ document.onreadystatechange = () => {
 
 			if(e.ctrlKey) {
 				if(e.shiftKey)  {
-					setMusicVolume(player.volume - Math.sign(e.deltaY)*.1);
+					setMusicVolume(player.volume - Math.sign(e.deltaY)*.1, volumeIcon);
 					return;
 				}
-				setMusicVolume(player.volume - Math.sign(e.deltaY)*.01);
+				setMusicVolume(player.volume - Math.sign(e.deltaY)*.01, volumeIcon);
 				return;
 			}
 
-			if((e.target.classList.contains("scroll-protected") || e.target.nodeName == "IMG" || e.target.nodeName == "P") 
+			/*if((e.target.classList.contains("scroll-protected") || e.target.nodeName == "IMG" || e.target.nodeName == "P") 
 				&& !e.target.classList.contains("scroll-unprotected") ) return;
 
 			scrollcap += e.deltaY;
@@ -838,13 +880,7 @@ document.onreadystatechange = () => {
 				} else if(scrollcap >= 200 && Math.sign(e.deltaY) > 0) {
 					edgeMenu();
 				}
-			} else {
-				$("lprog__bar").style.width = `${(scrollcap*-1)/500*100}vw`;
-				if($("history__wrapper").scrollTop == 0 && scrollcap < -500 && Math.sign(e.deltaY) < 0) {
-					closeMenu("history");
-					scrollcap = 0;
-				}
-			}
+			}*/
 		}
 
 		$("github__red").onclick = () => {
@@ -943,9 +979,16 @@ document.onreadystatechange = () => {
 					// console.log(file);
 					let ts = createNewSticker(file.path);
 					$("stickers__wrapper").appendChild(ts.imgElem);
+					userdata.stickers = exportStickersToJSON();
 				}
 
 				input.click();
+			})
+
+			contextMenu.addButtonOption("Remove Sticker", () => {
+				deleteSticker(contextMenu.currentFocus.id);
+				userdata.stickers = exportStickersToJSON();
+				contextMenu.hideMenu();
 			})
 
 			var fps = [ "240", "170", "144", "72", "32", "10" ];
@@ -1005,6 +1048,7 @@ document.onreadystatechange = () => {
 						contextMenu.showOption("Lock Proportions");
 						contextMenu.showOption("Invert");
 						contextMenu.showOption("Add Sticker");
+						contextMenu.showOption("Remove Sticker");
 						break;
 					case "body":
 						contextMenu.showOption("Add Sticker");
