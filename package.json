@@ -1,6 +1,6 @@
 {
   "name": "kiku_music_player",
-  "version": "0.7.99",
+  "version": "0.8.0",
   "description": "A local music player made with w/ electron and vanillajs",
   "main": "main.js",
   "scripts": {
@@ -8,7 +8,7 @@
     "make-win32": "electron-packager . \"kmp\" --platform=win32 --arch=x64",
     "make-linux": "electron-packager . \"kmp\" --platform=linux --arch=x64",
     "make-arm64": "electron-packager . \"kmp\" --platform=linux --arch=arm64",
-    "make-win64": "electron-packager . \"Kiku Music Player\" --out=dist/win --platform=win32 --arch=x64 --app-version=0.7.99 --icon=assets/icons/yu_music.ico"
+    "make-win64": "electron-packager . \"kmp\" --out=dist/win --platform=win32 --arch=x64 --app-version=0.8.0 --icon=assets/icons/yu_music.ico"
   },
   "keywords": [
     "music",
@@ -24,7 +24,7 @@
   },
   "license": "ISC",
   "devDependencies": {
-    "electron": "^27.1.0"
+    "electron": "^39.2.1"
   },
   "dependencies": {
     "node-id3": "^0.2.3"

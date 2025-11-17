@@ -44,6 +44,10 @@ body {
     font-family: 'BATMANTHICC';
     src: url('./assets/fonts/Gotham-Bold.otf');
 }
+@font-face {
+    font-family: 'fira code';
+    src: url('./assets/fonts/FiraCode-Regular.ttf');
+}
 
 #titlebar {
 	top: 0;
