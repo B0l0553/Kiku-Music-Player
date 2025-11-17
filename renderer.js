@@ -1,4 +1,4 @@
-const VERSION = "0.7.99"
+const VERSION = "0.8.0"
 
 const { ipcRenderer, dialog, app, BrowserWindow } = require("electron");
 const fs = require("fs");
