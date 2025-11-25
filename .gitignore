@@ -1,6 +1,8 @@
 node_modules/
 Cache/
+cache/
 data/
+Data/
 old/
 .vscode/
 unused/
