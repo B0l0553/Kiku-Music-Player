@@ -11,9 +11,9 @@
 	border-radius: 1rem 1rem 0 0;
 } 
 
-.smenu__body:hover.hide {
+/* .smenu__body:hover.hide {
 	transform: translateY(calc(100% - 33px));
-}
+} */
 .smenu__body.hide {
 	transform: translateY(calc(100% - 32px));
 }
@@ -34,7 +34,7 @@
 }
 
 .smenu__header.hide:hover {
-	background-color: rgb(30, 135, 196);
+	background-color: rgba(30, 135, 196, 0.25);
 }
 
 .smenu__header.hide {
@@ -48,6 +48,7 @@
 	padding-bottom: 24px;
 	overflow: auto;
 	background: linear-gradient(rgb(30, 135, 196) 32px, rgb(28, 26, 95));
+	transition: background .25s;
 }
 
 .playlist__music-wrapper {

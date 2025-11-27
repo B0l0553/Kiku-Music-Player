@@ -59,6 +59,7 @@ const {
 	Menu,
 	MenuPointer
 } = require("./menu.js");
+const { VolumeToast } = require("./volumeToast.js");
 
 function openLink(link) {
 	require("electron").shell.openExternal(link);
@@ -441,17 +442,16 @@ document.onreadystatechange = () => {
 		function setMusicVolume(_volume, _volumeIcon = null, _show = true) {
 			if(_volume < 0) _volume = 0;
 			if(_volume > 1) _volume = 1;
-			if(_show) showVToaster();
-			volumeSlider.parentElement.style.display = "";
-			volumeSlider.style.height = `${_volume*100}%`
-			//volumeText.textContent = `${Math.round(_volume*100)}%`
+			volumeToast.showVolumeToast()
+			volumeToast.hideVolumeToast(500);
+			volumeToast.setValue(_volume*100);
 			player.volume = Math.round(_volume*100)/100;
 			if(_volumeIcon) {
 				if(_volume >= .3) _volumeIcon.src = soundIcons.volumeHigh;
 				else if(_volume < .3 && _volume >= .1) _volumeIcon.src = soundIcons.volumeLow;
 				else _volumeIcon.src = soundIcons.volumeNone;
 
-				if(_volume == 0) _volumeIcon.src = soundIcons.volumeMute;
+				if(_volume == 0 || player.muted) _volumeIcon.src = soundIcons.volumeMute;
 			}
 
 			vHandle.setDecibels(-48+6*Math.log2(player.volume), -12+6*Math.log2(player.volume));
@@ -587,10 +587,7 @@ document.onreadystatechange = () => {
 		const playbackTitle = document.getElementById("playback__title");
 		const playbackWin = document.getElementById("playback__window");
 		visCanvas = document.getElementById("visualiz");
-		const volumeSlider = document.getElementById("volumeSlider");
 		const volumeIcon = document.getElementById("control__volume-icon");
-		const volumeText = document.getElementById("volume__text");
-		const volumeToaster = document.getElementById("volume-toast");
 		const test = document.getElementById("time");
 		const formatSeconds = s => (new Date(s * 100)).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0];
 
@@ -638,8 +635,11 @@ document.onreadystatechange = () => {
 		
 		let contextMenu = new FloatingMenu($("contextMenu"));
 		let historyMenu = new Menu($("history__wrapper"));
+		let volumeToast = new VolumeToast($("volume-toast"));
+		volumeToast.registerEvents();
+		volumeToast.showVolumeToast();
+		volumeToast.hideVolumeToast();
 		//historyMenu.startCustomScroll();
-
 
 		vHandle = setupVisualizer(visCanvas, player);
 		vHandle.setSmoothing(0.45);
@@ -668,26 +668,56 @@ document.onreadystatechange = () => {
 
 		setMusicVolume(userdata.volume || .5, volumeIcon, false);
 		clearPlaylist();
+
+		volumeToast.wrapper.addEventListener("mousedown", (e) => {
+
+			if(e.buttons != 1) return;
+			var r = volumeToast.wrapper.getBoundingClientRect();
+			var val = 1- ((e.clientY - r.y) / r.height)
+			setMusicVolume(val);
+			volumeToast.setFocus(2, true);
+
+			function mouseMove(_e) {
+				var cy = _e.clientY;
+				if(cy < r.y) cy = r.y;
+				else if(cy > r.y + r.height) cy = r.y+r.height;
+				setMusicVolume(1 - (_e.clientY-r.y)/r.height);
+				console.log(player.volume);
+			}
+
+			function handleMouseUp() {
+				document.removeEventListener("mousemove", mouseMove);
+				document.removeEventListener("mouseup", handleMouseUp);
+				volumeToast.setFocus(2, false); 
+				volumeToast.handleEntry();
+			}
+
+			document.addEventListener("mousemove", mouseMove);
+			document.addEventListener("mouseup", handleMouseUp);
+
+		})
 		
 		setInterval(() => {
 			if(userdata.playing) {
-				userdata.totalTime += 1
+				userdata.totalTime += .25
 			}
 			var td = new Date();
 			$("sampleRate").textContent = vHandle.audioCtx.sampleRate + " Hz";
 			$("fftSize").textContent = vHandle.analyser.fftSize/2 + " Bytes";
-			$("time").textContent = `${td.getHours().toLocaleString("en-US", { minimumIntegerDigits: 2 })}:${td.getMinutes().toLocaleString("en-US", { minimumIntegerDigits: 2 })}:${td.getSeconds().toLocaleString("en-US", { minimumIntegerDigits: 2 })}`;
+			$("time").textContent = `${td.getHours().toLocaleString("en-US", { minimumIntegerDigits: 2 })}:${td.getMinutes().toLocaleString("en-US", { minimumIntegerDigits: 2 })}:${td.getSeconds().toLocaleString("en-US", { minimumIntegerDigits: 2 })}.${Math.trunc(td.getMilliseconds()/100)}`;
 			if(contextMenu.discovered && contextMenu.lifetime >= 1) contextMenu.lifetime-= 1;
 			else if(contextMenu.discovered && contextMenu.lifetime < 1) contextMenu.hideMenu();
 			// scrollcap /= 2;
 			// if(scrollcap < 50) scrollcap = 0;
 			// $("lprog__bar").style.width = `${scrollcap/300*100}vw`;
 			menuHeaderTime++;
+			
 			if(menuHeaderTime > 5) {
 				$("history__header").classList.add("hide");
 			}
 			userdata.volume = player.volume;
-		}, 1000);
+			volumeToast.autoHideUpdate();
+		}, 250);
 		
 		
 		if(cache.pLen != 0) {
@@ -713,10 +743,6 @@ document.onreadystatechange = () => {
 		pBodyLength.onclick = () => {
 			userdata.settings.tMinus = !userdata.settings.tMinus;
 		}
-
-		volumeToaster.addEventListener("animationend", () => {
-			volumeToaster.classList.add("hidden");
-		});
 
 		visCanvas.onmousemove = (e) => {
 			let d = e.target.getBoundingClientRect()
@@ -745,6 +771,21 @@ document.onreadystatechange = () => {
 			}
 		}
 
+		document.addEventListener("mousemove", (e) => { 
+			var f = document.getElementById("playback__window"); 
+			var r = f.getBoundingClientRect();
+			var cx = e.clientX - r.x - r.width/2
+			var cy = e.clientY - r.y - r.height/2
+			var tiltx = cx / (r.width/2);
+			var tilty = cy / (r.width/2);
+			f.style = `transform: perspective(2000px) rotateY(${tiltx*.5}deg) rotateX(${-tilty*2}deg)`;
+		});
+
+		document.addEventListener("mouseleave", (e) => { 
+			var f = document.getElementById("playback__window");
+			f.style = `transform: perspective(1000px) rotateY(0deg) rotateX(0deg)`;
+		});
+
 		$("option-btn").onclick = 			() => { $("settings__body").classList.toggle("hidden"); }
 		$("settings__body").onclick = 		(e) => { e.target.classList.toggle("hidden"); }
 		$("settings__wrapper").onclick = 	(e) => { e.stopPropagation(); }
@@ -755,6 +796,11 @@ document.onreadystatechange = () => {
 		$("control__loop").onclick = 	 () => { toggleLoop(); }
 		$("control__shuffle").onclick =  () => { toggleShuffle(); }
 		$("control__showplay").onclick = () => { toggleMenu("playlist"); }
+		// $("control__volume").onmouseenter = () => { volumeToast.showVolumeToast(); }
+		// $("control__volume").onmouseleave = () => { if(!volumeToast.stillFocused) volumeToast.hideVolumeToast(); }
+		volumeIcon.onmouseenter = () => { volumeToast.setExternalFocus(true); }
+		volumeIcon.onmouseleave = () => { volumeToast.setExternalFocus(false); }
+		volumeIcon.onclick = () => { player.muted = !player.muted; setMusicVolume(player.volume, volumeIcon, false); }
 
 		$("history__header").onmouseenter = () => { menuHeaderTime=0; $("history__header").classList.remove("hide"); }
 		$("history__exit").onclick = 		() => { closeMenu("history"); }
@@ -815,6 +861,7 @@ document.onreadystatechange = () => {
 			e.stopPropagation();
 
 			clearPlaylist();
+			
 			for(let i = 0; i < e.dataTransfer.files.length; i++) {
 				var w = GetMetadata(e.dataTransfer.files[i].path);
 				addMusic(w);

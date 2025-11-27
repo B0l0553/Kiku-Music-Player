@@ -169,20 +169,17 @@ body {
 
 #volume-toast {
 	position: absolute;
-	border-radius: 2rem;
-	padding: 1rem;
-	bottom: 15vh;
-	transform: translateX(-50%);
-	background:rgba(0, 0, 0, 0.80);
+	border-radius: 2rem 2rem 0 0;
+	padding: .5rem;
+	bottom: calc(7.5rem + 4px ); /* 10rem / 2 (-> 5rem) + 32px (-> 2rem) + .5rem = 7.75rem */
+	background:rgba(0, 0, 0, 0.50);
 	z-index: 2;
-	user-select: none;
-	pointer-events: none;
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	flex-direction: column;
-	height: 15vh;
-	transition: opacity 2s;
+	height: 10rem;
+	transition: opacity 2s, height 100ms, padding 100ms;
 }
 
 #volume-toast.hide {
@@ -192,32 +189,6 @@ body {
 #volume-toast img {
 	height: 2rem;
 	filter: invert(1);
-}
-
-.volume__sliderWrapper {
-	display: flex;
-	justify-content: center;
-	align-items: end;
-	height: 100%;
-	width: 8px;
-	background: #3f3f3f;
-	border-radius: 0.25rem;
-	margin-left: 1.25rem;
-	margin-right: 0.5rem;
-	margin: .25rem 0 .25rem 0;
-	overflow: hidden;
-	cursor: pointer;
-}
-
-#volumeSlider {
-	height: 0%;
-	background-color: blueviolet;
-	width: 100%;
-	transition: height ease-out 100ms;
-}
-
-#volume__text {
-	font-size: .75rem;
 }
 
 #lprog__bar {
