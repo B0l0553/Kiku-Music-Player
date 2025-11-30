@@ -28,8 +28,8 @@
 	transform: rotateZ(90deg);
 	width: 1rem;
 	height: 1rem;
-	transition: top 150ms cubic-bezier(0.25, 0.1, 0.21, 1.6);
-	animation: loopSlide 1s infinite alternate ease-in;
+	transition: top 250ms cubic-bezier(0.25, 0.1, 0.21, 1.6);
+	animation: loopSlide 1s infinite alternate ease-in-out;
 }
 
 @keyframes loopSlide {

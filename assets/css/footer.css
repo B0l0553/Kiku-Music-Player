@@ -9,8 +9,9 @@
 	font-size: .6vw;
 	justify-content: space-between;
 	align-items: center;
-	background-color: rgba(0, 0, 0, 0.5);
+	background-color: rgba(0, 0, 0, 0.75);
 	font-family: "fira code";
+	backdrop-filter: blur(4px);
 }
 
 #footer * {

@@ -32,6 +32,7 @@ class Visualiser {
 	UIntBuffer;
 	mode;
 	bouncingBackground;
+	windowTilt = true;
 	showWaveform;
 	// showChibi;
 	refreshTime;
@@ -39,7 +40,7 @@ class Visualiser {
 	breakRender = true;
 	startRender;
 	debug = false;
-	mouse = {x:-1, y:-1, c:0, h:0, hx:0, hy:0}
+	mouse = {x:-1, y:-1, c:0, h:0, hx:0, hy:0, gx: -1, gy: -1}
 	imports = {}
 	height;
 	width;

@@ -126,16 +126,17 @@ function GetUserData() {
 	tu.stickers						= json.stickers						|| []
 
 	if(!json.settings) json.settings = {};
-	tu.settings.vis_mode			= json["settings"].vis_mode 		|| "none";
-	// tu.settings.vis_range			= json["settings"].vis_range	|| [[0, 32], [1, 12]];
-	tu.settings.vis_refresh_rate	= json["settings"].vis_refresh_rate	|| 75;
-	tu.settings.bcng_bg				= json["settings"].bcng_bg 			|| false;
-	tu.settings.wave_show			= json["settings"].wave_show 		|| false;
-	tu.settings.showchibi 			= json["settings"].showchibi 		|| false;
-	tu.settings.outputId			= json["settings"].outputId  		|| "default";
-	tu.settings.language			= json["settings"].language 		|| "english";
-	tu.settings.tMinus				= json["settings"].tMinus 			|| false;
-	tu.settings.debug				= json["settings"].debug			|| false;
+	tu.settings.vis_mode			= json["settings"].vis_mode 			|| "none";
+	tu.settings.vis_refresh_rate	= json["settings"].vis_refresh_rate		|| 75;
+	tu.settings.bcng_bg				= json["settings"].bcng_bg 				|| false;
+	tu.settings.beatWindow			= json["settings"].beatWindow			|| false;
+	tu.settings.parallaxBackground	= json["settings"].parallaxBackground	|| false;
+	tu.settings.wave_show			= json["settings"].wave_show 			|| false;
+	tu.settings.showchibi 			= json["settings"].showchibi 			|| false;
+	tu.settings.outputId			= json["settings"].outputId  			|| "default";
+	tu.settings.language			= json["settings"].language 			|| "english";
+	tu.settings.tMinus				= json["settings"].tMinus 				|| false;
+	tu.settings.debug				= json["settings"].debug				|| false;
 	return tu;
 }
 
@@ -252,8 +253,8 @@ function GetMetadata(_path) {
 		hashSum.update(tags.image.imageBuffer);
 		const hex = hashSum.digest('hex');
 		var finalPath = path.join(path.join(__dirname, "/cache/"), hex + "." + tags.image.mime.split('/')[1]);
-
 		if(!fs.existsSync(finalPath)) fs.writeFileSync(finalPath, tags.image.imageBuffer);
+
 
 		fMusic.tags.image = finalPath;
 	} else {

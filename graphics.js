@@ -1,5 +1,6 @@
 let barWidth = barWidthB = bpLength = bpbLength = backa = timerStart = timerEnd = debugT = phiInc = laftFrameFPS = decalGlbl = 0;
 let blurMax = brightMin = brightMax = maxBounce = 0;
+let tiltx = tilty = 0;
 let title = album = artist = mode = "";
 let desp = background = undefined;
 let ca = [];
@@ -202,6 +203,14 @@ function moveArrayC(_array, _value=1, _opp=false) {
 	_tArray.splice(0, 0, ..._objs);
 
 	return _tArray;
+}
+
+function AABB(_x, _y, _tx, _ty, _tw, _th) {
+	return (
+		_x > _tx && _x < _tx + _tw
+			&& _y > _ty
+			&& _y < _ty + _th
+		);
 }
 
 function renderFrame(visualiser, canvas, ctx) {
@@ -442,10 +451,13 @@ function renderFrame(visualiser, canvas, ctx) {
 		drawText(canvas.width-cwToPx(54), chToPx(35), `φ: ${Math.round(phi*10)/10}rad`, "fira code", chToPx(5), "white", 2);
 		drawText(canvas.width-cwToPx(54), chToPx(40), `t:`, "fira code", chToPx(5), "white", 2);
 		
-		drawText(canvas.width-cwToPx(24), chToPx(25), `B:  ${Math.round((blurMax - blurMax*2*value)*100)/100}px`, "fira code", chToPx(5), "white", 2);
-		drawText(canvas.width-cwToPx(24), chToPx(30), `L:  ${Math.round((.4 + .8*value)*100)/100}`, "fira code", chToPx(5), "white", 2);
-		drawText(canvas.width-cwToPx(24), chToPx(35), `BK: ${Math.round(backa*100)/100}`, "fira code", chToPx(5), "white", 2);
-		//drawText(canvas.width-cwToPx(24), chToPx(40), `Δφ: ${/*roundTo( (vis.refreshRate-hz)*2*Math.PI, 0)*/ decalGlbl}`, "fira code", chToPx(5), "white", 2);
+		drawText(canvas.width-cwToPx(24), chToPx(22.5), `PV: ${player.volume}`, "fira code", chToPx(2.5), "white", 2);
+		drawText(canvas.width-cwToPx(24), chToPx(25), `RV: ${realVolume}`, "fira code", chToPx(2.5), "white", 2);
+		drawText(canvas.width-cwToPx(14), chToPx(22.5), `TX: ${Math.round(tiltx*100)/100}`, "fira code", chToPx(2.5), "white", 2);
+		drawText(canvas.width-cwToPx(14), chToPx(25), `TY: ${Math.round(tilty*100)/100}`, "fira code", chToPx(2.5), "white", 2);
+		drawText(canvas.width-cwToPx(24), chToPx(30), `B:  ${Math.round((blurMax - blurMax*2*value)*100)/100}px`, "fira code", chToPx(5), "white", 2);
+		drawText(canvas.width-cwToPx(24), chToPx(35), `L:  ${Math.round((.4 + .8*value)*100)/100}`, "fira code", chToPx(5), "white", 2);
+		drawText(canvas.width-cwToPx(24), chToPx(40), `BK: ${Math.round(backa*100)/100}`, "fira code", chToPx(5), "white", 2);
 		
 		
 		var coefx = Math.trunc(256/pTme.length);
@@ -534,8 +546,6 @@ function renderFrame(visualiser, canvas, ctx) {
 				drawText(140 + i*100, chToPx(96), `${notes[i]}`, "fira code", 24, getColorFromValue(data, notesFreq[i]*256));
 			}
 		}
-		
-		
 	}
 
 	function drawLine(bp) {
@@ -761,16 +771,48 @@ function renderFrame(visualiser, canvas, ctx) {
 	}
 
 	timerStart = window.performance.now();
+	var paraOffsetX = 0;
+	var paraOffsetY = 0;
+	
+	if(visualiser.parallaxBackground) {
+		paraOffsetX = (visualiser.mouse.gx - window.innerWidth/2) / window.innerWidth;
+		paraOffsetY = (visualiser.mouse.gy - window.innerHeight/2) / window.innerHeight * 1.77;
+	}
+
+	dataArray = visualiser.getVisualiserUIntData()
+	let ampValue = getAverage(dataArray, 0, Math.round(visualiser.analyser.fftSize/170.7))/255;
+
+	if(visualiser.beatWindow) {
+		canvas.parentElement.style.scale = `${ampValue * .01 + 1}`;
+	}
+
+	if(visualiser.windowTilt) {
+		var f = canvas.parentElement;
+		var r = f.getBoundingClientRect();
+		let tiltSpeed = 0.41666 * visualiser.refreshRate; // Adding the refresh rate as a coefficient deletes bouncing
+		let tiltTarget = 1; // Tilt Target in degrees
+		if(AABB(visualiser.mouse.gx, visualiser.mouse.gy, r.x, r.y, r.width, r.height)) {
+			var cx = (visualiser.mouse.gx - r.x - r.width/2)/r.width;
+			var cy = Math.round(visualiser.mouse.gy - r.y - r.height/2)/r.height;
+			tiltx += (cx - tiltx/2)/(visualiser.refreshRate/tiltSpeed);
+			tilty += (cy - tilty/2)/(visualiser.refreshRate/tiltSpeed);
+			
+		} else {
+			tiltx += (0 - tiltx)/(visualiser.refreshRate/tiltSpeed);
+			tilty += (0 - tilty)/(visualiser.refreshRate/tiltSpeed);
+		}
+
+		f.style.transform = `perspective(500px) rotateY(${Math.round(tiltx*100)/100}deg) rotateX(${-Math.round(tilty*100)/100}deg)`;
+	}
 
 	if(visualiser.bouncingBackground) {
-		dataArray = visualiser.getVisualiserUIntData()
-		var value = getAverage(dataArray, 0, Math.round(visualiser.analyser.fftSize/170.7))/255;
+		
 		backa += (60/visualiser.refreshRate) / 750;
 		if(backa >= Math.PI*2) backa = 0;
-		var backgroundSize = 120 + maxBounce*value;
+		var backgroundSize = 120 + maxBounce*ampValue;
 		background.style.backgroundSize = `${backgroundSize}vw`
-		background.style.filter = `url(#rgb-split) brightness(${value * (brightMax - brightMin) + brightMin})  blur(${blurMax - blurMax*2*value}px)`;
-		background.style.backgroundPosition = `${(-(backgroundSize/2) + 50) - Math.cos(backa)*10}vw ${(-(backgroundSize/2) + 28.125) + Math.sin(backa)*20}vw`;
+		background.style.filter = `url(#rgb-split) brightness(${ampValue * (brightMax - brightMin) + brightMin})  blur(${blurMax - blurMax*2*ampValue}px)`;
+		background.style.backgroundPosition = `${(-(backgroundSize/2) + 50) - Math.cos(backa)*10 + paraOffsetX * 2}vw ${(-(backgroundSize/2) + 28.125) + Math.sin(backa)*20 + paraOffsetY * 2}vw`;
 	} else {
 		background.style.backgroundSize = `130vw`;
 		background.style.filter = `brightness(.7) blur(10px)`;
@@ -897,6 +939,7 @@ function renderFrame(visualiser, canvas, ctx) {
 			bpb.push(... getPointsUInt8(dataArray, 0,  30, chToPx(45),  barWidthB));
 			bpb.push(... getPointsUInt8(dataArray, 30, 31, chToPx(25),  barWidthB));
 			bpb.push(... getPointsUInt8(dataArray, 31, 32, chToPx(10),  barWidthB));
+			bpb.push(... getPointsUInt8(dataArray, 32, 33, chToPx(5),  barWidthB));
 			bpLength  = bp.length;
 			bpbLength = bpb.length;
 			ceiling = chToPx(45);

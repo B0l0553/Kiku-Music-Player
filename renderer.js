@@ -3,8 +3,8 @@ const VERSION = "0.8.0"
 const { ipcRenderer, dialog, app, BrowserWindow } = require("electron");
 const fs = require("fs");
 const path = require("path")
-let InternalPlaylist=[],stickers=[],pPtr=toPlay=loop=shuffle=optionOpn=scrollcap=menuHeaderTime=tMinus=0,contextData=null,vHandle,visCanvas,keys={},search="",menu="";
-
+let InternalPlaylist=[],stickers=[],pPtr=realVolume=toPlay=loop=shuffle=optionOpn=scrollcap=menuHeaderTime=tMinus=0,contextData=null,vHandle,visCanvas,keys={},search="",menu="";
+let inactivity = 0;
 let soundIcons = {};
 soundIcons.volumeHigh = "assets/icons/audio-volumehigh.svg"
 soundIcons.volumeLow = "assets/icons/audio-volumelow.svg"
@@ -445,7 +445,8 @@ document.onreadystatechange = () => {
 			volumeToast.showVolumeToast()
 			volumeToast.hideVolumeToast(500);
 			volumeToast.setValue(_volume*100);
-			player.volume = Math.round(_volume*100)/100;
+			realVolume = Math.round(_volume*100)/100;
+			player.volume = Math.round(Math.log2(_volume + 1)*1000)/1000;
 			if(_volumeIcon) {
 				if(_volume >= .3) _volumeIcon.src = soundIcons.volumeHigh;
 				else if(_volume < .3 && _volume >= .1) _volumeIcon.src = soundIcons.volumeLow;
@@ -611,17 +612,6 @@ document.onreadystatechange = () => {
 			document.addEventListener("mousemove", mouseMove);
 			document.addEventListener("mouseup", handleMouseUp);
 		});
-
-		player.addEventListener('timeupdate', () => {
-			var percent = (player.currentTime / player.duration) * 100;
-			var r = progressWrapper.getBoundingClientRect();
-			progressBody.style.width = `${percent}%`;
-			progressHandle.style.transform = `translateX(${r.width*percent/100}px)`;
-			pBodyTime.textContent = getTime(player.currentTime);
-			pBodyLength.textContent = userdata.settings.tMinus ? getTime(player.duration-player.currentTime) : getTime(player.duration);
-			userdata.playtime = player.currentTime;
-			
-		});
 	
 		player.addEventListener("ended", () => {
 			userdata.playing = 0;
@@ -648,6 +638,8 @@ document.onreadystatechange = () => {
 		setBackground(playbackBodyBg);
 		vHandle.showWaveform = userdata.settings.wave_show;
 		vHandle.bouncingBackground = userdata.settings.bcng_bg;
+		vHandle.beatWindow = userdata.settings.beatWindow;
+		vHandle.parallaxBackground = userdata.settings.parallaxBackground;
 		vHandle.setAudioOutput(userdata.settings.outputId);
 		vHandle.setFftSize(vHandle.audioCtx.sampleRate/11.71875); // 11.71875 -> Idk honestly ; magic number to find correct power of 2 :P
 		vHandle.startRender();
@@ -682,7 +674,6 @@ document.onreadystatechange = () => {
 				if(cy < r.y) cy = r.y;
 				else if(cy > r.y + r.height) cy = r.y+r.height;
 				setMusicVolume(1 - (_e.clientY-r.y)/r.height);
-				console.log(player.volume);
 			}
 
 			function handleMouseUp() {
@@ -698,24 +689,32 @@ document.onreadystatechange = () => {
 		})
 		
 		setInterval(() => {
+			
 			if(userdata.playing) {
 				userdata.totalTime += .25
 			}
 			var td = new Date();
+			var percent = (player.currentTime / player.duration) * 100;
+			var r = progressWrapper.getBoundingClientRect();
 			$("sampleRate").textContent = vHandle.audioCtx.sampleRate + " Hz";
 			$("fftSize").textContent = vHandle.analyser.fftSize/2 + " Bytes";
-			$("time").textContent = `${td.getHours().toLocaleString("en-US", { minimumIntegerDigits: 2 })}:${td.getMinutes().toLocaleString("en-US", { minimumIntegerDigits: 2 })}:${td.getSeconds().toLocaleString("en-US", { minimumIntegerDigits: 2 })}.${Math.trunc(td.getMilliseconds()/100)}`;
+			$("time").textContent = `${td.getHours().toLocaleString("en-US", { minimumIntegerDigits: 2 })}:${td.getMinutes().toLocaleString("en-US", { minimumIntegerDigits: 2 })}:${td.getSeconds().toLocaleString("en-US", { minimumIntegerDigits: 2 })}`;
 			if(contextMenu.discovered && contextMenu.lifetime >= 1) contextMenu.lifetime-= 1;
 			else if(contextMenu.discovered && contextMenu.lifetime < 1) contextMenu.hideMenu();
-			// scrollcap /= 2;
-			// if(scrollcap < 50) scrollcap = 0;
-			// $("lprog__bar").style.width = `${scrollcap/300*100}vw`;
+			progressBody.style.width = `${percent}%`;
+			progressHandle.style.transform = `translateX(${r.width*percent/100}px)`;
+			pBodyTime.textContent = getTime(player.currentTime);
+			pBodyLength.textContent = userdata.settings.tMinus ? getTime(player.duration-player.currentTime) : getTime(player.duration);
+			userdata.playtime = player.currentTime;
 			menuHeaderTime++;
-			
+			inactivity += 250;
+
+			if(inactivity > 10000)
+
 			if(menuHeaderTime > 5) {
 				$("history__header").classList.add("hide");
 			}
-			userdata.volume = player.volume;
+			userdata.volume = realVolume;
 			volumeToast.autoHideUpdate();
 		}, 250);
 		
@@ -742,6 +741,18 @@ document.onreadystatechange = () => {
 
 		pBodyLength.onclick = () => {
 			userdata.settings.tMinus = !userdata.settings.tMinus;
+		}
+
+		document.onmousemove = (e) => {
+			vHandle.mouse.seenObject = e.target;
+			vHandle.mouse.gx = e.clientX;
+			vHandle.mouse.gy = e.clientY;
+			inactivity = 0;
+		}
+
+		document.onmouseleave = (e) => {
+			vHandle.mouse.gx = window.innerWidth/2;
+			vHandle.mouse.gy = window.innerHeight/2;
 		}
 
 		visCanvas.onmousemove = (e) => {
@@ -771,21 +782,6 @@ document.onreadystatechange = () => {
 			}
 		}
 
-		document.addEventListener("mousemove", (e) => { 
-			var f = document.getElementById("playback__window"); 
-			var r = f.getBoundingClientRect();
-			var cx = e.clientX - r.x - r.width/2
-			var cy = e.clientY - r.y - r.height/2
-			var tiltx = cx / (r.width/2);
-			var tilty = cy / (r.width/2);
-			f.style = `transform: perspective(2000px) rotateY(${tiltx*.5}deg) rotateX(${-tilty*2}deg)`;
-		});
-
-		document.addEventListener("mouseleave", (e) => { 
-			var f = document.getElementById("playback__window");
-			f.style = `transform: perspective(1000px) rotateY(0deg) rotateX(0deg)`;
-		});
-
 		$("option-btn").onclick = 			() => { $("settings__body").classList.toggle("hidden"); }
 		$("settings__body").onclick = 		(e) => { e.target.classList.toggle("hidden"); }
 		$("settings__wrapper").onclick = 	(e) => { e.stopPropagation(); }
@@ -800,7 +796,7 @@ document.onreadystatechange = () => {
 		// $("control__volume").onmouseleave = () => { if(!volumeToast.stillFocused) volumeToast.hideVolumeToast(); }
 		volumeIcon.onmouseenter = () => { volumeToast.setExternalFocus(true); }
 		volumeIcon.onmouseleave = () => { volumeToast.setExternalFocus(false); }
-		volumeIcon.onclick = () => { player.muted = !player.muted; setMusicVolume(player.volume, volumeIcon, false); }
+		volumeIcon.onclick = () => { player.muted = !player.muted; setMusicVolume(realVolume, volumeIcon, false); }
 
 		$("history__header").onmouseenter = () => { menuHeaderTime=0; $("history__header").classList.remove("hide"); }
 		$("history__exit").onclick = 		() => { closeMenu("history"); }
@@ -906,10 +902,10 @@ document.onreadystatechange = () => {
 
 			if(e.ctrlKey) {
 				if(e.shiftKey)  {
-					setMusicVolume(player.volume - Math.sign(e.deltaY)*.1, volumeIcon);
+					setMusicVolume(realVolume - Math.sign(e.deltaY)*.1, volumeIcon);
 					return;
 				}
-				setMusicVolume(player.volume - Math.sign(e.deltaY)*.01, volumeIcon);
+				setMusicVolume(realVolume - Math.sign(e.deltaY)*.01, volumeIcon);
 				return;
 			}
 
@@ -962,6 +958,16 @@ document.onreadystatechange = () => {
 				vHandle.bouncingBackground = !vHandle.bouncingBackground;
 				$("bouncingBackground__input").checked = vHandle.bouncingBackground;
 				userdata.settings.bcng_bg = vHandle.bouncingBackground;
+			});
+			contextMenu.addTickOption("Window Shadow", vHandle.beatWindow, () => {
+				vHandle.beatWindow = !vHandle.beatWindow;
+				$("bouncingBackground__input").checked = vHandle.beatWindow;
+				userdata.settings.beatWindow = vHandle.beatWindow;
+			});
+			contextMenu.addTickOption("Parallax Background", vHandle.parallaxBackground, () => {
+				vHandle.parallaxBackground = !vHandle.parallaxBackground;
+				$("bouncingBackground__input").checked = vHandle.parallaxBackground;
+				userdata.settings.parallaxBackground = vHandle.parallaxBackground;
 			});
 			contextMenu.addInputOption("Smoothing", vHandle.analyser.smoothingTimeConstant, (e) => {
 				var f = parseFloat(e.target.value);
@@ -1038,7 +1044,7 @@ document.onreadystatechange = () => {
 				contextMenu.hideMenu();
 			})
 
-			var fps = [ "240", "170", "144", "72", "32", "10" ];
+			var fps = [ "240", "165", "144", "75", "60", "30", "20" ];
 
 			contextMenu.addSelectOption("FPS", fps, `${userdata.settings.vis_refresh_rate}`, (e) => {
 				userdata.settings.vis_refresh_rate = Number.parseInt(e.target.value);
@@ -1085,6 +1091,8 @@ document.onreadystatechange = () => {
 					case "visualiser":
 						contextMenu.showOption("Wave");
 						contextMenu.showOption("Background");
+						contextMenu.showOption("Window Shadow");
+						contextMenu.showOption("Parallax Background");
 						contextMenu.showOption("Smoothing");
 						contextMenu.showOption("FPS");
 						contextMenu.showOption("Debug");
@@ -1143,11 +1151,11 @@ document.onreadystatechange = () => {
 					break;
 				case "ArrowUp":
 					e.preventDefault();
-					setMusicVolume(player.volume + .01);
+					setMusicVolume(realVolume + .01);
 					break;
 				case "ArrowDown":
 					e.preventDefault();
-					setMusicVolume(player.volume - .01);
+					setMusicVolume(realVolume - .01);
 					break;
 				case "ArrowLeft":
 					e.preventDefault();
