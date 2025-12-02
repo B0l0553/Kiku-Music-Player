@@ -23,6 +23,9 @@
 		
 		<header id="titlebar">
 			<div id="drag-region">
+				<div id="window-icon">
+					<img src="assets/icons/samael_bw.svg" draggable="false" />
+				</div>
 				<div id="window-controls">
 					<div class="button" id="option-btn">
 						<img src="assets/icons/window-settings.svg" draggable="false" />
@@ -41,8 +44,8 @@
 		</header>
 		<div id="app" class="scrollbar-app">
 			<div id="playback__wrapper">
-				<div id="playback__body" style="overflow: hidden; display: flex;">
-					<div id="playback__window" class="wrapper flex-row">
+				<div data-ctx="body" id="playback__body" style="overflow: hidden; display: flex;">
+					<div data-ctx="window" id="playback__window" class="wrapper flex-row">
 						<div class="wrapper" style="display: flex;justify-content: center;align-items: center; flex-direction: column;">
 							<div data-ctx="music-thumbnail" id="playback__thumb"></div>
 						</div>
@@ -54,14 +57,11 @@
 					</div>
 				</div>
 
-				<div id="footer">
+				<div data-ctx="footer" id="footer">
 					<div style="flex-wrap: nowrap;display: flex;">
 						<p>© 2025 Kiku Music Player, All Right Reserved</p>
 						<div class="fIcon" id="github__red">
 							<img src="assets/icons/logo-github.svg" draggable="false"/>
-						</div>
-						<div class="fIcon" id="twitter__red">
-							<img src="assets/icons/logo-x.svg" draggable="false"/>
 						</div>
 						<!-- <div class="fIcon">
 							<img src="assets/icons/logo-discord.svg" draggable="false"/>

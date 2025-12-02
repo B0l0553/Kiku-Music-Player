@@ -448,8 +448,8 @@ document.onreadystatechange = () => {
 			realVolume = Math.round(_volume*100)/100;
 			player.volume = Math.round(Math.log2(_volume + 1)*1000)/1000;
 			if(_volumeIcon) {
-				if(_volume >= .3) _volumeIcon.src = soundIcons.volumeHigh;
-				else if(_volume < .3 && _volume >= .1) _volumeIcon.src = soundIcons.volumeLow;
+				if(_volume >= .5) _volumeIcon.src = soundIcons.volumeHigh;
+				else if(_volume < .5 && _volume >= .2) _volumeIcon.src = soundIcons.volumeLow;
 				else _volumeIcon.src = soundIcons.volumeNone;
 
 				if(_volume == 0 || player.muted) _volumeIcon.src = soundIcons.volumeMute;
@@ -640,6 +640,7 @@ document.onreadystatechange = () => {
 		vHandle.bouncingBackground = userdata.settings.bcng_bg;
 		vHandle.beatWindow = userdata.settings.beatWindow;
 		vHandle.parallaxBackground = userdata.settings.parallaxBackground;
+		vHandle.windowTilt = userdata.settings.windowTilt;
 		vHandle.setAudioOutput(userdata.settings.outputId);
 		vHandle.setFftSize(vHandle.audioCtx.sampleRate/11.71875); // 11.71875 -> Idk honestly ; magic number to find correct power of 2 :P
 		vHandle.startRender();
@@ -666,14 +667,14 @@ document.onreadystatechange = () => {
 			if(e.buttons != 1) return;
 			var r = volumeToast.wrapper.getBoundingClientRect();
 			var val = 1- ((e.clientY - r.y) / r.height)
-			setMusicVolume(val);
+			setMusicVolume(val, volumeIcon);
 			volumeToast.setFocus(2, true);
 
 			function mouseMove(_e) {
 				var cy = _e.clientY;
 				if(cy < r.y) cy = r.y;
 				else if(cy > r.y + r.height) cy = r.y+r.height;
-				setMusicVolume(1 - (_e.clientY-r.y)/r.height);
+				setMusicVolume(1 - (_e.clientY-r.y)/r.height, volumeIcon);
 			}
 
 			function handleMouseUp() {
@@ -930,10 +931,6 @@ document.onreadystatechange = () => {
 			openLink('https://github.com/B0l0553/Kiku-Music-Player');
 		}
 
-		$("twitter__red").onclick = () => {
-			openLink('https://twitter.com/b0l0553');
-		}
-
 		$("version").textContent = VERSION;
 
 		function setupContext() {
@@ -961,12 +958,14 @@ document.onreadystatechange = () => {
 			});
 			contextMenu.addTickOption("Window Shadow", vHandle.beatWindow, () => {
 				vHandle.beatWindow = !vHandle.beatWindow;
-				$("bouncingBackground__input").checked = vHandle.beatWindow;
 				userdata.settings.beatWindow = vHandle.beatWindow;
+			});
+			contextMenu.addTickOption("Tilting Window", vHandle.windowTilt, () => {
+				vHandle.windowTilt = !vHandle.windowTilt;
+				userdata.settings.windowTilt = vHandle.windowTilt;
 			});
 			contextMenu.addTickOption("Parallax Background", vHandle.parallaxBackground, () => {
 				vHandle.parallaxBackground = !vHandle.parallaxBackground;
-				$("bouncingBackground__input").checked = vHandle.parallaxBackground;
 				userdata.settings.parallaxBackground = vHandle.parallaxBackground;
 			});
 			contextMenu.addInputOption("Smoothing", vHandle.analyser.smoothingTimeConstant, (e) => {
@@ -1056,6 +1055,39 @@ document.onreadystatechange = () => {
 				$("shwDebug__input").checked = vHandle.debug;
 				userdata.settings.debug = vHandle.debug;
 			});
+			
+			contextMenu.addTickOption("Show FFT Size", userdata.settings.showFFTSize, () => {
+				userdata.settings.showFFTSize = !userdata.settings.showFFTSize;
+				if(userdata.settings.showFFTSize) $("fftSize").classList.remove("hidden");
+				else $("fftSize").classList.add("hidden");
+			});
+			contextMenu.addTickOption("Show Sample Rate", userdata.settings.sampleRate, () => {
+				userdata.settings.sampleRate = !userdata.settings.sampleRate;
+				if(userdata.settings.sampleRate) $("sampleRate").classList.remove("hidden");
+				else $("sampleRate").classList.add("hidden");
+			});
+			contextMenu.addTickOption("Show FPS", userdata.settings.showFPS, () => {
+				userdata.settings.showFPS = !userdata.settings.showFPS;
+				if(userdata.settings.showFPS) $("fps").classList.remove("hidden");
+				else $("fps").classList.add("hidden");
+			});
+			contextMenu.addTickOption("Show Time", userdata.settings.showTime, () => {
+				userdata.settings.showTime = !userdata.settings.showTime;
+				if(userdata.settings.showTime) $("time").classList.remove("hidden");
+				else $("time").classList.add("hidden");
+			});
+
+			if(userdata.settings.showFFTSize) $("fftSize").classList.remove("hidden");
+			else $("fftSize").classList.add("hidden");
+
+			if(userdata.settings.sampleRate) $("sampleRate").classList.remove("hidden");
+			else $("sampleRate").classList.add("hidden");
+
+			if(userdata.settings.showFPS) $("fps").classList.remove("hidden");
+			else $("fps").classList.add("hidden");
+
+			if(userdata.settings.showTime) $("time").classList.remove("hidden");
+			else $("time").classList.add("hidden");
 		}
 
 		function contextSearchParent(_elem) {
@@ -1088,15 +1120,19 @@ document.onreadystatechange = () => {
 					case "music-thumbnail":
 						contextMenu.showOption("Extract Cover")
 						break;
+					
 					case "visualiser":
 						contextMenu.showOption("Wave");
 						contextMenu.showOption("Background");
-						contextMenu.showOption("Window Shadow");
+						contextMenu.showOption("Tilting Window");
 						contextMenu.showOption("Parallax Background");
 						contextMenu.showOption("Smoothing");
 						contextMenu.showOption("FPS");
 						contextMenu.showOption("Debug");
+					case "window":
+						contextMenu.showOption("Window Shadow");
 						break;
+
 					case "sticker":
 						contextMenu.showOption("Move");
 						contextMenu.showOption("Resize");
@@ -1107,7 +1143,15 @@ document.onreadystatechange = () => {
 						break;
 					case "body":
 						contextMenu.showOption("Add Sticker");
-					case "":
+						contextMenu.showOption("Background");
+						contextMenu.showOption("Parallax Background");
+						break;
+					case "footer":
+						contextMenu.showOption("Show FPS");
+						contextMenu.showOption("Show FFT Size");
+						contextMenu.showOption("Show Sample Rate");
+						contextMenu.showOption("Show Time");
+						break
 					default:
 						break
 				}

@@ -803,6 +803,10 @@ function renderFrame(visualiser, canvas, ctx) {
 		}
 
 		f.style.transform = `perspective(500px) rotateY(${Math.round(tiltx*100)/100}deg) rotateX(${-Math.round(tilty*100)/100}deg)`;
+	} else if(!visualiser.windowTilt && tiltx + tilty != 0) {
+		var f = canvas.parentElement;
+		f.style.transform = "";
+		tiltx = tilty = 0;
 	}
 
 	if(visualiser.bouncingBackground) {
@@ -816,7 +820,7 @@ function renderFrame(visualiser, canvas, ctx) {
 	} else {
 		background.style.backgroundSize = `130vw`;
 		background.style.filter = `brightness(.7) blur(10px)`;
-		background.style.backgroundPosition = `center`;
+		background.style.backgroundPosition = `${-25 + paraOffsetX * 2}vw ${-31.875 + paraOffsetY * 2}vw`;
 	}
 
 	if(visualiser.mode == "none") {

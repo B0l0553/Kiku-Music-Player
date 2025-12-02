@@ -130,12 +130,17 @@ function GetUserData() {
 	tu.settings.vis_refresh_rate	= json["settings"].vis_refresh_rate		|| 75;
 	tu.settings.bcng_bg				= json["settings"].bcng_bg 				|| false;
 	tu.settings.beatWindow			= json["settings"].beatWindow			|| false;
+	tu.settings.windowTilt			= json["settings"].windowTilt			|| false;
 	tu.settings.parallaxBackground	= json["settings"].parallaxBackground	|| false;
 	tu.settings.wave_show			= json["settings"].wave_show 			|| false;
 	tu.settings.showchibi 			= json["settings"].showchibi 			|| false;
 	tu.settings.outputId			= json["settings"].outputId  			|| "default";
 	tu.settings.language			= json["settings"].language 			|| "english";
 	tu.settings.tMinus				= json["settings"].tMinus 				|| false;
+	tu.settings.showFPS				= json["settings"].showFPS				|| false; 
+	tu.settings.showFFTSize			= json["settings"].showFFTSize			|| false; 
+	tu.settings.sampleRate			= json["settings"].sampleRate			|| false;
+	tu.settings.showTime			= json["settings"].showTime				|| true; 
 	tu.settings.debug				= json["settings"].debug				|| false;
 	return tu;
 }
